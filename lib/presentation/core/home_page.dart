@@ -1,4 +1,5 @@
 import 'package:articly/data/services/auth_service.dart';
+import 'package:articly/presentation/authentication/widgets/profile_page.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {
@@ -7,19 +8,22 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: Center(
-        child: Column(
-          children: [
-            Text('Welcome to Articly!'),
-            ElevatedButton(
-              onPressed: () {
-                AuthService().signOut();
-              },
-              child: Text('Sign out'),
-            ),
-          ],
-        ),
+      appBar: AppBar(
+        title: const Text('Home'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.account_circle),
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => ProfilePage()));
+            },
+          ),
+        ],
+      ),
+      body: Align(
+        alignment: AlignmentGeometry.center,
+        child: Text('Welcome to Articly!'),
       ),
     );
   }

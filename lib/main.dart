@@ -29,6 +29,9 @@ void main() async {
   setupLogging();
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  if (kIsWeb) {
+    FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+  }
   runApp(const MyApp());
 }
 
@@ -55,7 +58,7 @@ class AuthGate extends StatelessWidget {
 
   final AuthService _authService;
 
-  final log = Logger("AuthPage");
+  final log = Logger("AuthGate");
 
   @override
   Widget build(BuildContext context) {

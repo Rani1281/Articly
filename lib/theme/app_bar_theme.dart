@@ -9,6 +9,7 @@ final AppBarTheme appBarTheme = AppBarTheme(
     fontSize: 18,
     fontWeight: FontWeight.bold,
   ),
+  actionsPadding: EdgeInsets.all(8),
   centerTitle: true,
   elevation: 0,
 );

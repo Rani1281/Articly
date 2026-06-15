@@ -2,36 +2,39 @@ import 'package:articly/data/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
+/// Manages profile state and user account actions.
 class ProfileViewModel extends ChangeNotifier {
-  ProfileViewModel({required AuthService authService})
-    : _authService = authService;
+  ProfileViewModel({AuthService? authService})
+    : _authService = authService ?? AuthService();
 
   final AuthService _authService;
-  String? _errorMessageLogout;
-  bool _isRunningLogout = false;
-
-  String? _errorMessageUsername;
-  bool _isRunningUsername = false;
-
-  String? get errorMessageLogout => _errorMessageLogout;
-  bool get isRunningLogout => _isRunningLogout;
-
-  String? get errorMessageUsername => _errorMessageUsername;
-  bool get isRunningUsername => _isRunningUsername;
-
   final log = Logger('ProfileViewModel');
 
-  String? getUsername() {
-    return _authService.user?.displayName;
-  }
+  String? _email;
+  String? _username; // can be modified
 
-  String? getUserEmail() {
-    return _authService.user?.email;
+  bool _isRunningLogout = false;
+
+  String? _errorMessage;
+  bool _isRunningName = false;
+
+  String? get email => _email;
+  String? get username => _username;
+
+  bool get isRunningLogout => _isRunningLogout;
+
+  String? get errorMessage => _errorMessage;
+  bool get isRunningName => _isRunningName;
+
+  // Use in initState to initialize data
+  void loadData() {
+    _email = _authService.user?.email;
+    _username = _authService.user?.displayName;
   }
 
   Future<void> logOut() async {
     log.info('Logout started...');
-    _errorMessageLogout = null;
+    _errorMessage = null;
     _isRunningLogout = true;
     notifyListeners();
 
@@ -40,38 +43,56 @@ class ProfileViewModel extends ChangeNotifier {
       log.fine('Logout was successful!');
     } on CustomAuthException catch (e) {
       log.shout(
-        'A Firebase Auth exception occurred: ${e.errorMessage}.\nCode: ${e.code}',
+        'A Firebase Auth exception occurred: ${e.errorMessage}.\n'
+        'Code: ${e.code}',
       );
-      _errorMessageLogout = e.displayMessage;
+      _errorMessage = e.displayMessage;
     } catch (e) {
       log.shout('An error has occurred: ${e.toString()}');
-      _errorMessageLogout = 'Something went wrong. Please try again later';
+      _errorMessage = 'Something went wrong. Please try again later';
     } finally {
       _isRunningLogout = false;
       notifyListeners();
     }
   }
 
-  Future<void> editUsername(String newName) async {
-    log.info('Edit username started...');
-    _errorMessageUsername = null;
-    _isRunningUsername = true;
+  Future<void> editName(String? newName) async {
+    if (newName == null || newName.isEmpty) {
+      log.info('The new username is empty or null, so not updating...');
+      return Future.value();
+    }
+
+    log.info('Edit name started...');
+    _errorMessage = null;
+    _isRunningName = true;
     notifyListeners();
 
     try {
       await _authService.updateUsername(newName);
-      log.fine('User was successfully updated!');
+      _username = newName;
+      log.fine('username was successfully updated!');
     } on CustomAuthException catch (e) {
       log.shout(
-        'A Firebase Auth exception occurred: ${e.errorMessage}.\nCode: ${e.code}',
+        'A Firebase Auth exception occurred: ${e.errorMessage}.\n'
+        'Code: ${e.code}',
       );
-      _errorMessageUsername = e.displayMessage;
+      _errorMessage = e.displayMessage;
     } catch (e) {
       log.shout('An error has occurred: ${e.toString()}');
-      _errorMessageUsername = 'Something went wrong. Please try again later';
+      _errorMessage = 'Something went wrong. Please try again later';
     } finally {
-      _isRunningUsername = false;
+      _isRunningName = false;
       notifyListeners();
     }
+  }
+
+  String? validateUsername(String username) {
+    if (username.isEmpty) {
+      return 'Username is required';
+    }
+    if (username.length > 50) {
+      return 'Username is too long';
+    }
+    return null;
   }
 }
