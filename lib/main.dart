@@ -8,10 +8,13 @@ import 'package:articly/presentation/core/error_page.dart';
 import 'package:articly/presentation/core/home_page.dart';
 import 'package:articly/theme/app_bar_theme.dart';
 import 'package:articly/theme/app_colors.dart';
+import 'package:articly/theme/app_theme.dart';
+import 'package:articly/theme/theme_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:logging/logging.dart';
 
@@ -32,7 +35,10 @@ void main() async {
   if (kIsWeb) {
     FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
   }
-  runApp(const MyApp());
+
+  final themeModel = ThemeModel();
+  await themeModel.load();
+  runApp(ChangeNotifierProvider.value(value: themeModel, child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -40,12 +46,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeModel = context.watch<ThemeModel>();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: AppColors.scaffoldBackgroundColor,
-        appBarTheme: appBarTheme,
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeModel.themeMode,
       home: AuthGate(),
     );
   }
