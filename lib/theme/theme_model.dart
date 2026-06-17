@@ -45,4 +45,18 @@ class ThemeModel extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  // Uses "context" in case of the user being in "system" mode
+  bool isDark(BuildContext context) {
+    switch (_themeMode) {
+      case ThemeMode.dark:
+        return true;
+
+      case ThemeMode.light:
+        return false;
+
+      case ThemeMode.system:
+        return MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    }
+  }
 }

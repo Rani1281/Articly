@@ -79,16 +79,16 @@ class _CooldownAuthButtonState extends State<CooldownAuthButton> {
     return Column(
       children: [
         AuthButton(
-          color: Colors.blue[400]!,
+          color: Theme.of(context).colorScheme.primary,
           onPressed: _isCooldown ? null : _handlePress,
-          child: Text(widget.text),
+          child: Text(widget.text, style: TextStyle(fontSize: 16)),
         ),
 
         if (_isCooldown) ...[
           const SizedBox(height: 8),
           Text(
             'Try again in $_remainingSeconds seconds',
-            style: const TextStyle(fontSize: 12, color: Colors.black87),
+            // style: const TextStyle(fontSize: 12, color: Colors.black87),
           ),
         ],
       ],

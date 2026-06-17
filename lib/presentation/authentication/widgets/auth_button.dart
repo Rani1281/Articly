@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AuthButton extends StatelessWidget {
-  final Color color;
+  final Color? color;
   final Color textColor;
   final VoidCallback? onPressed;
   final double maxWidth;
@@ -9,7 +9,7 @@ class AuthButton extends StatelessWidget {
 
   const AuthButton({
     super.key,
-    required this.color,
+    this.color,
     required this.onPressed,
     this.textColor = Colors.white, // Defaults to white text
     this.maxWidth = 450.0, // Matches the text field's max width

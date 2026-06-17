@@ -1,7 +1,9 @@
 import 'package:articly/presentation/authentication/view_models/profile_view_model.dart';
 import 'package:articly/presentation/authentication/widgets/auth_page.dart';
 import 'package:articly/presentation/authentication/widgets/input_dialog.dart';
+import 'package:articly/theme/theme_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ProfilePage extends StatefulWidget {
   ProfilePage({super.key, ProfileViewModel? viewModel})
@@ -42,9 +44,32 @@ class _ProfilePageState extends State<ProfilePage> {
     await widget._viewModel.editName(newName);
   }
 
+  Future<bool?> _showLogoutDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Log Out'),
+        content:
+            const Text('Are you sure you want to log out of your account?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Log Out'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final themeModel = context.watch<ThemeModel>();
     widget._viewModel.loadData();
+
     return ListenableBuilder(
       listenable: widget._viewModel,
       builder: (context, child) {
@@ -66,7 +91,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // TODO: switch to a predefined theme
                         Text(
                           widget._viewModel.username ?? 'User',
                           style: Theme.of(context).textTheme.headlineSmall,
@@ -82,7 +106,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 50),
 
                     // Email Section
-                    Divider(color: Colors.grey.shade300, thickness: 1),
+                    Divider(),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -104,6 +128,38 @@ class _ProfilePageState extends State<ProfilePage> {
                         ],
                       ),
                     ),
+
+                    const Divider(),
+
+                    ListTile(
+                      title: const Text('Theme'),
+                      trailing: DropdownButton<ThemeMode>(
+                        underline: const SizedBox(),
+                        borderRadius: BorderRadius.circular(10),
+                        elevation: 8,
+                        value: themeModel.themeMode,
+                        onChanged: (value) {
+                          if (value != null) {
+                            context.read<ThemeModel>().setThemeMode(value);
+                          }
+                        },
+                        items: const [
+                          DropdownMenuItem(
+                            value: ThemeMode.system,
+                            child: Text('System'),
+                          ),
+                          DropdownMenuItem(
+                            value: ThemeMode.light,
+                            child: Text('Light'),
+                          ),
+                          DropdownMenuItem(
+                            value: ThemeMode.dark,
+                            child: Text('Dark'),
+                          ),
+                        ],
+                      ),
+                    ),
+
                     Divider(),
 
                     const SizedBox(height: 60),
@@ -111,10 +167,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     // Log Out Button
                     // TODO: Switch this with a custom button
                     ElevatedButton.icon(
-                      onPressed: () {
-                        widget._viewModel.logOut();
-                        Navigator.of(context).pop();
-                        // ! Note: this only pops the current route, matching the current homepage -> profile page structure, so if nesting more pages, deleting all navigation stack beforehand is necessary.
+                      onPressed: () async {
+                        final confirmed = await _showLogoutDialog();
+                        if (confirmed == true) {
+                          widget._viewModel.logOut();
+                          Navigator.of(context).pop();
+                          // ! Note: this only pops the current route, matching the current homepage -> profile page structure, so if nesting more pages, deleting all navigation stack beforehand is necessary.
+                        }
                       },
                       label: const Text('Log out'),
                       icon: Icon(Icons.logout),
@@ -127,36 +186,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                     ),
-
-                    // OutlinedButton.icon(
-                    //   onPressed: widget._viewModel.logOut,
-                    //   icon: const Icon(
-                    //     Icons.logout,
-                    //     size: 20,
-                    //     color: Color(
-                    //       0xFF002244,
-                    //     ), // Dark navy/black to match the image
-                    //   ),
-                    //   label: const Text(
-                    //     'Log out',
-                    //     style: TextStyle(
-                    //       color: Color(0xFF002244),
-                    //       fontSize: 14,
-                    //       fontWeight: FontWeight.bold,
-                    //     ),
-                    //   ),
-                    //   style: OutlinedButton.styleFrom(
-                    //     side: BorderSide(color: Colors.grey.shade400, width: 1),
-                    //     // The image shows completely sharp, square corners
-                    //     shape: RoundedRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(12),
-                    //     ),
-                    //     padding: const EdgeInsets.symmetric(
-                    //       horizontal: 36,
-                    //       vertical: 16,
-                    //     ),
-                    //   ),
-                    // ),
                   ],
                 ),
               ),

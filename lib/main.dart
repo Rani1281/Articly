@@ -2,12 +2,9 @@ import 'package:articly/data/services/auth_service.dart';
 import 'package:articly/presentation/authentication/view_models/auth_page_model.dart';
 import 'package:articly/presentation/authentication/view_models/verify_email_view_model.dart';
 import 'package:articly/presentation/authentication/widgets/auth_page.dart';
-import 'package:articly/presentation/authentication/widgets/forgot_password_page.dart';
 import 'package:articly/presentation/authentication/widgets/verify_email_page.dart';
 import 'package:articly/presentation/core/error_page.dart';
 import 'package:articly/presentation/core/home_page.dart';
-import 'package:articly/theme/app_bar_theme.dart';
-import 'package:articly/theme/app_colors.dart';
 import 'package:articly/theme/app_theme.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -17,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:logging/logging.dart';
+import 'package:flutter/widget_previews.dart';
 
 void setupLogging() {
   Logger.root.level = Level.ALL;

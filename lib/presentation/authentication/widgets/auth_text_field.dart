@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 class AuthTextField extends StatelessWidget {
   final TextEditingController? controller;
   final String? hintText;
+  // final Color? fillColor;
+  final bool? isDark;
   final Widget? suffixIcon;
   final bool obscureText;
   final double maxWidth;
@@ -13,6 +15,8 @@ class AuthTextField extends StatelessWidget {
     super.key,
     this.controller,
     this.hintText,
+    // this.fillColor,
+    this.isDark,
     this.suffixIcon,
     this.obscureText = false,
     this.maxWidth = 450.0,
@@ -36,15 +40,17 @@ class AuthTextField extends StatelessWidget {
             // style: const TextStyle(fontSize: 16.0, color: Colors.black87),
             decoration: InputDecoration(
               filled: true,
-              fillColor: Colors.white,
+              // fillColor: (isDark ?? false) ? Colors.black : Colors.white,
 
               // 1. DISABLES THE GREY HOVER EFFECT ON WEB/DESKTOP
               hoverColor: Colors.transparent,
 
               // 2. DISPLAYS THE HINT TEXT WHEN EMPTY
               hintText: hintText,
-              hintStyle: const TextStyle(color: Colors.black54),
 
+              // hintStyle: TextStyle(
+              //   color: (isDark ?? false) ? Colors.white54 : Colors.black54,
+              // ),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 20.0,
                 vertical: 18.0,
