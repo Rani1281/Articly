@@ -14,7 +14,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:logging/logging.dart';
-import 'package:flutter/widget_previews.dart';
 
 void setupLogging() {
   Logger.root.level = Level.ALL;

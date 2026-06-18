@@ -1,4 +1,3 @@
-import 'package:articly/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 const AppBarTheme appBarThemeLight = AppBarTheme(

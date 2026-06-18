@@ -1,4 +1,3 @@
-import 'package:articly/data/services/auth_service.dart';
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
 import 'package:flutter/material.dart';
 

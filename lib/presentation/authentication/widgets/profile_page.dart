@@ -1,5 +1,4 @@
 import 'package:articly/presentation/authentication/view_models/profile_view_model.dart';
-import 'package:articly/presentation/authentication/widgets/auth_page.dart';
 import 'package:articly/presentation/authentication/widgets/input_dialog.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:flutter/material.dart';
@@ -49,8 +48,9 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Log Out'),
-        content:
-            const Text('Are you sure you want to log out of your account?'),
+        content: const Text(
+          'Are you sure you want to log out of your account?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),

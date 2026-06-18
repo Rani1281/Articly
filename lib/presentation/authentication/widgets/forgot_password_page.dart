@@ -1,5 +1,4 @@
 import 'package:articly/data/services/auth_service.dart';
-import 'package:articly/presentation/authentication/widgets/auth_button.dart';
 import 'package:articly/presentation/authentication/widgets/auth_text_field.dart';
 import 'package:articly/presentation/authentication/widgets/cooldown_widget.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +17,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   late TextEditingController _emailController;
 
   String? _emailErrorMsg;
-  bool _isLoading = false;
 
   final log = Logger('ForgotPasswordPage');
 
@@ -43,13 +41,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     final email = _emailController.text.trim();
     setState(() {
       _emailErrorMsg = _validateEmail(email);
-      _isLoading = true;
     });
 
     if (_emailErrorMsg != null) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() {});
       log.severe('Not proceeding because email is not valid...');
       return Future.value();
     }
@@ -59,9 +54,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     } catch (e) {
       _emailErrorMsg = 'Something went wrong. Please try again later';
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() {});
     }
   }
 
@@ -116,20 +109,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   const SizedBox(height: 24),
                 ],
 
-                // Submit button
-                // AuthButton(
-                //   color: Colors.blue[400]!,
-                //   onPressed: _sendResetEmail,
-                //   child: _isLoading
-                //       ? SizedBox(
-                //           height: 20,
-                //           width: 20,
-                //           child: const CircularProgressIndicator(
-                //             strokeWidth: 2,
-                //           ),
-                //         )
-                //       : SizedBox(child: const Text('Send Email')),
-                // ),
                 CooldownAuthButton(
                   onResend: _sendResetEmail,
                   text: 'Resend email',

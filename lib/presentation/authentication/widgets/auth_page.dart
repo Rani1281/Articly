@@ -1,4 +1,3 @@
-import 'package:articly/data/services/auth_service.dart';
 import 'package:articly/presentation/authentication/view_models/auth_page_model.dart';
 import 'package:articly/presentation/authentication/widgets/auth_button.dart';
 import 'package:articly/presentation/authentication/widgets/auth_text_field.dart';
@@ -30,13 +29,8 @@ class _AuthPageState extends State<AuthPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.viewModel != null) {
-      _viewModel = widget.viewModel!;
-      _ownsViewModel = false;
-    } else {
-      _viewModel = AuthPageModel(service: AuthService());
-      _ownsViewModel = true;
-    }
+    _viewModel = widget.viewModel;
+    _ownsViewModel = false;
   }
 
   @override

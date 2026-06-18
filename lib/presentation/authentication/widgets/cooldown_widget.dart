@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:articly/presentation/authentication/widgets/auth_button.dart';
 import 'package:flutter/material.dart';
-import 'package:logging/logging.dart';
 
 /// A wrapper widget that handles the cooldown logic for your custom AuthButton.
 class CooldownAuthButton extends StatefulWidget {
