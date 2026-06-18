@@ -3,6 +3,7 @@ import 'package:articly/presentation/authentication/view_models/auth_page_model.
 import 'package:articly/presentation/authentication/widgets/auth_button.dart';
 import 'package:articly/presentation/authentication/widgets/auth_text_field.dart';
 import 'package:articly/theme/theme_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -56,13 +57,16 @@ class _AuthPageState extends State<AuthPage> {
       context,
       listen: false,
     ).isDark(context);
+
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, _) {
         final bool isLogin = _viewModel.isLogin;
         return Scaffold(
-          backgroundColor: isDark
-              ? Colors.black
+          backgroundColor: kIsWeb
+              ? (isDark
+                    ? Colors.black
+                    : Theme.of(context).scaffoldBackgroundColor)
               : Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
             automaticallyImplyLeading: true,
@@ -71,17 +75,19 @@ class _AuthPageState extends State<AuthPage> {
             ),
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(25.0),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 450),
                 child: Container(
-                  padding: EdgeInsets.all(25),
+                  padding: kIsWeb ? EdgeInsets.all(25) : EdgeInsets.all(0),
 
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Theme.of(context).colorScheme.surface
-                        : Colors.white,
+                    color: kIsWeb
+                        ? (isDark
+                              ? Theme.of(context).colorScheme.surface
+                              : Colors.white)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Column(

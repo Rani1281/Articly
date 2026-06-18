@@ -4,6 +4,7 @@ import 'package:articly/presentation/authentication/widgets/auth_button.dart';
 import 'package:articly/presentation/authentication/widgets/cooldown_widget.dart';
 import 'package:articly/presentation/core/home_page.dart';
 import 'package:articly/theme/theme_model.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -78,8 +79,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       listenable: widget.viewModel,
       builder: (context, _) {
         return Scaffold(
-          backgroundColor: isDark
-              ? Colors.black
+          backgroundColor: kIsWeb
+              ? (isDark ? Colors.black : Theme.of(context).colorScheme.surface)
               : Theme.of(context).colorScheme.surface,
           appBar: AppBar(
             automaticallyImplyLeading: true,
@@ -91,11 +92,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 450),
                 child: Container(
-                  padding: EdgeInsets.all(25),
+                  padding: kIsWeb ? EdgeInsets.all(25) : EdgeInsets.all(0),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Theme.of(context).colorScheme.surface
-                        : Colors.white,
+                    color: kIsWeb
+                        ? (isDark
+                              ? Theme.of(context).colorScheme.surface
+                              : Colors.white)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Column(
