@@ -51,8 +51,8 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeModel.themeMode,
-      // home: AuthGate(),
-      home: SaveWebsiteScreen(),
+      home: AuthGate(),
+      // home: SaveWebsiteScreen(),
     );
   }
 }

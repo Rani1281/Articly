@@ -88,6 +88,7 @@ class SaveWebpageViewModel extends ChangeNotifier {
     required String title,
     required String notes,
   }) async {
+    log.info('Saving started...');
     _isSaving = true;
     _isSavingSuccessful = false;
 
@@ -99,8 +100,7 @@ class SaveWebpageViewModel extends ChangeNotifier {
     // first clear all errors
 
     url = url.trim();
-    title = title.trim();
-    notes = notes.trim();
+    // Title and notes don't trim to maintain how the user typed it.
 
     final isValid = validateFields(url, title, notes);
     if (!isValid) {

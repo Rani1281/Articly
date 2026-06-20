@@ -22,11 +22,11 @@ class SavedItem {
   Map<String, dynamic> toFirestore() {
     return {
       'type': type.name,
-      'url': ?url,
+      if (url != null && url!.isNotEmpty) 'url': url,
       'readingStatus': readingStatus.name,
-      'title': ?title,
-      'notes': ?notes,
-      'remindReading': ?remindReading,
+      if (title != null && title!.isNotEmpty) 'title': title,
+      if (notes != null && notes!.isNotEmpty) 'notes': notes,
+      if (remindReading != null) 'remindReading': remindReading,
       // Only use this field on creation. If it's for updating, don't set this field:
       'createdAt': FieldValue.serverTimestamp(),
     };

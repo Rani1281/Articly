@@ -76,18 +76,29 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
                                 status.name == _selectedStatusNotifier.value,
                             orElse: () => ReadingStatus.unread,
                           );
-                          await widget.viewModel.saveWebpage(
-                            url: _urlController.text,
-                            readingStatus: readingStatus,
-                            title: _titleController.text,
-                            notes: _notesController.text,
+                          final url = _urlController.text;
+                          final title = _titleController.text;
+                          final notes = _notesController.text;
+                          debugPrint(
+                            'Gathered page info:\nurl: $url\ntitle: $title\nnotes: ${notes.trimLeft().trimRight()}',
                           );
-                          if (widget.viewModel.isSavingSuccessful) {
+
+                          await widget.viewModel.saveWebpage(
+                            url: url,
+                            readingStatus: readingStatus,
+                            title: title,
+                            notes: notes,
+                          );
+                          if (widget.viewModel.isSavingSuccessful && mounted) {
                             Navigator.pop(context);
                           }
                         },
                   child: widget.viewModel.isSaving
-                      ? CircularProgressIndicator()
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(),
+                        )
                       : Row(
                           children: [
                             Icon(Icons.check),
@@ -109,6 +120,35 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ! [-- TITLE FIELD --]
+                      // LabeledTextField(
+                      //   key: ValueKey('titleTextField'),
+                      //   controller: _titleController,
+                      //   label: 'Title (optional)',
+                      //   hintText: 'Enter title...',
+                      //   isDark: isDark,
+                      //   errorText: widget.viewModel.titleError,
+                      //   maxLength: SaveWebpageViewModel.titleMaxChars,
+                      //   maxLines: 2,
+                      // ),
+                      TextField(
+                        key: const ValueKey('titleTextField'),
+                        controller: _titleController,
+                        keyboardType: TextInputType.multiline,
+                        minLines: 1,
+                        maxLines: null,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLength: SaveWebpageViewModel.titleMaxChars,
+                        decoration: InputDecoration(
+                          hintText: 'Add title',
+                          errorText: widget.viewModel.titleError,
+                          counterText: '',
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
                       // const SizedBox(height: 8),
                       // ! [-- URL FIELD --]
                       LabeledTextField(
@@ -156,19 +196,6 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ! [-- TITLE FIELD --]
-                      LabeledTextField(
-                        key: ValueKey('titleTextField'),
-                        controller: _titleController,
-                        label: 'Title (optional)',
-                        hintText: 'Enter title...',
-                        isDark: isDark,
-                        errorText: widget.viewModel.titleError,
-                        maxLength: SaveWebpageViewModel.titleMaxChars,
-                        maxLines: 2,
-                      ),
-                      const SizedBox(height: 20),
-
                       // ! [-- NOTES FIELD --]
                       LabeledTextField(
                         key: ValueKey('notesTextField'),
@@ -178,7 +205,7 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
                         isDark: isDark,
                         errorText: widget.viewModel.notesError,
                         maxLength: SaveWebpageViewModel.notesMaxChars,
-                        maxLines: 4,
+                        maxLines: 6,
                       ),
                       const SizedBox(height: 24),
 

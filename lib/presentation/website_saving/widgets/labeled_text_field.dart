@@ -12,6 +12,7 @@ class LabeledTextField extends StatelessWidget {
     this.maxLines = 1,
     this.errorText,
     this.maxLength,
+    this.showMaxLength = false,
   });
 
   final TextEditingController? controller;
@@ -23,6 +24,7 @@ class LabeledTextField extends StatelessWidget {
   final int maxLines;
   final String? errorText;
   final int? maxLength;
+  final bool showMaxLength;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +45,7 @@ class LabeledTextField extends StatelessWidget {
         ],
         TextField(
           maxLength: maxLength,
+
           maxLines: maxLines,
           controller: controller,
           decoration: InputDecoration(
@@ -57,6 +60,7 @@ class LabeledTextField extends StatelessWidget {
             fillColor: (isDark ?? false)
                 ? Theme.of(context).colorScheme.surfaceContainer
                 : Colors.white,
+            counterText: showMaxLength ? null : '',
             contentPadding: const EdgeInsets.all(14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -71,10 +75,7 @@ class LabeledTextField extends StatelessWidget {
               borderSide: BorderSide(color: borderColor, width: 1.5),
             ),
             suffixIcon: suffixIcon != null && onSuffixIconTap != null
-                ? GestureDetector(
-                    onTap: onSuffixIconTap,
-                    child: suffixIcon,
-                  )
+                ? GestureDetector(onTap: onSuffixIconTap, child: suffixIcon)
                 : suffixIcon,
           ),
         ),

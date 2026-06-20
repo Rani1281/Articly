@@ -77,22 +77,27 @@ void main() {
         check(result['createdAt']).isA<FieldValue>();
       });
 
-      test('returns a map with null values for omitted optional fields', () {
-        final item = SavedItem(
-          type: ItemType.webpage,
-          readingStatus: ReadingStatus.unread,
-        );
+      test(
+        'doesn\'t include fields that are null or empty in the result map',
+        () {
+          final item = SavedItem(
+            type: ItemType.webpage,
+            readingStatus: ReadingStatus.unread,
+            url: '',
+            title: '',
+          );
 
-        final result = item.toFirestore();
+          final result = item.toFirestore();
 
-        check(result['type']).equals('webpage');
-        check(result['readingStatus']).equals('unread');
-        check(result['createdAt']).isA<FieldValue>();
-        check(result.containsKey('url')).isFalse();
-        check(result.containsKey('title')).isFalse();
-        check(result.containsKey('notes')).isFalse();
-        check(result.containsKey('remindReading')).isFalse();
-      });
+          check(result['type']).equals('webpage');
+          check(result['readingStatus']).equals('unread');
+          check(result['createdAt']).isA<FieldValue>();
+          check(result.containsKey('url')).isFalse();
+          check(result.containsKey('title')).isFalse();
+          check(result.containsKey('notes')).isFalse();
+          check(result.containsKey('remindReading')).isFalse();
+        },
+      );
 
       test('createdAt is a FieldValue.serverTimestamp()', () {
         final item = SavedItem(
