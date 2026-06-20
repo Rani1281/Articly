@@ -70,13 +70,13 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
                   key: ValueKey('saveButton'),
                   onTap: widget.viewModel.isSaving
                       ? null
-                      : () {
+                      : () async {
                           final readingStatus = ReadingStatus.values.firstWhere(
                             (status) =>
                                 status.name == _selectedStatusNotifier.value,
                             orElse: () => ReadingStatus.unread,
                           );
-                          widget.viewModel.saveWebpage(
+                          await widget.viewModel.saveWebpage(
                             url: _urlController.text,
                             readingStatus: readingStatus,
                             title: _titleController.text,
