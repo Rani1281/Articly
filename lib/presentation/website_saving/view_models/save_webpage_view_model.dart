@@ -38,31 +38,37 @@ class SaveWebpageViewModel extends ChangeNotifier {
 
   final log = Logger('SaveWebpageViewModel');
 
-  String? validateUrl(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Url is required';
-    }
+  Uri? _parsedUri;
 
-    if (value.length > urlMaxChars) {
-      return 'Url is too long';
-    }
-
-    final uri = Uri.tryParse(value.trim());
-
+  // Returns true if the url is formatter correctly: uses "https" or "http" and is not empty
+  bool isUrlValid(Uri? uri) {
     if (uri == null ||
         !uri.hasScheme ||
         !(uri.scheme == 'http' || uri.scheme == 'https') ||
         uri.host.isEmpty) {
-      return 'Invalid url';
+      return false;
     }
 
-    return null;
+    return true;
   }
 
   /// Validates all fields. If one is invalid, immediately returns false and updates the value of the error message.
   bool validateFields(String url, String title, String notes) {
-    _urlError = validateUrl(url);
-    if (_urlError != null) {
+    if (url.isEmpty) {
+      _urlError = 'Url is required';
+      notifyListeners();
+      return false;
+    }
+
+    if (url.length > urlMaxChars) {
+      _urlError = 'Url is too long';
+      notifyListeners();
+      return false;
+    }
+
+    _parsedUri = Uri.tryParse(url);
+    if (!isUrlValid(_parsedUri)) {
+      _urlError = 'Invalid url';
       notifyListeners();
       return false;
     }
@@ -99,10 +105,7 @@ class SaveWebpageViewModel extends ChangeNotifier {
     notifyListeners();
     // first clear all errors
 
-    url = url.trim();
-    // Title and notes don't trim to maintain how the user typed it.
-
-    final isValid = validateFields(url, title, notes);
+    final isValid = validateFields(url.trim(), title, notes);
     if (!isValid) {
       log.info('Some info is invalid, so not saving the webpage');
       _isSaving = false;
@@ -112,7 +115,7 @@ class SaveWebpageViewModel extends ChangeNotifier {
 
     final item = SavedItem(
       type: ItemType.webpage,
-      url: url,
+      uri: _parsedUri,
       readingStatus: readingStatus,
       title: title,
       notes: notes,

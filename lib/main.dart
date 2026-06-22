@@ -4,8 +4,7 @@ import 'package:articly/presentation/authentication/view_models/verify_email_vie
 import 'package:articly/presentation/authentication/widgets/auth_page.dart';
 import 'package:articly/presentation/authentication/widgets/verify_email_page.dart';
 import 'package:articly/presentation/core/error_page.dart';
-import 'package:articly/presentation/core/home_page.dart';
-import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
+import 'package:articly/presentation/website_displaying/widgets/home_page.dart';
 import 'package:articly/theme/app_theme.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -104,7 +103,7 @@ class AuthGate extends StatelessWidget {
         }
 
         log.info('Moving to home page...');
-        return const HomePage();
+        return HomePage();
       },
     );
   }

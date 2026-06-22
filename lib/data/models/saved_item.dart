@@ -2,7 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SavedItem {
   final ItemType type;
-  final String? url; // for webpage
+  // final String? url; // for webpage
+  final Uri? uri;
   final ReadingStatus readingStatus;
   final String? title;
   final String? notes;
@@ -11,7 +12,7 @@ class SavedItem {
 
   SavedItem({
     required this.type,
-    this.url,
+    this.uri,
     required this.readingStatus,
     this.title,
     this.notes,
@@ -22,7 +23,7 @@ class SavedItem {
   Map<String, dynamic> toFirestore() {
     return {
       'type': type.name,
-      if (url != null && url!.isNotEmpty) 'url': url,
+      if (uri != null && uri!.toString().isNotEmpty) 'url': uri.toString(),
       'readingStatus': readingStatus.name,
       if (title != null && title!.isNotEmpty) 'title': title,
       if (notes != null && notes!.isNotEmpty) 'notes': notes,
@@ -46,7 +47,7 @@ class SavedItem {
         (status) => status.name == data?['readingStatus'] as String?,
         orElse: () => ReadingStatus.unread,
       ),
-      url: data?['url'] as String?,
+      uri: (data?['url'] != null) ? Uri.tryParse(data?['url'] as String) : null,
       title: data?['title'] as String?,
       notes: data?['notes'] as String?,
       remindReading: data?['remindReading'] as bool?,
