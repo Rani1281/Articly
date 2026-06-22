@@ -1,225 +1,307 @@
-// import 'package:articly/data/models/saved_item.dart';
-// import 'package:articly/data/repositories/saved_items_repository.dart';
-// import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
-// import 'package:checks/checks.dart';
-// import 'package:flutter_test/flutter_test.dart';
-// import 'package:mocktail/mocktail.dart';
+import 'package:articly/data/models/saved_item.dart';
+import 'package:articly/data/repositories/saved_items_repository.dart';
+import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
+import 'package:checks/checks.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 
-// /// A mock implementation of [SavedItemsRepository] for testing.
-// class MockSavedItemsRepository extends Mock implements SavedItemsRepository {}
+/// A mock implementation of [SavedItemsRepository] for testing.
+class MockSavedItemsRepository extends Mock implements SavedItemsRepository {}
 
-// void main() {
-//   late SaveWebpageViewModel viewModel;
-//   late MockSavedItemsRepository mockRepo;
+void main() {
+  late SaveWebpageViewModel viewModel;
+  late MockSavedItemsRepository mockRepo;
 
-//   setUpAll(() {
-//     registerFallbackValue(
-//       SavedItem(
-//         type: ItemType.webpage,
-//         readingStatus: ReadingStatus.unread,
-//         uri: '',
-//         title: '',
-//         notes: '',
-//       ),
-//     );
-//   });
+  setUpAll(() {
+    registerFallbackValue(
+      SavedItem(
+        type: ItemType.webpage,
+        readingStatus: ReadingStatus.unread,
+        uri: Uri(),
+        title: '',
+        notes: '',
+      ),
+    );
+  });
 
-//   setUp(() {
-//     mockRepo = MockSavedItemsRepository();
-//     viewModel = SaveWebpageViewModel(repo: mockRepo);
-//   });
+  setUp(() {
+    mockRepo = MockSavedItemsRepository();
+    viewModel = SaveWebpageViewModel(repo: mockRepo);
+  });
 
-//   tearDown(() {
-//     viewModel.dispose();
-//   });
+  tearDown(() {
+    viewModel.dispose();
+  });
 
-//   group('remindMe setter', () {
-//     test('notifies listeners when the value changes', () {
-//       var notifiedCount = 0;
-//       viewModel.addListener(() {
-//         notifiedCount++;
-//       });
+  group('remindMe setter', () {
+    test('notifies listeners when the value changes', () {
+      var notifiedCount = 0;
+      viewModel.addListener(() {
+        notifiedCount++;
+      });
 
-//       viewModel.remindMe = true;
+      viewModel.remindMe = true;
 
-//       check(notifiedCount).equals(1);
-//     });
-//   });
+      check(notifiedCount).equals(1);
+    });
+  });
 
-//   group('validateUrl', () {
-//     test('returns "Url is required" when input is null', () {
-//       final result = viewModel.validateUrl(null);
-//       check(result).equals('Url is required');
-//     });
+  group('isUrlValid', () {
+    test('returns true for a normal url', () {
+      final result = viewModel.isUrlValid(
+        Uri(scheme: 'https', host: 'example.com', path: 'page'),
+      );
+      check(result).isTrue();
+    });
+    test('returns false when uri is null', () {
+      final result = viewModel.isUrlValid(null);
+      check(result).isFalse();
+    });
+    test('returns false when the uri has no scheme', () {
+      final result = viewModel.isUrlValid(Uri(host: 'example.com'));
+      check(result).isFalse();
+    });
+    test('returns false when the scheme is not http or https', () {
+      final result = viewModel.isUrlValid(
+        Uri(scheme: 'invalid-scheme', host: 'example.com'),
+      );
+      check(result).isFalse();
+    });
+    test('returns false when host is empty', () {
+      final result = viewModel.isUrlValid(Uri(scheme: 'https'));
+      check(result).isFalse();
+    });
+  });
 
-//     test('returns "Url is required" when input is empty', () {
-//       final result = viewModel.validateUrl('');
-//       check(result).equals('Url is required');
-//     });
+  // group('validateUrl', () {
+  //   test('returns "Url is required" when input is null', () {
+  //     final result = viewModel.validateUrl(null);
+  //     check(result).equals('Url is required');
+  //   });
 
-//     test('returns "Url is required" when input is only whitespace', () {
-//       final result = viewModel.validateUrl('   ');
-//       check(result).equals('Url is required');
-//     });
+  //   test('returns "Url is required" when input is empty', () {
+  //     final result = viewModel.validateUrl('');
+  //     check(result).equals('Url is required');
+  //   });
 
-//     test('returns "Url is too long" when length exceeds urlMaxChars', () {
-//       final longUrl =
-//           'https://example.com/${'a' * SaveWebpageViewModel.urlMaxChars}';
-//       final result = viewModel.validateUrl(longUrl);
-//       check(result).equals('Url is too long');
-//     });
+  //   test('returns "Url is required" when input is only whitespace', () {
+  //     final result = viewModel.validateUrl('   ');
+  //     check(result).equals('Url is required');
+  //   });
 
-//     test('returns "Invalid url" for malformed URLs', () {
-//       check(viewModel.validateUrl('not-a-url')).equals('Invalid url');
-//       check(viewModel.validateUrl('ftp://example.com')).equals('Invalid url');
-//       check(viewModel.validateUrl('http://')).equals('Invalid url');
-//     });
+  //   test('returns "Url is too long" when length exceeds urlMaxChars', () {
+  //     final longUrl =
+  //         'https://example.com/${'a' * SaveWebpageViewModel.urlMaxChars}';
+  //     final result = viewModel.validateUrl(longUrl);
+  //     check(result).equals('Url is too long');
+  //   });
 
-//     test('returns null for valid http and https URLs', () {
-//       final validUrls = <String>[
-//         'https://example.com',
-//         'https://example.org',
-//         'https://example.com/page',
-//         'http://example.com',
-//         'http://example.com/path',
-//       ];
+  //   test('returns "Invalid url" for malformed URLs', () {
+  //     check(viewModel.validateUrl('not-a-url')).equals('Invalid url');
+  //     check(viewModel.validateUrl('ftp://example.com')).equals('Invalid url');
+  //     check(viewModel.validateUrl('http://')).equals('Invalid url');
+  //   });
 
-//       for (final url in validUrls) {
-//         check(viewModel.validateUrl(url)).isNull();
-//       }
-//     });
-//   });
+  // test('returns null for valid http and https URLs', () {
+  //   final validUrls = <String>[
+  //     'https://example.com',
+  //     'https://example.org',
+  //     'https://example.com/page',
+  //     'http://example.com',
+  //     'http://example.com/path',
+  //   ];
 
-//   group('validateFields', () {
-//     test(
-//       'returns false, sets urlError, and notifies listeners when URL is invalid',
-//       () {
-//         var notified = false;
-//         viewModel.addListener(() {
-//           notified = true;
-//         });
+  //   for (final url in validUrls) {
+  //     check(viewModel.validateUrl(url)).isNull();
+  //   }
+  // });
+  // });
 
-//         final result = viewModel.validateFields('invalid', 'Title', 'Notes');
+  group('validateFields', () {
+    test(
+      'if url is empty, sets urlError, notifies listeners, and returns false',
+      () {
+        var notified = false;
+        viewModel.addListener(() {
+          notified = true;
+        });
 
-//         check(result).isFalse();
-//         check(viewModel.urlError).equals('Invalid url');
-//         check(notified).isTrue();
-//       },
-//     );
+        final result = viewModel.validateFields('', 'Title', 'Notes');
 
-//     test(
-//       'returns false, sets titleError, and notifies listeners when title exceeds max length',
-//       () {
-//         final longTitle = 'A' * (SaveWebpageViewModel.titleMaxChars + 1);
-//         var notified = false;
-//         viewModel.addListener(() {
-//           notified = true;
-//         });
+        check(result).isFalse();
+        check(viewModel.urlError).equals('Url is required');
+        check(notified).isTrue();
+      },
+    );
+    test(
+      'if the url exceeds its max length, sets urlError, notifies listeners, and returns false',
+      () {
+        var notified = false;
+        viewModel.addListener(() {
+          notified = true;
+        });
 
-//         final result = viewModel.validateFields(
-//           'https://example.com',
-//           longTitle,
-//           'Notes',
-//         );
+        final result = viewModel.validateFields(
+          'https://${'s' * 2048}.com',
+          'Title',
+          'Notes',
+        );
 
-//         check(result).isFalse();
-//         check(viewModel.titleError).equals('Title is too long');
-//         check(viewModel.urlError).isNull();
-//         check(notified).isTrue();
-//       },
-//     );
+        check(result).isFalse();
+        check(viewModel.urlError).equals('Url is too long');
+        check(notified).isTrue();
+      },
+    );
 
-//     test(
-//       'returns false, sets notesError, and notifies listeners when notes exceed max length',
-//       () {
-//         final longNotes = 'B' * (SaveWebpageViewModel.notesMaxChars + 1);
-//         var notified = false;
-//         viewModel.addListener(() {
-//           notified = true;
-//         });
+    test(
+      'after both pass, if the format of the url is invalid, sets urlError, notifies listeners and returns false',
+      () {
+        var notified = false;
+        viewModel.addListener(() {
+          notified = true;
+        });
 
-//         final result = viewModel.validateFields(
-//           'https://example.com',
-//           'Title',
-//           longNotes,
-//         );
+        final result = viewModel.validateFields(
+          'invalid-example.com',
+          'Title',
+          'Notes',
+        );
 
-//         check(result).isFalse();
-//         check(viewModel.notesError).equals('Notes are too long');
-//         check(viewModel.urlError).isNull();
-//         check(viewModel.titleError).isNull();
-//         check(notified).isTrue();
-//       },
-//     );
+        check(result).isFalse();
+        check(viewModel.urlError).equals('Invalid url');
+        check(notified).isTrue();
+      },
+    );
 
-//     test('returns true and clears errors when all fields are valid', () {
-//       final result = viewModel.validateFields(
-//         'https://example.com',
-//         'Title',
-//         'Notes',
-//       );
+    // test(
+    //   'returns false, sets urlError, and notifies listeners when URL is invalid',
+    //   () {
+    //     var notified = false;
+    //     viewModel.addListener(() {
+    //       notified = true;
+    //     });
 
-//       check(result).isTrue();
-//       check(viewModel.urlError).isNull();
-//       check(viewModel.titleError).isNull();
-//       check(viewModel.notesError).isNull();
-//     });
-//   });
+    //     final result = viewModel.validateFields('invalid', 'Title', 'Notes');
 
-//   group('saveWebpage', () {
-//     test(
-//       'stops and returns when fields are invalid without calling the repo',
-//       () async {
-//         await viewModel.saveWebpage(
-//           url: 'invalid-url',
-//           readingStatus: ReadingStatus.unread,
-//           title: 'Title',
-//           notes: 'Notes',
-//         );
+    //     check(result).isFalse();
+    //     check(viewModel.urlError).equals('Invalid url');
+    //     check(notified).isTrue();
+    //   },
+    // );
 
-//         check(viewModel.isSaving).isFalse();
-//         check(viewModel.isSavingSuccessful).isFalse();
-//         verifyZeroInteractions(mockRepo);
-//       },
-//     );
+    test(
+      'returns false, sets titleError, and notifies listeners when title exceeds max length',
+      () {
+        final longTitle = 'A' * (SaveWebpageViewModel.titleMaxChars + 1);
+        var notified = false;
+        viewModel.addListener(() {
+          notified = true;
+        });
 
-//     test('on success, sets isSavingSuccessful to true', () async {
-//       when(
-//         () => mockRepo.saveItem(any()),
-//       ).thenAnswer((_) async => 'users/uid/savedItems/123');
+        final result = viewModel.validateFields(
+          'https://example.com',
+          longTitle,
+          'Notes',
+        );
 
-//       await viewModel.saveWebpage(
-//         url: 'https://example.com',
-//         readingStatus: ReadingStatus.unread,
-//         title: 'Title',
-//         notes: 'Notes',
-//       );
+        check(result).isFalse();
+        check(viewModel.titleError).equals('Title is too long');
+        check(viewModel.urlError).isNull();
+        check(notified).isTrue();
+      },
+    );
 
-//       check(viewModel.isSavingSuccessful).isTrue();
-//       check(viewModel.isSaving).isFalse();
-//       check(viewModel.savingError).isNull();
-//     });
+    test(
+      'returns false, sets notesError, and notifies listeners when notes exceed max length',
+      () {
+        final longNotes = 'B' * (SaveWebpageViewModel.notesMaxChars + 1);
+        var notified = false;
+        viewModel.addListener(() {
+          notified = true;
+        });
 
-//     test(
-//       'on error, sets error message and keeps isSavingSuccessful false',
-//       () async {
-//         when(
-//           () => mockRepo.saveItem(any()),
-//         ).thenThrow(Exception('Firestore error'));
+        final result = viewModel.validateFields(
+          'https://example.com',
+          'Title',
+          longNotes,
+        );
 
-//         await viewModel.saveWebpage(
-//           url: 'https://example.com',
-//           readingStatus: ReadingStatus.unread,
-//           title: 'Title',
-//           notes: 'Notes',
-//         );
+        check(result).isFalse();
+        check(viewModel.notesError).equals('Notes are too long');
+        check(viewModel.urlError).isNull();
+        check(viewModel.titleError).isNull();
+        check(notified).isTrue();
+      },
+    );
 
-//         check(viewModel.isSavingSuccessful).isFalse();
-//         check(viewModel.savingError).equals(
-//           "Something wen't wrong. Please check you internet connection and try again later.",
-//         );
-//         check(viewModel.isSaving).isFalse();
-//       },
-//     );
-//   });
-// }
+    test('returns true and clears errors when all fields are valid', () {
+      final result = viewModel.validateFields(
+        'https://example.com',
+        'Title',
+        'Notes',
+      );
+
+      check(result).isTrue();
+      check(viewModel.urlError).isNull();
+      check(viewModel.titleError).isNull();
+      check(viewModel.notesError).isNull();
+    });
+  });
+
+  group('saveWebpage', () {
+    test(
+      'stops and returns when fields are invalid without calling the repo',
+      () async {
+        await viewModel.saveWebpage(
+          url: 'invalid-url',
+          readingStatus: ReadingStatus.unread,
+          title: 'Title',
+          notes: 'Notes',
+        );
+
+        check(viewModel.isSaving).isFalse();
+        check(viewModel.isSavingSuccessful).isFalse();
+        verifyZeroInteractions(mockRepo);
+      },
+    );
+
+    test('on success, sets isSavingSuccessful to true', () async {
+      when(
+        () => mockRepo.saveItem(any()),
+      ).thenAnswer((_) async => 'users/uid/savedItems/123');
+
+      await viewModel.saveWebpage(
+        url: 'https://example.com',
+        readingStatus: ReadingStatus.unread,
+        title: 'Title',
+        notes: 'Notes',
+      );
+
+      check(viewModel.isSavingSuccessful).isTrue();
+      check(viewModel.isSaving).isFalse();
+      check(viewModel.savingError).isNull();
+    });
+
+    test(
+      'on error, sets error message and keeps isSavingSuccessful false',
+      () async {
+        when(
+          () => mockRepo.saveItem(any()),
+        ).thenThrow(Exception('Firestore error'));
+
+        await viewModel.saveWebpage(
+          url: 'https://example.com',
+          readingStatus: ReadingStatus.unread,
+          title: 'Title',
+          notes: 'Notes',
+        );
+
+        check(viewModel.isSavingSuccessful).isFalse();
+        check(viewModel.savingError).equals(
+          "Something wen't wrong. Please check you internet connection and try again later.",
+        );
+        check(viewModel.isSaving).isFalse();
+      },
+    );
+  });
+}

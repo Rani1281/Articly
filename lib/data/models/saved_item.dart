@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:logging/logging.dart';
 
 class SavedItem {
   final ItemType type;
@@ -9,6 +10,8 @@ class SavedItem {
   final String? notes;
   final bool? remindReading;
   final DateTime? createdAt; // only use when retrieving data
+
+  final log = Logger('SavedItem');
 
   SavedItem({
     required this.type,
@@ -38,6 +41,17 @@ class SavedItem {
     SnapshotOptions? options,
   ) {
     final data = snapshot.data();
+    final url = data?['url'] as String?;
+    Uri? uri;
+    if (url != null) {
+      try {
+        uri = Uri.parse(url);
+      } on FormatException catch (e) {
+        Logger('SavedItem').severe(
+          'Couldn\'t parse the given url from Firestore.\nUrl:$url\nError: $e',
+        );
+      }
+    }
     return SavedItem(
       type: ItemType.values.firstWhere(
         (type) => type.name == data?['type'] as String?,
@@ -47,7 +61,7 @@ class SavedItem {
         (status) => status.name == data?['readingStatus'] as String?,
         orElse: () => ReadingStatus.unread,
       ),
-      uri: (data?['url'] != null) ? Uri.tryParse(data?['url'] as String) : null,
+      uri: uri,
       title: data?['title'] as String?,
       notes: data?['notes'] as String?,
       remindReading: data?['remindReading'] as bool?,
