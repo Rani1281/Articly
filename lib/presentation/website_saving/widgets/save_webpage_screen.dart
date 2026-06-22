@@ -51,6 +51,12 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
   }
 
   @override
+  void dispose() {
+    widget.viewModel.removeListener(_checkError);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Provider.of<ThemeModel>(
       context,

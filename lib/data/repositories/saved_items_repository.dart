@@ -33,4 +33,27 @@ class SavedItemsRepository {
 
     return docRef.path;
   }
+
+  /// Returns a result map where the key is the Firestore id and the value is the saved item
+  Future<Map<String, SavedItem>> fetchItems() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception(
+        'The user is not authenticated, so can\'t save the item under his name',
+      );
+    }
+
+    final querySnap = await _db
+        .collection(usersCollection)
+        .doc(user.uid)
+        .collection(savedItemsCollection)
+        .get();
+
+    return Map<String, SavedItem>.fromEntries(
+      querySnap.docs.map(
+        (querySnap) =>
+            MapEntry(querySnap.id, SavedItem.fromFirestore(querySnap, null)),
+      ),
+    );
+  }
 }

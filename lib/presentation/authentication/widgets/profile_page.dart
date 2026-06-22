@@ -66,6 +66,12 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   @override
+  void dispose() {
+    widget._viewModel.removeListener(_checkError);
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final themeModel = context.watch<ThemeModel>();
     widget._viewModel.loadData();

@@ -1,40 +1,26 @@
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
+import 'package:articly/presentation/website_displaying/view_models/home_page_view_model.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:flutter/material.dart';
 
-class HomePage extends StatelessWidget {
-  HomePage({super.key});
+class HomePage extends StatefulWidget {
+  HomePage({super.key, HomePageViewModel? viewModel})
+    : viewModel = viewModel ?? HomePageViewModel();
 
-  final List<SavedItem> _items = [
-    SavedItem(
-      type: ItemType.webpage,
-      readingStatus: ReadingStatus.unread,
-      uri: Uri.parse('https://machine-learning.com/page'),
-      title: 'How does a vector database work?',
-      remindReading: true,
-      notes: """
-- RAG is currently one of the most important techniques in practical AI applications.
-- Vector databases allow a semantic understanding of the user queries.""",
-    ),
-    SavedItem(
-      type: ItemType.webpage,
-      readingStatus: ReadingStatus.read,
-      uri: Uri.parse('http://machine-learning.com/page'),
-      title:
-          'How does a vector database work? How does a vector database work?',
-      remindReading: true,
-      notes:
-          """- RAG is currently one of the most important techniques in practical AI applications.
-          - Vector databases allow a semantic understanding of the user queries.""",
-    ),
-    SavedItem(
-      type: ItemType.webpage,
-      readingStatus: ReadingStatus.reading,
-      uri: Uri(host: 'google.com'),
-    ),
-  ];
+  final HomePageViewModel viewModel;
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    widget.viewModel.load.execute();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -59,21 +45,38 @@ class HomePage extends StatelessWidget {
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 450),
-                  child: ListView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    itemCount: _items.length,
-                    itemBuilder: (context, index) {
-                      final item = _items[index];
-                      // if (_items[index].type == ItemType.webpage)
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 5),
-                        child: SavedWebpageCard(
-                          title: item.title,
-                          uri: item.uri,
-                          status: item.readingStatus.name,
-                          notes: item.notes,
-                        ),
+                  child: ListenableBuilder(
+                    listenable: widget.viewModel,
+                    builder: (context, _) {
+                      if (widget.viewModel.load.running) {
+                        return const CircularProgressIndicator();
+                      }
+                      if (widget.viewModel.load.hasError) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(widget.viewModel.load.error!),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                      final items = widget.viewModel.items.values.toList();
+                      return ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: items.length,
+                        itemBuilder: (context, index) {
+                          final item = items[index];
+                          // if (_items[index].type == ItemType.webpage)
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: SavedWebpageCard(
+                              title: item.title,
+                              uri: item.uri,
+                              status: item.readingStatus.name,
+                              notes: item.notes,
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
