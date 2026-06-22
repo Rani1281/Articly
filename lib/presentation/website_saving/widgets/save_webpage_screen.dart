@@ -138,7 +138,7 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
                         minLines: 1,
                         maxLines: null,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w600,
                         ),
                         maxLength: SaveWebpageViewModel.titleMaxChars,
                         decoration: InputDecoration(
@@ -166,10 +166,13 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
                               color: Colors.blue[100]?.withValues(alpha: 0.7),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: Icon(
-                              Icons.paste_outlined,
-                              color: Colors.blue[900],
-                              size: 18,
+                            child: Tooltip(
+                              message: 'Paste',
+                              child: Icon(
+                                Icons.paste_outlined,
+                                color: Colors.blue[900],
+                                size: 18,
+                              ),
                             ),
                           ),
                         ),

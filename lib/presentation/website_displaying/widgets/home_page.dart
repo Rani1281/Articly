@@ -14,9 +14,9 @@ class HomePage extends StatelessWidget {
       uri: Uri.parse('https://machine-learning.com/page'),
       title: 'How does a vector database work?',
       remindReading: true,
-      notes:
-          """- RAG is currently one of the most important techniques in practical AI applications.
-          - Vector databases allow a semantic understanding of the user queries.""",
+      notes: """
+- RAG is currently one of the most important techniques in practical AI applications.
+- Vector databases allow a semantic understanding of the user queries.""",
     ),
     SavedItem(
       type: ItemType.webpage,
@@ -29,43 +29,59 @@ class HomePage extends StatelessWidget {
           """- RAG is currently one of the most important techniques in practical AI applications.
           - Vector databases allow a semantic understanding of the user queries.""",
     ),
+    SavedItem(
+      type: ItemType.webpage,
+      readingStatus: ReadingStatus.reading,
+      uri: Uri(host: 'google.com'),
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        // title: const Text('Home'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.account_circle),
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => ProfilePage()));
-            },
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.account_circle),
+                onPressed: () {
+                  Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute(builder: (_) => ProfilePage()));
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 450),
-          child: Padding(
+          SliverPadding(
             padding: const EdgeInsets.all(24.0),
-            child: ListView.builder(
-              itemBuilder: (context, index) {
-                final item = _items[index];
-                // if (_items[index].type == ItemType.webpage)
-                return SavedWebpageCard(
-                  title: item.title,
-                  urlHost: item.uri?.host,
-                  status: item.readingStatus.name,
-                  notes: item.notes,
-                );
-              },
+            sliver: SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 450),
+                  child: ListView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    itemCount: _items.length,
+                    itemBuilder: (context, index) {
+                      final item = _items[index];
+                      // if (_items[index].type == ItemType.webpage)
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 5),
+                        child: SavedWebpageCard(
+                          title: item.title,
+                          uri: item.uri,
+                          status: item.readingStatus.name,
+                          notes: item.notes,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.of(
