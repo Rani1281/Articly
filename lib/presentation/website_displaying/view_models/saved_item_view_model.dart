@@ -50,7 +50,7 @@ class SavedItemViewModel extends ChangeNotifier {
 
   // A function that opens the URL in a web browser
   Future<void> _openUrl(Uri? uri) async {
-    openUrl.clear();
+    openUrl.start();
     notifyListeners();
 
     if (!isUrlValid(uri)) {
@@ -63,8 +63,8 @@ class SavedItemViewModel extends ChangeNotifier {
     final success = await launchUrl(uri!, mode: LaunchMode.externalApplication);
 
     if (!success) {
-      log.warning('Opening the webpage wasn\'t successful');
-      openUrl.problem('Can\'t open the url: $uri');
+      log.warning('A problem occurred while trying to open the url: $uri');
+      openUrl.problem('Can\'t open the url');
       notifyListeners();
       return Future.value();
     }

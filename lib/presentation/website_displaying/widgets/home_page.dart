@@ -70,6 +70,7 @@ class _HomePageState extends State<HomePage> {
                           return Padding(
                             padding: const EdgeInsets.symmetric(vertical: 5),
                             child: SavedWebpageCard(
+                              key: ValueKey('card$index'),
                               title: item.title,
                               uri: item.uri,
                               status: item.readingStatus.name,

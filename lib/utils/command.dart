@@ -15,10 +15,16 @@ class Command {
     await _action();
   }
 
+  void start() {
+    running = true;
+    error = null;
+    completed = false;
+  }
+
   void finish(String? errorMessage) {
     running = false;
     error = errorMessage;
-    completed = errorMessage == null ? false : true;
+    completed = errorMessage == null ? true : false;
     // set completed based on error message. If the error is null, the action completed, otherwise it had not.
   }
 

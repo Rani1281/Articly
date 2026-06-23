@@ -22,7 +22,7 @@ class HomePageViewModel extends ChangeNotifier {
   Future<void> _load() async {
     log.info('Loading started...');
     String? error;
-    load.clear();
+    load.start();
     notifyListeners();
     try {
       _items = await _repo.fetchItems();

@@ -1,4 +1,3 @@
-import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,6 +30,11 @@ class SavedWebpageCard extends StatefulWidget {
 
 class _SavedWebpageCardState extends State<SavedWebpageCard> {
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: widget.viewModel,
@@ -58,8 +62,18 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
               GestureDetector(
                 onTap: widget.uri == null
                     ? null
-                    : () {
-                        // TODO: OPEN THE LINK IN THE BROWSER
+                    : () async {
+                        final openUrl = widget.viewModel.openUrl;
+                        await openUrl.execute();
+
+                        if (!openUrl.completed && openUrl.hasError && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(openUrl.error!),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
                       },
 
                 child: Padding(
