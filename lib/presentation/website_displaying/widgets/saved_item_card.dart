@@ -1,6 +1,10 @@
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
+import 'package:articly/theme/theme_model.dart';
+import 'package:articly/utils/my_snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/link.dart'; // Added for web link preview
 
 class SavedWebpageCard extends StatefulWidget {
   final String? title;
@@ -34,11 +38,134 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
     super.initState();
   }
 
+  _onTap() async {
+    if (widget.uri == null) {
+      return null;
+    }
+
+    final openUrl = widget.viewModel.openUrl;
+    await openUrl.execute();
+
+    if (!openUrl.completed && openUrl.hasError && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(openUrl.error!),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeModel>(
+      context,
+      listen: false,
+    ).isDark(context);
+
     return ListenableBuilder(
       listenable: widget.viewModel,
       builder: (context, _) {
+        // Extracted the header into a helper method so we can easily wrap it in a Link
+        Widget buildHeader() {
+          return MouseRegion(
+            cursor: widget.uri != null
+                ? SystemMouseCursors
+                      .click // Changes cursor to pointing finger
+                : SystemMouseCursors.basic,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _onTap,
+              child: Container(
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerLow.withValues(alpha: 0.4),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title and External Link Icon
+                    if (widget.title != null) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                            child: SelectableText(
+                              widget.title!,
+                              onTap: _onTap,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.north_east,
+                            size: 20,
+                            color: Colors.grey.shade500,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // URL and Reading Status
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        widget.uri == null
+                            ? const SizedBox()
+                            : SelectableText(
+                                widget.uri!.host,
+                                onTap: _onTap,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Theme.of(context).colorScheme.onSurface
+                                      .withValues(alpha: 0.7),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Colors.blueAccent,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              widget.status,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
         return Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerLowest,
@@ -59,104 +186,14 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top Header Section
-              GestureDetector(
-                onTap: widget.uri == null
-                    ? null
-                    : () async {
-                        final openUrl = widget.viewModel.openUrl;
-                        await openUrl.execute();
-
-                        if (!openUrl.completed && openUrl.hasError && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(openUrl.error!),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      },
-
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title and External Link Icon
-                      if (widget.title != null) ...[
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: SelectableText(
-                                widget.title!,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                  // color: Color(0xFF2D3748),
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.9),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.north_east,
-                              size: 20,
-                              color: Colors.grey.shade500,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-
-                      // URL and Reading Status
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          widget.uri == null
-                              ? SizedBox()
-                              : SelectableText(
-                                  widget.uri!.host,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    // color: Colors.grey.shade600,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.7),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                          Row(
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Colors.blueAccent,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                widget.status,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  // color: Color(0xFF4A5568),
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              // Wrap the header in a Link widget to generate the native HTML <a> tag on Web
+              widget.uri == null
+                  ? buildHeader()
+                  : Link(
+                      uri: widget.uri,
+                      target: LinkTarget.blank,
+                      builder: (context, followLink) => buildHeader(),
+                    ),
 
               // Divider
               Divider(
@@ -174,19 +211,22 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                 ),
                 child: Row(
                   children: [
-                    _buildActionIcon(
-                      Icons.edit_outlined,
-                      "Edit",
-                      onPressed: widget.viewModel.copyContents,
-                    ),
+                    _buildActionIcon(Icons.edit_outlined, "Edit"),
                     _buildActionIcon(Icons.delete_outline, "Delete"),
-                    // _buildActionIcon(Icons.share_outlined, "Share"),
-                    // _buildActionIcon(Icons.local_offer_outlined, "Tag"),
-                    _buildActionIcon(Icons.content_copy_outlined, "Copy"),
+                    _buildActionIcon(
+                      Icons.content_copy_outlined,
+                      "Copy",
+                      onPressed: () async {
+                        await widget.viewModel.copyContents();
+                        if (mounted) {
+                          showSnackBar(context);
+                        }
+                      },
+                    ),
                     const Spacer(),
                     // Expand/Collapse Toggle Button
                     widget.notes == null
-                        ? SizedBox()
+                        ? const SizedBox()
                         : IconButton(
                             icon: Icon(
                               widget.viewModel.isExpanded
@@ -219,13 +259,11 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              // color: const Color(0xFFF7FAFC),
                               color: Theme.of(
                                 context,
                               ).colorScheme.surface.withValues(alpha: 0.9),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                // color: Colors.grey.shade200
                                 color: Theme.of(
                                   context,
                                 ).colorScheme.surfaceContainerHigh,
@@ -236,7 +274,6 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                               style: TextStyle(
                                 fontSize: 15,
                                 height: 1.5,
-                                // color: Color(0xFF4A5568),
                                 color: Theme.of(
                                   context,
                                 ).colorScheme.onSurface.withValues(alpha: 0.8),
