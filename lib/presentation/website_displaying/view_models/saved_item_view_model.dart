@@ -9,7 +9,10 @@ class SavedItemViewModel extends ChangeNotifier {
     required this.title,
     required this.uri,
     required this.notes,
-  }) {
+    Future<bool> Function(Uri)? urlLauncher,
+    Future<void> Function(ClipboardData)? setClipboard,
+  })  : _launchUrl = urlLauncher ?? launchUrl,
+        _setClipboard = setClipboard ?? Clipboard.setData {
     openUrl = Command(() => _openUrl(uri));
   }
   final String? title;
@@ -19,6 +22,9 @@ class SavedItemViewModel extends ChangeNotifier {
   bool get isExpanded => _isExpanded;
 
   late final Command openUrl;
+
+  final Future<bool> Function(Uri) _launchUrl;
+  final Future<void> Function(ClipboardData) _setClipboard;
 
   void toggleExpand() {
     _isExpanded = !_isExpanded;
@@ -43,7 +49,7 @@ class SavedItemViewModel extends ChangeNotifier {
     // split the parts by a blank line
     final String content = parts.join('\n\n');
 
-    await Clipboard.setData(ClipboardData(text: content));
+    await _setClipboard(ClipboardData(text: content));
 
     log.fine('Copied contents into the clipboard');
   }
@@ -60,7 +66,7 @@ class SavedItemViewModel extends ChangeNotifier {
       return Future.value();
     }
 
-    final success = await launchUrl(uri!, mode: LaunchMode.externalApplication);
+    final success = await _launchUrl(uri!);
 
     if (!success) {
       log.warning('A problem occurred while trying to open the url: $uri');
