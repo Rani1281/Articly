@@ -24,6 +24,8 @@ class MockQuerySnapshot extends Mock
 class MockQueryDocumentSnapshot extends Mock
     implements QueryDocumentSnapshot<Map<String, dynamic>> {}
 
+class MockQuery extends Mock implements Query<Map<String, dynamic>> {}
+
 void main() {
   late SavedItemsRepository repository;
   late MockFirebaseAuth mockAuth;
@@ -55,6 +57,7 @@ void main() {
         final userDoc = MockDocumentReference();
         final savedItemsCollection = MockCollectionReference();
         final querySnapshot = MockQuerySnapshot();
+        final orderByQuery = MockQuery();
         final doc1 = MockQueryDocumentSnapshot();
         final doc2 = MockQueryDocumentSnapshot();
 
@@ -66,8 +69,12 @@ void main() {
           () => userDoc.collection('savedItems'),
         ).thenReturn(savedItemsCollection);
         when(
+          () => savedItemsCollection.orderBy('createdAt', descending: true),
+        ).thenReturn(orderByQuery);
+        when(
           () => savedItemsCollection.get(),
         ).thenAnswer((_) async => querySnapshot);
+        when(() => orderByQuery.get()).thenAnswer((_) async => querySnapshot);
         when(() => querySnapshot.docs).thenReturn([doc1, doc2]);
         when(() => doc1.id).thenReturn('doc-id-1');
         when(() => doc1.data()).thenReturn(<String, dynamic>{
@@ -87,13 +94,13 @@ void main() {
         check(result.length).equals(2);
         check(result.containsKey('doc-id-1')).isTrue();
         check(result.containsKey('doc-id-2')).isTrue();
-        check(result['doc-id-1']!.uri).equals(
-          Uri.parse('https://example.com/1'),
-        );
+        check(
+          result['doc-id-1']!.uri,
+        ).equals(Uri.parse('https://example.com/1'));
         check(result['doc-id-1']!.readingStatus).equals(ReadingStatus.unread);
-        check(result['doc-id-2']!.uri).equals(
-          Uri.parse('https://example.com/2'),
-        );
+        check(
+          result['doc-id-2']!.uri,
+        ).equals(Uri.parse('https://example.com/2'));
         check(result['doc-id-2']!.readingStatus).equals(ReadingStatus.read);
       },
     );

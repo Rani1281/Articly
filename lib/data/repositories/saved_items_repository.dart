@@ -47,6 +47,7 @@ class SavedItemsRepository {
         .collection(usersCollection)
         .doc(user.uid)
         .collection(savedItemsCollection)
+        .orderBy('createdAt', descending: true)
         .get();
 
     return Map<String, SavedItem>.fromEntries(
