@@ -1,4 +1,5 @@
 import 'package:articly/data/services/auth_service.dart';
+import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/authentication/view_models/auth_page_model.dart';
 import 'package:articly/presentation/authentication/view_models/verify_email_view_model.dart';
 import 'package:articly/presentation/authentication/widgets/auth_page.dart';
@@ -35,7 +36,17 @@ void main() async {
 
   final themeModel = ThemeModel();
   await themeModel.load();
-  runApp(ChangeNotifierProvider.value(value: themeModel, child: const MyApp()));
+  // runApp(ChangeNotifierProvider.value(value: themeModel, child: const MyApp()));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: themeModel),
+        // Don't await loading
+        ChangeNotifierProvider(create: (_) => SavedItemsProvider()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

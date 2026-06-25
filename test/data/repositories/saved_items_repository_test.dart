@@ -69,7 +69,7 @@ void main() {
           () => userDoc.collection('savedItems'),
         ).thenReturn(savedItemsCollection);
         when(
-          () => savedItemsCollection.orderBy('createdAt', descending: true),
+          () => savedItemsCollection.orderBy('createdAt', descending: false),
         ).thenReturn(orderByQuery);
         when(
           () => savedItemsCollection.get(),

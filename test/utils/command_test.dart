@@ -7,7 +7,7 @@ void main() {
     test(
       'initially has running = false, error = null, completed = false, and hasError is false',
       () {
-        final command = Command(() async {});
+        final command = Command();
 
         check(command.running).isFalse();
         check(command.error).isNull();
@@ -18,7 +18,7 @@ void main() {
 
     group('finish', () {
       test('sets completed to true when there is no error message', () {
-        final command = Command(() async {});
+        final command = Command();
 
         command.finish(null);
 
@@ -29,7 +29,7 @@ void main() {
       });
 
       test('sets completed to false when there is an error message', () {
-        final command = Command(() async {});
+        final command = Command();
 
         command.finish('Something went wrong');
 
@@ -40,22 +40,9 @@ void main() {
       });
     });
 
-    group('execute', () {
-      test('activates the action by awaiting it', () async {
-        var called = false;
-        final command = Command(() async {
-          called = true;
-        });
-
-        await command.execute();
-
-        check(called).isTrue();
-      });
-    });
-
     group('successful', () {
       test('sets running to false, error to null, and completed to true', () {
-        final command = Command(() async {});
+        final command = Command();
 
         command.successful();
 
@@ -70,7 +57,7 @@ void main() {
       test(
         'sets running to false, error to the given message, and completed to false',
         () {
-          final command = Command(() async {});
+          final command = Command();
 
           command.problem('An error occurred');
 
@@ -84,7 +71,7 @@ void main() {
 
     group('clear', () {
       test('resets running, error, and completed to their initial values', () {
-        final command = Command(() async {});
+        final command = Command();
         command.running = true;
         command.error = 'some error';
         command.completed = true;

@@ -1,6 +1,4 @@
 class Command {
-  Command(this._action);
-
   bool running = false;
 
   String? error;
@@ -8,12 +6,10 @@ class Command {
 
   bool completed = false; // if the action completed successfully (no errors)
 
-  final Future<void> Function() _action;
-
   /// Doesn't include error handling
-  Future<void> execute() async {
-    await _action();
-  }
+  // Future<void> execute() async {
+  //   await _action();
+  // }
 
   void start() {
     running = true;

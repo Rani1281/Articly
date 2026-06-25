@@ -1,27 +1,19 @@
-import 'package:articly/data/models/saved_item.dart';
+import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
-import 'package:articly/presentation/website_displaying/view_models/home_page_view_model.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
+import 'package:articly/utils/my_snack_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
-  HomePage({super.key, HomePageViewModel? viewModel})
-    : viewModel = viewModel ?? HomePageViewModel();
-
-  final HomePageViewModel viewModel;
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  @override
-  void initState() {
-    widget.viewModel.load.execute();
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,25 +37,25 @@ class _HomePageState extends State<HomePage> {
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 450),
-                  child: ListenableBuilder(
-                    listenable: widget.viewModel,
-                    builder: (context, _) {
-                      if (widget.viewModel.load.running) {
+                  // ! [ SAVED ITEMS CONSUMER ]
+                  child: Consumer<SavedItemsProvider>(
+                    builder: (context, provider, child) {
+                      if (provider.loadCommand.running) {
                         return const CircularProgressIndicator();
                       }
-                      if (widget.viewModel.load.hasError) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(widget.viewModel.load.error!),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                      if (provider.loadCommand.hasError) {
+                        MySnackBar(
+                          context,
+                          message: provider.loadCommand.error!,
+                        ).show();
                       }
-                      final items = widget.viewModel.items.values.toList();
+                      final items = provider.items.values.toList();
                       return ListView.builder(
                         physics: const NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
                         itemCount: items.length,
+                        // reverse so that new items will appear on the top
+                        reverse: true,
                         itemBuilder: (context, index) {
                           final item = items[index];
                           // if (_items[index].type == ItemType.webpage)

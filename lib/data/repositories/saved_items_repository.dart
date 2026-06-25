@@ -16,7 +16,7 @@ class SavedItemsRepository {
 
   final log = Logger('SavedItemsRepository');
 
-  // Returns the path where the item was saved
+  // Returns the id of the added document
   Future<String> saveItem(SavedItem item) async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -31,10 +31,10 @@ class SavedItemsRepository {
         .collection(savedItemsCollection)
         .add(item.toFirestore());
 
-    return docRef.path;
+    return docRef.id;
   }
 
-  /// Returns a result map where the key is the Firestore id and the value is the saved item
+  /// Returns a result map where the key is the Firestore id and the value is the saved item, sorted by createdAt (oldest dates first)
   Future<Map<String, SavedItem>> fetchItems() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -47,8 +47,10 @@ class SavedItemsRepository {
         .collection(usersCollection)
         .doc(user.uid)
         .collection(savedItemsCollection)
-        .orderBy('createdAt', descending: true)
+        .orderBy('createdAt', descending: false)
         .get();
+
+    // return by ascending so that when adding new items the order will be maintained
 
     return Map<String, SavedItem>.fromEntries(
       querySnap.docs.map(

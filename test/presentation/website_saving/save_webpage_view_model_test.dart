@@ -26,7 +26,7 @@ void main() {
 
   setUp(() {
     mockRepo = MockSavedItemsRepository();
-    viewModel = SaveWebpageViewModel(repo: mockRepo);
+    viewModel = SaveWebpageViewModel();
   });
 
   tearDown(() {
@@ -246,62 +246,5 @@ void main() {
       check(viewModel.titleError).isNull();
       check(viewModel.notesError).isNull();
     });
-  });
-
-  group('saveWebpage', () {
-    test(
-      'stops and returns when fields are invalid without calling the repo',
-      () async {
-        await viewModel.saveWebpage(
-          url: 'invalid-url',
-          readingStatus: ReadingStatus.unread,
-          title: 'Title',
-          notes: 'Notes',
-        );
-
-        check(viewModel.isSaving).isFalse();
-        check(viewModel.isSavingSuccessful).isFalse();
-        verifyZeroInteractions(mockRepo);
-      },
-    );
-
-    test('on success, sets isSavingSuccessful to true', () async {
-      when(
-        () => mockRepo.saveItem(any()),
-      ).thenAnswer((_) async => 'users/uid/savedItems/123');
-
-      await viewModel.saveWebpage(
-        url: 'https://example.com',
-        readingStatus: ReadingStatus.unread,
-        title: 'Title',
-        notes: 'Notes',
-      );
-
-      check(viewModel.isSavingSuccessful).isTrue();
-      check(viewModel.isSaving).isFalse();
-      check(viewModel.savingError).isNull();
-    });
-
-    test(
-      'on error, sets error message and keeps isSavingSuccessful false',
-      () async {
-        when(
-          () => mockRepo.saveItem(any()),
-        ).thenThrow(Exception('Firestore error'));
-
-        await viewModel.saveWebpage(
-          url: 'https://example.com',
-          readingStatus: ReadingStatus.unread,
-          title: 'Title',
-          notes: 'Notes',
-        );
-
-        check(viewModel.isSavingSuccessful).isFalse();
-        check(viewModel.savingError).equals(
-          "Something wen't wrong. Please check you internet connection and try again later.",
-        );
-        check(viewModel.isSaving).isFalse();
-      },
-    );
   });
 }

@@ -4,8 +4,8 @@ import 'package:logging/logging.dart';
 class SavedItem {
   final ItemType type;
   // final String? url; // for webpage
-  final Uri? uri;
   final ReadingStatus readingStatus;
+  final Uri? uri;
   final String? title;
   final String? notes;
   final bool? remindReading;
@@ -15,8 +15,8 @@ class SavedItem {
 
   SavedItem({
     required this.type,
-    this.uri,
     required this.readingStatus,
+    this.uri,
     this.title,
     this.notes,
     this.remindReading,

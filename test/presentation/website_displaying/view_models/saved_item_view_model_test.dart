@@ -13,21 +13,17 @@ void main() {
       Uri? uri,
       String? notes,
     }) {
-      return SavedItemViewModel(
-        title: title,
-        uri: uri,
-        notes: notes,
-        urlLauncher: (uri) async => launchResult ?? false,
-        setClipboard: (data) async => clipboardContents.add(data.text!),
-      );
+      return SavedItemViewModel(title: title, uri: uri, notes: notes);
     }
+
+    final uri = Uri.parse('https://example.com');
 
     setUp(() {
       launchResult = null;
       clipboardContents = <String>[];
       viewModel = createViewModel(
         title: 'Test Title',
-        uri: Uri.parse('https://example.com'),
+        uri: uri,
         notes: 'Test Notes',
       );
     });
@@ -37,7 +33,7 @@ void main() {
         check(viewModel.title).equals('Test Title');
         check(viewModel.uri).equals(Uri.parse('https://example.com'));
         check(viewModel.notes).equals('Test Notes');
-        check(viewModel.openUrl).isNotNull();
+        check(viewModel.openUrlCommand).isNotNull();
       });
     });
 
@@ -68,43 +64,37 @@ void main() {
           await viewModel.copyContents();
 
           check(clipboardContents.length).equals(1);
-          check(clipboardContents.first).equals(
-            'Test Title\n\nTest Notes\n\n(https://example.com)',
-          );
+          check(
+            clipboardContents.first,
+          ).equals('Test Title\n\nTest Notes\n\n(https://example.com)');
         },
       );
 
-      test(
-        'omits a missing part without adding extra blank lines',
-        () async {
-          viewModel = createViewModel(
-            title: null,
-            uri: Uri.parse('https://example.com'),
-            notes: null,
-          );
+      test('omits a missing part without adding extra blank lines', () async {
+        viewModel = createViewModel(
+          title: null,
+          uri: Uri.parse('https://example.com'),
+          notes: null,
+        );
 
-          await viewModel.copyContents();
+        await viewModel.copyContents();
 
-          check(clipboardContents.length).equals(1);
-          check(clipboardContents.first).equals('(https://example.com)');
-        },
-      );
+        check(clipboardContents.length).equals(1);
+        check(clipboardContents.first).equals('(https://example.com)');
+      });
 
-      test(
-        'handles empty strings as missing',
-        () async {
-          viewModel = createViewModel(
-            title: '',
-            uri: Uri.parse('https://example.com'),
-            notes: '',
-          );
+      test('handles empty strings as missing', () async {
+        viewModel = createViewModel(
+          title: '',
+          uri: Uri.parse('https://example.com'),
+          notes: '',
+        );
 
-          await viewModel.copyContents();
+        await viewModel.copyContents();
 
-          check(clipboardContents.length).equals(1);
-          check(clipboardContents.first).equals('(https://example.com)');
-        },
-      );
+        check(clipboardContents.length).equals(1);
+        check(clipboardContents.first).equals('(https://example.com)');
+      });
     });
 
     group('isUrlValid', () {
@@ -125,9 +115,7 @@ void main() {
       });
 
       test('returns false when the scheme is not http or https', () {
-        check(
-          viewModel.isUrlValid(Uri.parse('ftp://example.com')),
-        ).isFalse();
+        check(viewModel.isUrlValid(Uri.parse('ftp://example.com'))).isFalse();
       });
 
       test('returns false when host is empty', () {
@@ -145,9 +133,9 @@ void main() {
           });
 
           launchResult = true;
-          await viewModel.openUrl.execute();
+          viewModel.openUrl();
 
-          check(viewModel.openUrl.running).isFalse();
+          check(viewModel.openUrlCommand.running).isFalse();
           check(notified).isTrue();
         },
       );
@@ -166,14 +154,14 @@ void main() {
             notified = true;
           });
 
-          await viewModel.openUrl.execute();
+          await viewModel.openUrl();
 
-          check(viewModel.openUrl.running).isFalse();
-          check(viewModel.openUrl.completed).isFalse();
-          check(viewModel.openUrl.error).equals(
-            "Can't open the webpage because the url isn't valid",
-          );
-          check(viewModel.openUrl.hasError).isTrue();
+          check(viewModel.openUrlCommand.running).isFalse();
+          check(viewModel.openUrlCommand.completed).isFalse();
+          check(
+            viewModel.openUrlCommand.error,
+          ).equals("Can't open the webpage because the url isn't valid");
+          check(viewModel.openUrlCommand.hasError).isTrue();
           check(notified).isTrue();
         },
       );
@@ -188,12 +176,12 @@ void main() {
             notified = true;
           });
 
-          await viewModel.openUrl.execute();
+          await viewModel.openUrl();
 
-          check(viewModel.openUrl.running).isFalse();
-          check(viewModel.openUrl.completed).isFalse();
-          check(viewModel.openUrl.error).equals("Can't open the url");
-          check(viewModel.openUrl.hasError).isTrue();
+          check(viewModel.openUrlCommand.running).isFalse();
+          check(viewModel.openUrlCommand.completed).isFalse();
+          check(viewModel.openUrlCommand.error).equals("Can't open the url");
+          check(viewModel.openUrlCommand.hasError).isTrue();
           check(notified).isTrue();
         },
       );
@@ -208,12 +196,12 @@ void main() {
             notified = true;
           });
 
-          await viewModel.openUrl.execute();
+          await viewModel.openUrl();
 
-          check(viewModel.openUrl.running).isFalse();
-          check(viewModel.openUrl.completed).isTrue();
-          check(viewModel.openUrl.error).isNull();
-          check(viewModel.openUrl.hasError).isFalse();
+          check(viewModel.openUrlCommand.running).isFalse();
+          check(viewModel.openUrlCommand.completed).isTrue();
+          check(viewModel.openUrlCommand.error).isNull();
+          check(viewModel.openUrlCommand.hasError).isFalse();
           check(notified).isTrue();
         },
       );

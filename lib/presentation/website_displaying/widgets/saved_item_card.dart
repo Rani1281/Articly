@@ -1,9 +1,7 @@
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
-import 'package:articly/theme/theme_model.dart';
 import 'package:articly/utils/my_snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/link.dart'; // Added for web link preview
 
 class SavedWebpageCard extends StatefulWidget {
@@ -33,23 +31,27 @@ class SavedWebpageCard extends StatefulWidget {
 }
 
 class _SavedWebpageCardState extends State<SavedWebpageCard> {
+  late final SavedItemViewModel _viewModel;
+
   @override
   void initState() {
+    _viewModel = widget.viewModel;
     super.initState();
   }
 
-  _onTap() async {
+  _openUrl() async {
     if (widget.uri == null) {
       return null;
     }
 
-    final openUrl = widget.viewModel.openUrl;
-    await openUrl.execute();
+    await _viewModel.openUrl();
 
-    if (!openUrl.completed && openUrl.hasError && mounted) {
+    if (!_viewModel.openUrlCommand.completed &&
+        _viewModel.openUrlCommand.hasError &&
+        mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(openUrl.error!),
+          content: Text(_viewModel.openUrlCommand.error!),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -58,10 +60,10 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Provider.of<ThemeModel>(
-      context,
-      listen: false,
-    ).isDark(context);
+    // final isDark = Provider.of<ThemeModel>(
+    //   context,
+    //   listen: false,
+    // ).isDark(context);
 
     return ListenableBuilder(
       listenable: widget.viewModel,
@@ -75,7 +77,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                 : SystemMouseCursors.basic,
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: _onTap,
+              onTap: _openUrl,
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
@@ -99,7 +101,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                             padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
                             child: SelectableText(
                               widget.title!,
-                              onTap: _onTap,
+                              onTap: _openUrl,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -128,7 +130,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                             ? const SizedBox()
                             : SelectableText(
                                 widget.uri!.host,
-                                onTap: _onTap,
+                                onTap: _openUrl,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Theme.of(context).colorScheme.onSurface
@@ -219,7 +221,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                       onPressed: () async {
                         await widget.viewModel.copyContents();
                         if (mounted) {
-                          showSnackBar(context);
+                          MySnackBar(context, message: 'Copied to clipboard');
                         }
                       },
                     ),

@@ -20,10 +20,7 @@ void main() {
   setUpAll(() {
     SharedPreferences.setMockInitialValues({});
     registerFallbackValue(
-      SavedItem(
-        type: ItemType.webpage,
-        readingStatus: ReadingStatus.unread,
-      ),
+      SavedItem(type: ItemType.webpage, readingStatus: ReadingStatus.unread),
     );
   });
 
@@ -36,18 +33,18 @@ void main() {
       final repo = _MockSavedItemsRepository();
 
       if (neverCompletes) {
-        when(() => repo.saveItem(any())).thenAnswer(
-          (_) async => Completer<String>().future,
-        );
+        when(
+          () => repo.saveItem(any()),
+        ).thenAnswer((_) async => Completer<String>().future);
       } else if (shouldFail) {
         when(() => repo.saveItem(any())).thenThrow(Exception('Save failed'));
       } else {
-        when(() => repo.saveItem(any())).thenAnswer(
-          (_) async => 'users/uid/savedItems/123',
-        );
+        when(
+          () => repo.saveItem(any()),
+        ).thenAnswer((_) async => 'users/uid/savedItems/123');
       }
 
-      return SaveWebpageViewModel(repo: repo);
+      return SaveWebpageViewModel();
     }
 
     /// Pumps the screen wrapped in a [ChangeNotifierProvider<ThemeModel>].
@@ -60,9 +57,7 @@ void main() {
         MaterialApp(
           home: ChangeNotifierProvider<ThemeModel>.value(
             value: themeModel,
-            child: SaveWebsiteScreen(
-              viewModel: viewModel,
-            ),
+            child: SaveWebsiteScreen(viewModel: viewModel),
           ),
         ),
       );
@@ -82,27 +77,26 @@ void main() {
       expect(find.byKey(const ValueKey('saveButton')), findsOneWidget);
     });
 
-    testWidgets(
-      'shows a snack bar when an error appears in savingError',
-      (tester) async {
-        // Arrange
-        final viewModel = createViewModel(shouldFail: true);
-        await pumpScreen(tester, viewModel: viewModel);
+    testWidgets('shows a snack bar when an error appears in savingError', (
+      tester,
+    ) async {
+      // Arrange
+      final viewModel = createViewModel(shouldFail: true);
+      await pumpScreen(tester, viewModel: viewModel);
 
-        // Act - trigger a save that will fail
-        await tester.enterText(
-          find.byKey(const ValueKey('urlTextField')),
-          'https://example.com',
-        );
-        await tester.tap(find.byKey(const ValueKey('saveButton')));
-        await tester.pumpAndSettle();
+      // Act - trigger a save that will fail
+      await tester.enterText(
+        find.byKey(const ValueKey('urlTextField')),
+        'https://example.com',
+      );
+      await tester.tap(find.byKey(const ValueKey('saveButton')));
+      await tester.pumpAndSettle();
 
-        // Assert
-        expect(find.byType(SnackBar), findsOneWidget);
-        final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-        check(snackBar.behavior).equals(SnackBarBehavior.floating);
-      },
-    );
+      // Assert
+      expect(find.byType(SnackBar), findsOneWidget);
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      check(snackBar.behavior).equals(SnackBarBehavior.floating);
+    });
 
     testWidgets(
       'shows a circular progress indicator when in the middle of saving',
@@ -164,9 +158,7 @@ void main() {
                     MaterialPageRoute(
                       builder: (_) => ChangeNotifierProvider<ThemeModel>.value(
                         value: ThemeModel(),
-                        child: SaveWebsiteScreen(
-                          viewModel: viewModel,
-                        ),
+                        child: SaveWebsiteScreen(viewModel: viewModel),
                       ),
                     ),
                   );
@@ -211,65 +203,62 @@ void main() {
       },
     );
 
-    testWidgets(
-      'url text field maxLength is enforced at 2048 characters',
-      (tester) async {
-        // Arrange
-        final viewModel = createViewModel();
-        await pumpScreen(tester, viewModel: viewModel);
+    testWidgets('url text field maxLength is enforced at 2048 characters', (
+      tester,
+    ) async {
+      // Arrange
+      final viewModel = createViewModel();
+      await pumpScreen(tester, viewModel: viewModel);
 
-        // Act
-        final textField = tester.widget<TextField>(
-          find.descendant(
-            of: find.byKey(const ValueKey('urlTextField')),
-            matching: find.byType(TextField),
-          ),
-        );
+      // Act
+      final textField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byKey(const ValueKey('urlTextField')),
+          matching: find.byType(TextField),
+        ),
+      );
 
-        // Assert
-        check(textField.maxLength).equals(SaveWebpageViewModel.urlMaxChars);
-      },
-    );
+      // Assert
+      check(textField.maxLength).equals(SaveWebpageViewModel.urlMaxChars);
+    });
 
-    testWidgets(
-      'title text field maxLength is enforced at 200 characters',
-      (tester) async {
-        // Arrange
-        final viewModel = createViewModel();
-        await pumpScreen(tester, viewModel: viewModel);
+    testWidgets('title text field maxLength is enforced at 200 characters', (
+      tester,
+    ) async {
+      // Arrange
+      final viewModel = createViewModel();
+      await pumpScreen(tester, viewModel: viewModel);
 
-        // Act
-        final textField = tester.widget<TextField>(
-          find.descendant(
-            of: find.byKey(const ValueKey('titleTextField')),
-            matching: find.byType(TextField),
-          ),
-        );
+      // Act
+      final textField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byKey(const ValueKey('titleTextField')),
+          matching: find.byType(TextField),
+        ),
+      );
 
-        // Assert
-        check(textField.maxLength).equals(SaveWebpageViewModel.titleMaxChars);
-      },
-    );
+      // Assert
+      check(textField.maxLength).equals(SaveWebpageViewModel.titleMaxChars);
+    });
 
-    testWidgets(
-      'notes field maxLength is enforced at 10000 characters',
-      (tester) async {
-        // Arrange
-        final viewModel = createViewModel();
-        await pumpScreen(tester, viewModel: viewModel);
+    testWidgets('notes field maxLength is enforced at 10000 characters', (
+      tester,
+    ) async {
+      // Arrange
+      final viewModel = createViewModel();
+      await pumpScreen(tester, viewModel: viewModel);
 
-        // Act
-        final textField = tester.widget<TextField>(
-          find.descendant(
-            of: find.byKey(const ValueKey('notesTextField')),
-            matching: find.byType(TextField),
-          ),
-        );
+      // Act
+      final textField = tester.widget<TextField>(
+        find.descendant(
+          of: find.byKey(const ValueKey('notesTextField')),
+          matching: find.byType(TextField),
+        ),
+      );
 
-        // Assert
-        check(textField.maxLength).equals(SaveWebpageViewModel.notesMaxChars);
-      },
-    );
+      // Assert
+      check(textField.maxLength).equals(SaveWebpageViewModel.notesMaxChars);
+    });
 
     testWidgets(
       'clicking on the suffix icon of the url text field pastes clipboard text',
@@ -282,7 +271,9 @@ void main() {
           SystemChannels.platform,
           (methodCall) async {
             if (methodCall.method == 'Clipboard.getData') {
-              return <String, dynamic>{'text': 'https://pasted-from-clipboard.com'};
+              return <String, dynamic>{
+                'text': 'https://pasted-from-clipboard.com',
+              };
             }
             return null;
           },
@@ -310,29 +301,29 @@ void main() {
             matching: find.byType(TextField),
           ),
         );
-        check(textField.controller!.text)
-            .equals('https://pasted-from-clipboard.com');
+        check(
+          textField.controller!.text,
+        ).equals('https://pasted-from-clipboard.com');
       },
     );
 
-    testWidgets(
-      'the initial value of the dropdown should be Unread',
-      (tester) async {
-        // Arrange
-        final viewModel = createViewModel();
-        await pumpScreen(tester, viewModel: viewModel);
+    testWidgets('the initial value of the dropdown should be Unread', (
+      tester,
+    ) async {
+      // Arrange
+      final viewModel = createViewModel();
+      await pumpScreen(tester, viewModel: viewModel);
 
-        // Act
-        final dropdown = tester.widget<DropdownButtonFormField<String>>(
-          find.descendant(
-            of: find.byKey(const ValueKey('statusDropdown')),
-            matching: find.byType(DropdownButtonFormField<String>),
-          ),
-        );
+      // Act
+      final dropdown = tester.widget<DropdownButtonFormField<String>>(
+        find.descendant(
+          of: find.byKey(const ValueKey('statusDropdown')),
+          matching: find.byType(DropdownButtonFormField<String>),
+        ),
+      );
 
-        // Assert
-        check(dropdown.initialValue).equals('Unread');
-      },
-    );
+      // Assert
+      check(dropdown.initialValue).equals('Unread');
+    });
   });
 }
