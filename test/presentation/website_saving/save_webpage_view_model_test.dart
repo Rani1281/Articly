@@ -10,7 +10,6 @@ class MockSavedItemsRepository extends Mock implements SavedItemsRepository {}
 
 void main() {
   late SaveWebpageViewModel viewModel;
-  late MockSavedItemsRepository mockRepo;
 
   setUpAll(() {
     registerFallbackValue(
@@ -25,7 +24,6 @@ void main() {
   });
 
   setUp(() {
-    mockRepo = MockSavedItemsRepository();
     viewModel = SaveWebpageViewModel();
   });
 
@@ -73,51 +71,50 @@ void main() {
     });
   });
 
-  // group('validateUrl', () {
-  //   test('returns "Url is required" when input is null', () {
-  //     final result = viewModel.validateUrl(null);
-  //     check(result).equals('Url is required');
-  //   });
-
-  //   test('returns "Url is required" when input is empty', () {
-  //     final result = viewModel.validateUrl('');
-  //     check(result).equals('Url is required');
-  //   });
-
-  //   test('returns "Url is required" when input is only whitespace', () {
-  //     final result = viewModel.validateUrl('   ');
-  //     check(result).equals('Url is required');
-  //   });
-
-  //   test('returns "Url is too long" when length exceeds urlMaxChars', () {
-  //     final longUrl =
-  //         'https://example.com/${'a' * SaveWebpageViewModel.urlMaxChars}';
-  //     final result = viewModel.validateUrl(longUrl);
-  //     check(result).equals('Url is too long');
-  //   });
-
-  //   test('returns "Invalid url" for malformed URLs', () {
-  //     check(viewModel.validateUrl('not-a-url')).equals('Invalid url');
-  //     check(viewModel.validateUrl('ftp://example.com')).equals('Invalid url');
-  //     check(viewModel.validateUrl('http://')).equals('Invalid url');
-  //   });
-
-  // test('returns null for valid http and https URLs', () {
-  //   final validUrls = <String>[
-  //     'https://example.com',
-  //     'https://example.org',
-  //     'https://example.com/page',
-  //     'http://example.com',
-  //     'http://example.com/path',
-  //   ];
-
-  //   for (final url in validUrls) {
-  //     check(viewModel.validateUrl(url)).isNull();
-  //   }
-  // });
-  // });
-
   group('validateFields', () {
+    test('Initially clears all errors and notifies listeners', () {
+      bool notified = false;
+      viewModel.addListener(() {
+        notified = true;
+      });
+
+      // should be valid
+      final _ = viewModel.validateFields(
+        'https://www.example.com',
+        'Title',
+        'Notes',
+      );
+
+      // notified because of "clear()"
+      check(notified).isTrue();
+
+      // intentionally pass invalid arguments to set an error message
+      final _ = viewModel.validateFields('', '', ''); // 1
+      final _ = viewModel.validateFields(
+        'https://www.example.com',
+        'H' * 202,
+        '',
+      ); // 2
+      final _ = viewModel.validateFields(
+        'https://www.example.com',
+        '',
+        'N' * 10002,
+      ); // 3
+
+      // these ones should pass
+      final valid = viewModel.validateFields(
+        'https://www.example.com',
+        'Title',
+        'Notes',
+      ); // 4
+
+      check(valid).isTrue();
+
+      check(viewModel.urlError).isNull();
+      check(viewModel.titleError).isNull();
+      check(viewModel.notesError).isNull();
+    });
+
     test(
       'if url is empty, sets urlError, notifies listeners, and returns false',
       () {
@@ -172,22 +169,6 @@ void main() {
         check(notified).isTrue();
       },
     );
-
-    // test(
-    //   'returns false, sets urlError, and notifies listeners when URL is invalid',
-    //   () {
-    //     var notified = false;
-    //     viewModel.addListener(() {
-    //       notified = true;
-    //     });
-
-    //     final result = viewModel.validateFields('invalid', 'Title', 'Notes');
-
-    //     check(result).isFalse();
-    //     check(viewModel.urlError).equals('Invalid url');
-    //     check(notified).isTrue();
-    //   },
-    // );
 
     test(
       'returns false, sets titleError, and notifies listeners when title exceeds max length',

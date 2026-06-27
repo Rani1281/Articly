@@ -49,22 +49,12 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
     if (!_viewModel.openUrlCommand.completed &&
         _viewModel.openUrlCommand.hasError &&
         mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_viewModel.openUrlCommand.error!),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      MySnackBar(context, message: _viewModel.openUrlCommand.error!).show();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // final isDark = Provider.of<ThemeModel>(
-    //   context,
-    //   listen: false,
-    // ).isDark(context);
-
     return ListenableBuilder(
       listenable: widget.viewModel,
       builder: (context, _) {
@@ -81,9 +71,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
               child: Container(
                 padding: const EdgeInsets.all(16.0),
                 decoration: BoxDecoration(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.surfaceContainerLow.withValues(alpha: 0.4),
+                  color: Theme.of(context).colorScheme.surfaceContainerLowest,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -93,25 +81,29 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Title and External Link Icon
-                    if (widget.title != null) ...[
+                    if (widget.title != null && widget.title!.isNotEmpty) ...[
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
-                            child: SelectableText(
-                              widget.title!,
-                              onTap: _openUrl,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.9),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
+                              child: SelectableText(
+                                widget.title!,
+                                onTap: _openUrl,
+                                // softWrap: true,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                ),
+                                maxLines: null,
                               ),
                             ),
                           ),
-                          const Spacer(),
+                          const SizedBox(width: 5),
                           Icon(
                             Icons.north_east,
                             size: 20,
@@ -126,18 +118,19 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        widget.uri == null
-                            ? const SizedBox()
-                            : SelectableText(
-                                widget.uri!.host,
-                                onTap: _openUrl,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.7),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                        if (widget.uri != null &&
+                            widget.uri!.toString().isNotEmpty)
+                          SelectableText(
+                            widget.uri!.host,
+                            onTap: _openUrl,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         Row(
                           children: [
                             Container(
@@ -221,7 +214,10 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                       onPressed: () async {
                         await widget.viewModel.copyContents();
                         if (mounted) {
-                          MySnackBar(context, message: 'Copied to clipboard');
+                          MySnackBar(
+                            context,
+                            message: 'Copied to clipboard',
+                          ).show();
                         }
                       },
                     ),

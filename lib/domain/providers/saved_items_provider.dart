@@ -6,9 +6,7 @@ import 'package:logging/logging.dart';
 
 class SavedItemsProvider extends ChangeNotifier {
   SavedItemsProvider({SavedItemsRepository? repo})
-    : _repo = repo ?? SavedItemsRepository() {
-    load(); // load right away (don't await though)
-  }
+    : _repo = repo ?? SavedItemsRepository();
 
   Map<String, SavedItem> _items = {};
   Map<String, SavedItem> get items => _items;

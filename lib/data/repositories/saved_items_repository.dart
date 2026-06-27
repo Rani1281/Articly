@@ -34,7 +34,9 @@ class SavedItemsRepository {
     return docRef.id;
   }
 
-  /// Returns a result map where the key is the Firestore id and the value is the saved item, sorted by createdAt (oldest dates first)
+  /// Returns a result map where the key is the Firestore id and the value is the saved item, sorted by createdAt (oldest dates first). For example:
+  ///
+  /// ``{'123': SavedItem(...), '456': SavedItem(...)}``
   Future<Map<String, SavedItem>> fetchItems() async {
     final user = _auth.currentUser;
     if (user == null) {

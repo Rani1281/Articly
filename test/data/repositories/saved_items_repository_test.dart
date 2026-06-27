@@ -105,4 +105,49 @@ void main() {
       },
     );
   });
+
+  group('saveItem', () {
+    test('throws an exception when no user is authenticated', () {
+      when(() => mockAuth.currentUser).thenReturn(null);
+
+      final item = SavedItem(
+        type: ItemType.webpage,
+        readingStatus: ReadingStatus.unread,
+      );
+
+      expect(
+        () async => await repository.saveItem(item),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('returns the document id on success', () async {
+      final usersCollection = MockCollectionReference();
+      final userDoc = MockDocumentReference();
+      final savedItemsCollection = MockCollectionReference();
+      final addedDoc = MockDocumentReference();
+      final expectedId = '123';
+
+      when(() => mockAuth.currentUser).thenReturn(mockUser);
+      when(() => mockUser.uid).thenReturn('test-uid');
+      when(() => mockDb.collection('users')).thenReturn(usersCollection);
+      when(() => usersCollection.doc('test-uid')).thenReturn(userDoc);
+      when(
+        () => userDoc.collection('savedItems'),
+      ).thenReturn(savedItemsCollection);
+      when(
+        () => savedItemsCollection.add(any()),
+      ).thenAnswer((_) async => addedDoc);
+      when(() => addedDoc.id).thenReturn(expectedId);
+
+      final item = SavedItem(
+        type: ItemType.webpage,
+        readingStatus: ReadingStatus.unread,
+      );
+
+      final result = await repository.saveItem(item);
+
+      check(result).equals(expectedId);
+    });
+  });
 }

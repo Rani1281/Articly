@@ -1,3 +1,4 @@
+import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
@@ -14,6 +15,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<SavedItemsProvider>(context, listen: false);
+
+      provider.load();
+    });
+
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,7 +44,7 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           SliverPadding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(15.0),
             sliver: SliverToBoxAdapter(
               child: Center(
                 child: ConstrainedBox(
@@ -44,10 +56,7 @@ class _HomePageState extends State<HomePage> {
                         return const CircularProgressIndicator();
                       }
                       if (provider.loadCommand.hasError) {
-                        MySnackBar(
-                          context,
-                          message: provider.loadCommand.error!,
-                        ).show();
+                        return Text(provider.loadCommand.error!);
                       }
                       final items = provider.items.values.toList();
                       return ListView.builder(
