@@ -60,7 +60,7 @@ class SavedItemViewModel extends ChangeNotifier {
       return Future.value();
     }
 
-    final success = await launchUrl(uri!);
+    final success = await launchUrl(uri!, mode: LaunchMode.externalApplication);
 
     if (!success) {
       log.warning('A problem occurred while trying to open the url: $uri');

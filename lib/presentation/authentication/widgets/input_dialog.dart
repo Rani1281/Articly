@@ -34,22 +34,23 @@ class _EditUsernameDialogState extends State<EditUsernameDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      scrollable: true,
-      constraints: const BoxConstraints.tightFor(width: 300),
       title: const Text('Edit Username'),
-      content: SingleChildScrollView(
-        child: TextField(
-          controller: _controller,
-          maxLines: 1,
-          maxLength: 40,
-        decoration: const InputDecoration(
-          hintText: "Enter your username",
-          border: OutlineInputBorder(),
+      content: SizedBox(
+        width: 300,
+        child: SingleChildScrollView(
+          child: TextField(
+            controller: _controller,
+            maxLines: 1,
+            maxLength: 40,
+            decoration: const InputDecoration(
+              hintText: "Enter your username",
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {});
+            },
+          ),
         ),
-        onChanged: (value) {
-          setState(() {});
-        },
-      ),
       ),
       actions: [
         TextButton(

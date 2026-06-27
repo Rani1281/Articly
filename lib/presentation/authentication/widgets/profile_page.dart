@@ -84,115 +84,117 @@ class _ProfilePageState extends State<ProfilePage> {
             automaticallyImplyLeading: true,
             title: const Text('Profile'),
           ),
-          body: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 450),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 60),
+          body: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 450),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 60),
 
-                    // Profile Name & Edit Icon
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          widget._viewModel.username ?? 'User',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: _editUsername,
-                          icon: Icon(Icons.edit),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 50),
-
-                    // Email Section
-                    Divider(),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      // Profile Name & Edit Icon
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Email',
-                            style: Theme.of(context).textTheme.labelSmall,
+                            widget._viewModel.username ?? 'User',
+                            style: Theme.of(context).textTheme.headlineSmall,
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            widget._viewModel.email ?? 'Empty',
-                            // style: TextStyle(
-                            //   fontSize: 15,
-                            //   color: Colors.black87,
-                            // ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            onPressed: _editUsername,
+                            icon: Icon(Icons.edit),
                           ),
                         ],
                       ),
-                    ),
 
-                    const Divider(),
+                      const SizedBox(height: 50),
 
-                    ListTile(
-                      title: const Text('Theme'),
-                      trailing: DropdownButton<ThemeMode>(
-                        underline: const SizedBox(),
-                        borderRadius: BorderRadius.circular(10),
-                        elevation: 8,
-                        value: themeModel.themeMode,
-                        onChanged: (value) {
-                          if (value != null) {
-                            context.read<ThemeModel>().setThemeMode(value);
-                          }
-                        },
-                        items: const [
-                          DropdownMenuItem(
-                            value: ThemeMode.system,
-                            child: Text('System'),
-                          ),
-                          DropdownMenuItem(
-                            value: ThemeMode.light,
-                            child: Text('Light'),
-                          ),
-                          DropdownMenuItem(
-                            value: ThemeMode.dark,
-                            child: Text('Dark'),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    Divider(),
-
-                    const SizedBox(height: 60),
-
-                    // Log Out Button
-                    // TODO: Switch this with a custom button
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        final confirmed = await _showLogoutDialog();
-                        if (confirmed == true) {
-                          widget._viewModel.logOut();
-                          Navigator.of(context).pop();
-                          // ! Note: this only pops the current route, matching the current homepage -> profile page structure, so if nesting more pages, deleting all navigation stack beforehand is necessary.
-                        }
-                      },
-                      label: const Text('Log out'),
-                      icon: Icon(Icons.logout),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red[700],
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.all(20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.0),
+                      // Email Section
+                      Divider(),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Email',
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget._viewModel.email ?? 'Empty',
+                              // style: TextStyle(
+                              //   fontSize: 15,
+                              //   color: Colors.black87,
+                              // ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+
+                      const Divider(),
+
+                      ListTile(
+                        title: const Text('Theme'),
+                        trailing: DropdownButton<ThemeMode>(
+                          underline: const SizedBox(),
+                          borderRadius: BorderRadius.circular(10),
+                          elevation: 8,
+                          value: themeModel.themeMode,
+                          onChanged: (value) {
+                            if (value != null) {
+                              context.read<ThemeModel>().setThemeMode(value);
+                            }
+                          },
+                          items: const [
+                            DropdownMenuItem(
+                              value: ThemeMode.system,
+                              child: Text('System'),
+                            ),
+                            DropdownMenuItem(
+                              value: ThemeMode.light,
+                              child: Text('Light'),
+                            ),
+                            DropdownMenuItem(
+                              value: ThemeMode.dark,
+                              child: Text('Dark'),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      Divider(),
+
+                      const SizedBox(height: 60),
+
+                      // Log Out Button
+                      // TODO: Switch this with a custom button
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          final confirmed = await _showLogoutDialog();
+                          if (confirmed == true) {
+                            widget._viewModel.logOut();
+                            Navigator.of(context).pop();
+                            // ! Note: this only pops the current route, matching the current homepage -> profile page structure, so if nesting more pages, deleting all navigation stack beforehand is necessary.
+                          }
+                        },
+                        label: const Text('Log out'),
+                        icon: Icon(Icons.logout),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red[700],
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.all(20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16.0),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

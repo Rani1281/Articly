@@ -3,6 +3,7 @@ import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
+import 'package:articly/utils/my_action_button.dart';
 import 'package:articly/utils/my_snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -57,6 +58,32 @@ class _HomePageState extends State<HomePage> {
                       }
                       if (provider.loadCommand.hasError) {
                         return Text(provider.loadCommand.error!);
+                      }
+                      if (provider.items.isEmpty) {
+                        return SizedBox(
+                          height: MediaQuery.of(context).size.height - 200,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text('No saved sources yet'),
+                              const SizedBox(height: 15),
+
+                              MyActionButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SaveWebsiteScreen(),
+                                    ),
+                                  );
+                                },
+                                text: 'Add a webpage',
+                                icon: Icon(Icons.add),
+                              ),
+                            ],
+                          ),
+                        );
                       }
                       final items = provider.items.values.toList();
                       return ListView.builder(
