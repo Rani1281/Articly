@@ -31,19 +31,6 @@ void main() {
     viewModel.dispose();
   });
 
-  group('remindMe setter', () {
-    test('notifies listeners when the value changes', () {
-      var notifiedCount = 0;
-      viewModel.addListener(() {
-        notifiedCount++;
-      });
-
-      viewModel.remindMe = true;
-
-      check(notifiedCount).equals(1);
-    });
-  });
-
   group('isUrlValid', () {
     test('returns true for a normal url', () {
       final result = viewModel.isUrlValid(

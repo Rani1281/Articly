@@ -61,4 +61,27 @@ class SavedItemsRepository {
       ),
     );
   }
+
+  Future<void> updateItem(SavedItem item) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception(
+        'The user is not authenticated, so can\'t save the item under his name',
+      );
+    }
+
+    if (item.id == null) {
+      throw Exception(
+        'Can\'t proceed to updating the item in Firestore because the id of the item is null.',
+      );
+    }
+
+    await _db
+        .collection(usersCollection)
+        .doc(user.uid)
+        .collection(savedItemsCollection)
+        .doc(item.id)
+        .update(item.toFirestore(isEdit: true));
+    // isEdit = true to not change createdAt
+  }
 }

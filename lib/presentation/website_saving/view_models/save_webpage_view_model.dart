@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
 class SaveWebpageViewModel extends ChangeNotifier {
-  bool _remindMe = false;
-  bool get remindMe => _remindMe;
-  set remindMe(bool value) {
-    _remindMe = value;
-    notifyListeners();
-  }
+  // bool _remindMe = false;
+  // bool get remindMe => _remindMe;
+  // set remindMe(bool value) {
+  //   _remindMe = value;
+  //   notifyListeners();
+  // }
 
   String? _urlError;
   String? get urlError => _urlError;

@@ -57,7 +57,7 @@ void main() {
         MaterialApp(
           home: ChangeNotifierProvider<ThemeModel>.value(
             value: themeModel,
-            child: SaveWebsiteScreen(viewModel: viewModel),
+            child: SaveWebpageScreen(viewModel: viewModel),
           ),
         ),
       );
@@ -158,7 +158,7 @@ void main() {
                     MaterialPageRoute(
                       builder: (_) => ChangeNotifierProvider<ThemeModel>.value(
                         value: ThemeModel(),
-                        child: SaveWebsiteScreen(viewModel: viewModel),
+                        child: SaveWebpageScreen(viewModel: viewModel),
                       ),
                     ),
                   );

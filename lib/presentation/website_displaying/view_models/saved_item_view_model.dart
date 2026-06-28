@@ -1,3 +1,4 @@
+import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,14 +6,17 @@ import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SavedItemViewModel extends ChangeNotifier {
-  SavedItemViewModel({
-    required this.title,
-    required this.uri,
-    required this.notes,
-  });
-  final String? title;
-  final Uri? uri;
-  final String? notes;
+  SavedItemViewModel(this.currentItem) {
+    title = currentItem.title;
+    uri = currentItem.uri;
+    notes = currentItem.notes;
+  }
+
+  final SavedItem currentItem;
+
+  late final String? title;
+  late final Uri? uri;
+  late final String? notes;
   bool _isExpanded = false;
   bool get isExpanded => _isExpanded;
 

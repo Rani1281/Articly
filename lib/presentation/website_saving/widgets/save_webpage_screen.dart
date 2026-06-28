@@ -10,17 +10,24 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 
-class SaveWebsiteScreen extends StatefulWidget {
-  SaveWebsiteScreen({super.key, SaveWebpageViewModel? viewModel})
-    : viewModel = viewModel ?? SaveWebpageViewModel();
+class SaveWebpageScreen extends StatefulWidget {
+  SaveWebpageScreen({
+    super.key,
+    SaveWebpageViewModel? viewModel,
+    this.currentItem,
+    this.isEdit = false,
+  }) : viewModel = viewModel ?? SaveWebpageViewModel();
 
   final SaveWebpageViewModel viewModel;
 
+  final SavedItem? currentItem;
+  final bool isEdit;
+
   @override
-  State<SaveWebsiteScreen> createState() => _SaveWebsiteScreenState();
+  State<SaveWebpageScreen> createState() => _SaveWebpageScreenState();
 }
 
-class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
+class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
   final String _initialValue = 'Unread';
   // final List<String> _statuses = ['Unread', 'Reading', 'Read'];
   final Map<String, ReadingStatus> _statuses = {
@@ -41,10 +48,23 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
 
   late SavedItemsProvider provider;
 
+  bool _remindMe = false;
+
   @override
   void initState() {
     super.initState();
 
+    // prepopulate fields
+    final item = widget.currentItem;
+    if (widget.isEdit && item != null) {
+      _urlController.text = item.uri?.toString() ?? '';
+      _titleController.text = item.title ?? '';
+      _notesController.text = item.notes ?? '';
+      _selectedStatusNotifier.value = item.readingStatus.name;
+      _remindMe = item.remindReading ?? false;
+    }
+
+    // _titleController.text =
     WidgetsBinding.instance.addPostFrameCallback((_) {
       provider = context.read<SavedItemsProvider>();
       provider.addListener(_onProviderChanged);
@@ -54,6 +74,8 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
   void _onProviderChanged() {
     if (provider.saveCommand.hasError) {
       MySnackBar(context, message: provider.saveCommand.error!).show();
+    } else if (provider.editCommand.hasError) {
+      MySnackBar(context, message: provider.editCommand.error!).show();
     }
   }
 
@@ -80,17 +102,29 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
     }
 
     final item = SavedItem(
+      id: widget.currentItem?.id, // will be set if is edit
       type: ItemType.webpage,
       readingStatus: readingStatus,
       uri: Uri.tryParse(url),
       title: title,
       notes: notes,
-      remindReading: widget.viewModel.remindMe,
+      remindReading: _remindMe,
     );
 
+    log.info('Created item:\n$item');
+
+    bool completed = false;
     final provider = Provider.of<SavedItemsProvider>(context, listen: false);
-    await provider.save(item);
-    if (provider.saveCommand.completed && mounted) {
+
+    if (!widget.isEdit) {
+      await provider.save(item);
+      completed = provider.saveCommand.completed;
+    } else {
+      await provider.edit(item);
+      completed = provider.editCommand.completed;
+    }
+
+    if (completed && mounted) {
       Navigator.pop(context);
     }
   }
@@ -117,10 +151,14 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       key: ValueKey('saveButton'),
-                      onTap: (provider.saveCommand.running)
+                      onTap:
+                          (provider.saveCommand.running ||
+                              provider.editCommand.running)
                           ? null
                           : () => _save(context),
-                      child: provider.saveCommand.running
+                      child:
+                          provider.saveCommand.running ||
+                              provider.editCommand.running
                           ? SizedBox(
                               height: 20,
                               width: 20,
@@ -136,7 +174,7 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
                     ),
                   ),
                 ],
-                title: Text('Save website'),
+                title: Text('Save webpage'),
               ),
               body: SingleChildScrollView(
                 padding: EdgeInsets.all(20),
@@ -240,9 +278,11 @@ class _SaveWebsiteScreenState extends State<SaveWebsiteScreen> {
                             SizedBox(
                               height: 24, // Adjusting switch size slightly
                               child: Switch(
-                                value: widget.viewModel.remindMe,
+                                value: _remindMe,
                                 onChanged: (bool value) {
-                                  widget.viewModel.remindMe = value;
+                                  setState(() {
+                                    _remindMe = value;
+                                  });
                                 },
                               ),
                             ),

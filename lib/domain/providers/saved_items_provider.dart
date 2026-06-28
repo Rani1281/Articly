@@ -15,6 +15,7 @@ class SavedItemsProvider extends ChangeNotifier {
 
   final Command loadCommand = Command();
   final Command saveCommand = Command();
+  final Command editCommand = Command();
 
   final log = Logger('SavedItemsProvider');
 
@@ -37,6 +38,7 @@ class SavedItemsProvider extends ChangeNotifier {
     }
   }
 
+  /// Create a new item
   Future<void> save(SavedItem item) async {
     log.info('Saving started...');
     String? error;
@@ -53,6 +55,27 @@ class SavedItemsProvider extends ChangeNotifier {
           'Something went wrong. Please check your internet connection and try again';
     } finally {
       saveCommand.finish(error);
+      notifyListeners();
+    }
+  }
+
+  /// Edit an existing item
+  Future<void> edit(SavedItem item) async {
+    log.info('Editing started...');
+    String? error;
+    editCommand.start();
+    notifyListeners();
+
+    try {
+      await _repo.updateItem(item);
+      // if update item succeeds, the id must be non null
+      _items[item.id!] = item;
+      log.finest('Successfully edited the item in Firestore and in memory!');
+    } catch (e) {
+      log.shout('An error occurred: $e');
+      error = 'Something went wrong. Please try again later';
+    } finally {
+      editCommand.finish(error);
       notifyListeners();
     }
   }

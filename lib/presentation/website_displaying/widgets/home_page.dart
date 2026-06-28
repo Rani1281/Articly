@@ -1,10 +1,8 @@
-import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/utils/my_action_button.dart';
-import 'package:articly/utils/my_snack_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -74,7 +72,7 @@ class _HomePageState extends State<HomePage> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => SaveWebsiteScreen(),
+                                      builder: (_) => SaveWebpageScreen(),
                                     ),
                                   );
                                 },
@@ -99,10 +97,7 @@ class _HomePageState extends State<HomePage> {
                             padding: const EdgeInsets.symmetric(vertical: 5),
                             child: SavedWebpageCard(
                               key: ValueKey('card$index'),
-                              title: item.title,
-                              uri: item.uri,
-                              status: item.readingStatus.name,
-                              notes: item.notes,
+                              currentItem: item,
                             ),
                           );
                         },
@@ -118,7 +113,7 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.of(
           context,
-        ).push(MaterialPageRoute(builder: (_) => SaveWebsiteScreen())),
+        ).push(MaterialPageRoute(builder: (_) => SaveWebpageScreen())),
         child: const Icon(Icons.add),
       ),
     );

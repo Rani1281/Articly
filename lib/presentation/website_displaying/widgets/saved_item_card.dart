@@ -1,14 +1,12 @@
+import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
+import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/utils/my_snack_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/link.dart'; // Added for web link preview
 
 class SavedWebpageCard extends StatefulWidget {
-  final String? title;
-  final Uri? uri;
-  final String status;
-  final String? notes;
+  final SavedItem currentItem;
 
   final SavedItemViewModel viewModel;
 
@@ -17,14 +15,9 @@ class SavedWebpageCard extends StatefulWidget {
   SavedWebpageCard({
     super.key,
     SavedItemViewModel? viewModel,
-    required this.title,
-    required this.uri,
-    required this.status,
-    required this.notes,
+    required this.currentItem,
     this.isDark = false,
-  }) : viewModel =
-           viewModel ??
-           SavedItemViewModel(title: title, uri: uri, notes: notes);
+  }) : viewModel = viewModel ?? SavedItemViewModel(currentItem);
 
   @override
   State<SavedWebpageCard> createState() => _SavedWebpageCardState();
@@ -33,14 +26,23 @@ class SavedWebpageCard extends StatefulWidget {
 class _SavedWebpageCardState extends State<SavedWebpageCard> {
   late final SavedItemViewModel _viewModel;
 
+  late final Uri? _uri;
+  late final ReadingStatus _readingStatus;
+  late final String? _title;
+  late final String? _notes;
+
   @override
   void initState() {
-    _viewModel = widget.viewModel;
     super.initState();
+    _viewModel = widget.viewModel;
+    _uri = widget.currentItem.uri;
+    _readingStatus = widget.currentItem.readingStatus;
+    _title = widget.currentItem.title;
+    _notes = widget.currentItem.notes;
   }
 
   _openUrl() async {
-    if (widget.uri == null) {
+    if (_uri == null) {
       return null;
     }
 
@@ -61,7 +63,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
         // Extracted the header into a helper method so we can easily wrap it in a Link
         Widget buildHeader() {
           return MouseRegion(
-            cursor: widget.uri != null
+            cursor: _uri != null
                 ? SystemMouseCursors
                       .click // Changes cursor to pointing finger
                 : SystemMouseCursors.basic,
@@ -81,7 +83,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Title and External Link Icon
-                    if (widget.title != null && widget.title!.isNotEmpty) ...[
+                    if (_title != null && _title.isNotEmpty) ...[
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -89,7 +91,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
                               child: SelectableText(
-                                widget.title!,
+                                _title,
                                 onTap: _openUrl,
                                 // softWrap: true,
                                 style: TextStyle(
@@ -118,10 +120,9 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        if (widget.uri != null &&
-                            widget.uri!.toString().isNotEmpty)
+                        if (_uri != null && _uri.toString().isNotEmpty)
                           SelectableText(
-                            widget.uri!.host,
+                            _uri.host,
                             onTap: _openUrl,
                             style: TextStyle(
                               fontSize: 14,
@@ -143,7 +144,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              widget.status,
+                              _readingStatus.name,
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -182,10 +183,10 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
             children: [
               // Top Header Section
               // Wrap the header in a Link widget to generate the native HTML <a> tag on Web
-              widget.uri == null
+              _uri == null
                   ? buildHeader()
                   : Link(
-                      uri: widget.uri,
+                      uri: _uri,
                       target: LinkTarget.blank,
                       builder: (context, followLink) => buildHeader(),
                     ),
@@ -206,7 +207,21 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                 ),
                 child: Row(
                   children: [
-                    _buildActionIcon(Icons.edit_outlined, "Edit"),
+                    _buildActionIcon(
+                      Icons.edit_outlined,
+                      "Edit",
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SaveWebpageScreen(
+                              currentItem: widget.currentItem,
+                              isEdit: true,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                     _buildActionIcon(Icons.delete_outline, "Delete"),
                     _buildActionIcon(
                       Icons.content_copy_outlined,
@@ -223,7 +238,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                     ),
                     const Spacer(),
                     // Expand/Collapse Toggle Button
-                    widget.notes == null
+                    _notes == null
                         ? const SizedBox()
                         : IconButton(
                             icon: Icon(
@@ -242,7 +257,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
               ),
 
               // Expandable Notes Area
-              if (widget.notes != null) ...[
+              if (_notes != null) ...[
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
@@ -268,7 +283,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                               ),
                             ),
                             child: SelectableText(
-                              widget.notes!,
+                              _notes,
                               style: TextStyle(
                                 fontSize: 15,
                                 height: 1.5,
