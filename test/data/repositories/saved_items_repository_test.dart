@@ -150,4 +150,63 @@ void main() {
       check(result).equals(expectedId);
     });
   });
+
+  group('updateItem', () {
+    test(
+      'throws an exception if the user is not authenticated',
+      () async {
+        when(() => mockAuth.currentUser).thenReturn(null);
+
+        final item = SavedItem(
+          id: 'item-id-123',
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.unread,
+        );
+
+        expect(() async => await repository.updateItem(item),
+            throwsA(isA<Exception>()));
+      },
+    );
+
+    test('throws an exception if the item id is null', () async {
+      when(() => mockAuth.currentUser).thenReturn(mockUser);
+
+      final item = SavedItem(
+        type: ItemType.webpage,
+        readingStatus: ReadingStatus.unread,
+      );
+
+      expect(() async => await repository.updateItem(item),
+          throwsA(isA<Exception>()));
+    });
+
+    test('updates the item document in Firestore', () async {
+      final usersCollection = MockCollectionReference();
+      final userDoc = MockDocumentReference();
+      final savedItemsCollection = MockCollectionReference();
+      final itemDoc = MockDocumentReference();
+
+      when(() => mockAuth.currentUser).thenReturn(mockUser);
+      when(() => mockUser.uid).thenReturn('test-uid');
+      when(() => mockDb.collection('users')).thenReturn(usersCollection);
+      when(() => usersCollection.doc('test-uid')).thenReturn(userDoc);
+      when(
+        () => userDoc.collection('savedItems'),
+      ).thenReturn(savedItemsCollection);
+      when(
+        () => savedItemsCollection.doc('item-id-123'),
+      ).thenReturn(itemDoc);
+      when(() => itemDoc.update(any())).thenAnswer((_) async {});
+
+      final item = SavedItem(
+        id: 'item-id-123',
+        type: ItemType.webpage,
+        readingStatus: ReadingStatus.unread,
+      );
+
+      await repository.updateItem(item);
+
+      verify(() => itemDoc.update(any())).called(1);
+    });
+  });
 }

@@ -13,6 +13,7 @@ void main() {
       test('correctly builds a SavedItem with all given values', () {
         final createdAt = DateTime(2024, 1, 1);
         final item = SavedItem(
+          id: 'test-id-123',
           type: ItemType.webpage,
           uri: Uri.parse('https://example.com'),
           readingStatus: ReadingStatus.read,
@@ -22,6 +23,7 @@ void main() {
           createdAt: createdAt,
         );
 
+        check(item.id).equals('test-id-123');
         check(item.type).equals(ItemType.webpage);
         check(item.uri).equals(Uri.parse('https://example.com'));
         check(item.readingStatus).equals(ReadingStatus.read);
@@ -37,6 +39,7 @@ void main() {
           readingStatus: ReadingStatus.unread,
         );
 
+        check(item.id).isNull();
         check(item.type).equals(ItemType.webpage);
         check(item.uri).isNull();
         check(item.readingStatus).equals(ReadingStatus.unread);
@@ -50,6 +53,7 @@ void main() {
     group('toFirestore', () {
       test('returns a map with all expected keys and correct types', () {
         final item = SavedItem(
+          id: 'test-id',
           type: ItemType.webpage,
           uri: Uri.parse('https://example.com'),
           readingStatus: ReadingStatus.reading,
@@ -60,6 +64,7 @@ void main() {
 
         final result = item.toFirestore();
 
+        check(result.containsKey('id')).isTrue();
         check(result.containsKey('type')).isTrue();
         check(result.containsKey('url')).isTrue();
         check(result.containsKey('readingStatus')).isTrue();
@@ -68,6 +73,7 @@ void main() {
         check(result.containsKey('remindReading')).isTrue();
         check(result.containsKey('createdAt')).isTrue();
 
+        check(result['id']).equals('test-id');
         check(result['type']).equals('webpage');
         check(result['url']).equals('https://example.com');
         check(result['readingStatus']).equals('reading');
@@ -77,7 +83,54 @@ void main() {
         check(result['createdAt']).isA<FieldValue>();
       });
 
-      test('doesn\'t include fields that are empty', () {
+      test('includes id in the map when it is non-null', () {
+        final item = SavedItem(
+          id: 'abc-123',
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.unread,
+        );
+
+        final result = item.toFirestore();
+
+        check(result.containsKey('id')).isTrue();
+        check(result['id']).equals('abc-123');
+      });
+
+      test('does not include id in the map when it is null', () {
+        final item = SavedItem(
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.unread,
+        );
+
+        final result = item.toFirestore();
+
+        check(result.containsKey('id')).isFalse();
+      });
+
+      test('always includes createdAt when isEdit is false', () {
+        final item = SavedItem(
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.unread,
+        );
+
+        final result = item.toFirestore(isEdit: false);
+
+        check(result.containsKey('createdAt')).isTrue();
+        check(result['createdAt']).isA<FieldValue>();
+      });
+
+      test('does not include createdAt when isEdit is true', () {
+        final item = SavedItem(
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.unread,
+        );
+
+        final result = item.toFirestore(isEdit: true);
+
+        check(result.containsKey('createdAt')).isFalse();
+      });
+
+      test('does not include fields that are empty', () {
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
@@ -90,13 +143,15 @@ void main() {
 
         check(result['type']).equals('webpage');
         check(result['readingStatus']).equals('unread');
+        check(result.containsKey('createdAt')).isTrue();
         check(result['createdAt']).isA<FieldValue>();
         check(result.containsKey('url')).isFalse();
         check(result.containsKey('title')).isFalse();
         check(result.containsKey('notes')).isFalse();
         check(result.containsKey('remindReading')).isFalse();
       });
-      test('doesn\'t include fields that are null', () {
+
+      test('does not include fields that are null', () {
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
@@ -106,22 +161,12 @@ void main() {
 
         check(result['type']).equals('webpage');
         check(result['readingStatus']).equals('unread');
+        check(result.containsKey('createdAt')).isTrue();
         check(result['createdAt']).isA<FieldValue>();
         check(result.containsKey('url')).isFalse();
         check(result.containsKey('title')).isFalse();
         check(result.containsKey('notes')).isFalse();
         check(result.containsKey('remindReading')).isFalse();
-      });
-
-      test('createdAt is a FieldValue.serverTimestamp()', () {
-        final item = SavedItem(
-          type: ItemType.webpage,
-          readingStatus: ReadingStatus.unread,
-        );
-
-        final result = item.toFirestore();
-
-        check(result['createdAt']).isA<FieldValue>();
       });
     });
 
@@ -138,10 +183,12 @@ void main() {
           'remindReading': true,
           'createdAt': timestamp,
         };
+        when(() => snapshot.id).thenReturn('doc-id-456');
         when(() => snapshot.data()).thenReturn(data);
 
         final item = SavedItem.fromFirestore(snapshot, null);
 
+        check(item.id).equals('doc-id-456');
         check(item.type).equals(ItemType.webpage);
         check(item.uri).equals(Uri.parse('https://example.com'));
         check(item.readingStatus).equals(ReadingStatus.reading);
@@ -151,9 +198,20 @@ void main() {
         check(item.createdAt).equals(timestamp.toDate());
       });
 
+      test('sets id from snapshot.id', () {
+        final snapshot = _MockDocumentSnapshot();
+        when(() => snapshot.id).thenReturn('snapshot-id-789');
+        when(() => snapshot.data()).thenReturn(<String, dynamic>{});
+
+        final item = SavedItem.fromFirestore(snapshot, null);
+
+        check(item.id).equals('snapshot-id-789');
+      });
+
       test('If the url is not valid, the url will set to null', () {
         final snapshot = _MockDocumentSnapshot();
         final data = <String, dynamic>{'url': '::Not valid URI::'};
+        when(() => snapshot.id).thenReturn('doc-id');
         when(() => snapshot.data()).thenReturn(data);
 
         final item = SavedItem.fromFirestore(snapshot, null);
@@ -163,10 +221,12 @@ void main() {
 
       test('falls back on default values when data is missing', () {
         final snapshot = _MockDocumentSnapshot();
+        when(() => snapshot.id).thenReturn('doc-id');
         when(() => snapshot.data()).thenReturn(<String, dynamic>{});
 
         final item = SavedItem.fromFirestore(snapshot, null);
 
+        check(item.id).equals('doc-id');
         check(item.type).equals(ItemType.webpage);
         check(item.readingStatus).equals(ReadingStatus.unread);
         check(item.uri).isNull();
@@ -178,6 +238,7 @@ void main() {
 
       test('uses defaults for invalid enum strings', () {
         final snapshot = _MockDocumentSnapshot();
+        when(() => snapshot.id).thenReturn('doc-id');
         when(() => snapshot.data()).thenReturn(<String, dynamic>{
           'type': 'unknown',
           'readingStatus': 'unknown',
@@ -185,6 +246,7 @@ void main() {
 
         final item = SavedItem.fromFirestore(snapshot, null);
 
+        check(item.id).equals('doc-id');
         check(item.type).equals(ItemType.webpage);
         check(item.readingStatus).equals(ReadingStatus.unread);
       });
