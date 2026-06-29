@@ -26,23 +26,17 @@ class SavedWebpageCard extends StatefulWidget {
 class _SavedWebpageCardState extends State<SavedWebpageCard> {
   late final SavedItemViewModel _viewModel;
 
-  late final Uri? _uri;
-  late final ReadingStatus _readingStatus;
-  late final String? _title;
-  late final String? _notes;
+  late SavedItem _currentItem;
 
   @override
   void initState() {
     super.initState();
     _viewModel = widget.viewModel;
-    _uri = widget.currentItem.uri;
-    _readingStatus = widget.currentItem.readingStatus;
-    _title = widget.currentItem.title;
-    _notes = widget.currentItem.notes;
+    _currentItem = widget.currentItem;
   }
 
   _openUrl() async {
-    if (_uri == null) {
+    if (_currentItem.uri == null) {
       return null;
     }
 
@@ -57,13 +51,14 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
 
   @override
   Widget build(BuildContext context) {
+    _currentItem = _viewModel.currentItem;
     return ListenableBuilder(
       listenable: widget.viewModel,
       builder: (context, _) {
         // Extracted the header into a helper method so we can easily wrap it in a Link
         Widget buildHeader() {
           return MouseRegion(
-            cursor: _uri != null
+            cursor: _currentItem.uri != null
                 ? SystemMouseCursors
                       .click // Changes cursor to pointing finger
                 : SystemMouseCursors.basic,
@@ -83,7 +78,8 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Title and External Link Icon
-                    if (_title != null && _title.isNotEmpty) ...[
+                    if (_currentItem.title != null &&
+                        _currentItem.title!.isNotEmpty) ...[
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -91,7 +87,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(0, 0, 8, 0),
                               child: SelectableText(
-                                _title,
+                                _currentItem.title!,
                                 onTap: _openUrl,
                                 // softWrap: true,
                                 style: TextStyle(
@@ -120,9 +116,10 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        if (_uri != null && _uri.toString().isNotEmpty)
+                        if (_currentItem.uri != null &&
+                            _currentItem.uri.toString().isNotEmpty)
                           SelectableText(
-                            _uri.host,
+                            _currentItem.uri!.host,
                             onTap: _openUrl,
                             style: TextStyle(
                               fontSize: 14,
@@ -144,7 +141,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              _readingStatus.name,
+                              _currentItem.readingStatus.name,
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
@@ -183,10 +180,10 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
             children: [
               // Top Header Section
               // Wrap the header in a Link widget to generate the native HTML <a> tag on Web
-              _uri == null
+              _currentItem.uri == null
                   ? buildHeader()
                   : Link(
-                      uri: _uri,
+                      uri: _currentItem.uri,
                       target: LinkTarget.blank,
                       builder: (context, followLink) => buildHeader(),
                     ),
@@ -210,8 +207,8 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                     _buildActionIcon(
                       Icons.edit_outlined,
                       "Edit",
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        SavedItem? newItem = await Navigator.push<SavedItem>(
                           context,
                           MaterialPageRoute(
                             builder: (_) => SaveWebpageScreen(
@@ -220,6 +217,11 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                             ),
                           ),
                         );
+                        if (newItem != null) {
+                          setState(() {
+                            _viewModel.currentItem = newItem;
+                          });
+                        }
                       },
                     ),
                     _buildActionIcon(Icons.delete_outline, "Delete"),
@@ -238,7 +240,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                     ),
                     const Spacer(),
                     // Expand/Collapse Toggle Button
-                    _notes == null
+                    _currentItem.notes == null
                         ? const SizedBox()
                         : IconButton(
                             icon: Icon(
@@ -257,7 +259,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
               ),
 
               // Expandable Notes Area
-              if (_notes != null) ...[
+              if (_currentItem.notes != null) ...[
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
@@ -283,7 +285,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                               ),
                             ),
                             child: SelectableText(
-                              _notes,
+                              _currentItem.notes!,
                               style: TextStyle(
                                 fontSize: 15,
                                 height: 1.5,

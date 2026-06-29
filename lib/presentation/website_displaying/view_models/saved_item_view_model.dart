@@ -6,17 +6,27 @@ import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SavedItemViewModel extends ChangeNotifier {
-  SavedItemViewModel(this.currentItem) {
-    title = currentItem.title;
-    uri = currentItem.uri;
-    notes = currentItem.notes;
+  SavedItemViewModel(this._currentItem) {
+    title = _currentItem.title;
+    uri = _currentItem.uri;
+    notes = _currentItem.notes;
   }
 
-  final SavedItem currentItem;
+  SavedItem _currentItem;
 
-  late final String? title;
-  late final Uri? uri;
-  late final String? notes;
+  SavedItem get currentItem => _currentItem;
+
+  set currentItem(SavedItem newItem) {
+    _currentItem = newItem;
+    title = _currentItem.title;
+    uri = _currentItem.uri;
+    notes = _currentItem.notes;
+    notifyListeners();
+  }
+
+  late String? title;
+  late Uri? uri;
+  late String? notes;
   bool _isExpanded = false;
   bool get isExpanded => _isExpanded;
 

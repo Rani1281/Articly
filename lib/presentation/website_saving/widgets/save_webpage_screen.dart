@@ -28,7 +28,7 @@ class SaveWebpageScreen extends StatefulWidget {
 }
 
 class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
-  final String _initialValue = 'Unread';
+  String _initialValue = 'Unread';
   // final List<String> _statuses = ['Unread', 'Reading', 'Read'];
   final Map<String, ReadingStatus> _statuses = {
     'Unread': ReadingStatus.unread,
@@ -36,9 +36,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     'Read': ReadingStatus.read,
   };
 
-  final ValueNotifier<String?> _selectedStatusNotifier = ValueNotifier<String?>(
-    'Unread',
-  );
+  late final ValueNotifier<String> _selectedStatusNotifier;
 
   final _urlController = TextEditingController();
   final _titleController = TextEditingController();
@@ -54,15 +52,24 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
   void initState() {
     super.initState();
 
+    final values = {
+      ReadingStatus.unread: 'Unread',
+      ReadingStatus.reading: 'Reading',
+      ReadingStatus.read: 'Read',
+    };
+
     // prepopulate fields
     final item = widget.currentItem;
     if (widget.isEdit && item != null) {
       _urlController.text = item.uri?.toString() ?? '';
       _titleController.text = item.title ?? '';
       _notesController.text = item.notes ?? '';
-      _selectedStatusNotifier.value = item.readingStatus.name;
+
+      _initialValue = values[item.readingStatus] ?? 'Unread';
       _remindMe = item.remindReading ?? false;
     }
+
+    _selectedStatusNotifier = ValueNotifier(_initialValue);
 
     // _titleController.text =
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -125,7 +132,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     }
 
     if (completed && mounted) {
-      Navigator.pop(context);
+      Navigator.pop(context, item);
     }
   }
 
