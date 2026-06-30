@@ -79,10 +79,20 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
   }
 
   void _onProviderChanged() {
-    if (provider.saveCommand.hasError) {
-      MySnackBar(context, message: provider.saveCommand.error!).show();
-    } else if (provider.editCommand.hasError) {
-      MySnackBar(context, message: provider.editCommand.error!).show();
+    if (widget.isEdit) {
+      final cmd = provider.editCommand;
+      if (!cmd.completed && cmd.hasError) {
+        MySnackBar(context, message: provider.editCommand.error!).show();
+      } else if (cmd.completed) {
+        MySnackBar(context, message: 'Edited the webpage successfully!').show();
+      }
+    } else {
+      final cmd = provider.saveCommand;
+      if (!cmd.completed && cmd.hasError) {
+        MySnackBar(context, message: provider.saveCommand.error!).show();
+      } else if (cmd.completed) {
+        MySnackBar(context, message: 'Saved the webpage successfully!').show();
+      }
     }
   }
 

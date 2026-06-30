@@ -1,5 +1,6 @@
 import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
+import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/utils/my_action_button.dart';
@@ -97,7 +98,10 @@ class _HomePageState extends State<HomePage> {
                             padding: const EdgeInsets.symmetric(vertical: 5),
                             child: SavedWebpageCard(
                               key: ValueKey('card$index'),
-                              currentItem: item,
+                              viewModel: SavedItemViewModel(
+                                currentItem: item,
+                                provider: provider,
+                              ),
                             ),
                           );
                         },
