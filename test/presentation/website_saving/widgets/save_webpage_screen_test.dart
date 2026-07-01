@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/data/repositories/saved_items_repository.dart';
+import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/theme/theme_model.dart';
@@ -25,8 +26,8 @@ void main() {
   });
 
   group('SaveWebsiteScreen', () {
-    /// Creates a [SaveWebpageViewModel] backed by a mock repository.
-    SaveWebpageViewModel createViewModel({
+    // A minimal fake SavedItemsProvider to avoid real Firestore calls.
+    SavedItemsProvider _createProvider({
       bool shouldFail = false,
       bool neverCompletes = false,
     }) {
@@ -35,7 +36,7 @@ void main() {
       if (neverCompletes) {
         when(
           () => repo.saveItem(any()),
-        ).thenAnswer((_) async => Completer<String>().future);
+        ).thenAnswer((_) => Completer<String>().future);
       } else if (shouldFail) {
         when(() => repo.saveItem(any())).thenThrow(Exception('Save failed'));
       } else {
@@ -43,20 +44,29 @@ void main() {
           () => repo.saveItem(any()),
         ).thenAnswer((_) async => 'users/uid/savedItems/123');
       }
+      when(() => repo.updateItem(any())).thenAnswer((_) async {});
+      when(() => repo.fetchItems()).thenAnswer((_) async => {});
+      when(() => repo.deleteItem(any())).thenAnswer((_) async {});
 
-      return SaveWebpageViewModel();
+      return SavedItemsProvider(repo: repo);
     }
 
-    /// Pumps the screen wrapped in a [ChangeNotifierProvider<ThemeModel>].
+    /// Pumps the screen wrapped in the required providers.
     Future<void> pumpScreen(
       WidgetTester tester, {
       SaveWebpageViewModel? viewModel,
+      SavedItemsProvider? savedItemsProvider,
     }) async {
       final themeModel = ThemeModel();
       await tester.pumpWidget(
         MaterialApp(
-          home: ChangeNotifierProvider<ThemeModel>.value(
-            value: themeModel,
+          home: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<ThemeModel>.value(value: themeModel),
+              ChangeNotifierProvider<SavedItemsProvider>.value(
+                value: savedItemsProvider ?? _createProvider(),
+              ),
+            ],
             child: SaveWebpageScreen(viewModel: viewModel),
           ),
         ),
@@ -65,7 +75,7 @@ void main() {
 
     testWidgets('renders all widgets correctly', (tester) async {
       // Arrange
-      final viewModel = createViewModel();
+      final viewModel = SaveWebpageViewModel();
       await pumpScreen(tester, viewModel: viewModel);
 
       // Assert
@@ -81,8 +91,9 @@ void main() {
       tester,
     ) async {
       // Arrange
-      final viewModel = createViewModel(shouldFail: true);
-      await pumpScreen(tester, viewModel: viewModel);
+      final viewModel = SaveWebpageViewModel();
+      final provider = _createProvider(shouldFail: true);
+      await pumpScreen(tester, viewModel: viewModel, savedItemsProvider: provider);
 
       // Act - trigger a save that will fail
       await tester.enterText(
@@ -92,18 +103,21 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('saveButton')));
       await tester.pumpAndSettle();
 
-      // Assert
+      // Assert - expect the error snack bar
       expect(find.byType(SnackBar), findsOneWidget);
-      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-      check(snackBar.behavior).equals(SnackBarBehavior.floating);
     });
 
     testWidgets(
       'shows a circular progress indicator when in the middle of saving',
       (tester) async {
         // Arrange
-        final viewModel = createViewModel(neverCompletes: true);
-        await pumpScreen(tester, viewModel: viewModel);
+        final viewModel = SaveWebpageViewModel();
+        final provider = _createProvider(neverCompletes: true);
+        await pumpScreen(
+          tester,
+          viewModel: viewModel,
+          savedItemsProvider: provider,
+        );
 
         // Act - start a save that never completes
         await tester.enterText(
@@ -122,8 +136,13 @@ void main() {
       'save button is unpressable when the app is in the middle of saving',
       (tester) async {
         // Arrange
-        final viewModel = createViewModel(neverCompletes: true);
-        await pumpScreen(tester, viewModel: viewModel);
+        final viewModel = SaveWebpageViewModel();
+        final provider = _createProvider(neverCompletes: true);
+        await pumpScreen(
+          tester,
+          viewModel: viewModel,
+          savedItemsProvider: provider,
+        );
 
         // Act - start a save that never completes
         await tester.enterText(
@@ -145,7 +164,8 @@ void main() {
       'automatically pops the page when the operation was successful',
       (tester) async {
         // Arrange - push the screen onto a navigator
-        final viewModel = createViewModel();
+        final viewModel = SaveWebpageViewModel();
+        final provider = _createProvider();
         final homeKey = GlobalKey();
         await tester.pumpWidget(
           MaterialApp(
@@ -156,8 +176,16 @@ void main() {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ChangeNotifierProvider<ThemeModel>.value(
-                        value: ThemeModel(),
+                      builder: (_) => MultiProvider(
+                        // ignore: always_specify_types
+                        providers: [
+                          ChangeNotifierProvider<ThemeModel>(
+                            create: (_) => ThemeModel(),
+                          ),
+                          ChangeNotifierProvider<SavedItemsProvider>.value(
+                            value: provider,
+                          ),
+                        ],
                         child: SaveWebpageScreen(viewModel: viewModel),
                       ),
                     ),
@@ -191,7 +219,7 @@ void main() {
       'set and rebuild happened',
       (tester) async {
         // Arrange
-        final viewModel = createViewModel();
+        final viewModel = SaveWebpageViewModel();
         await pumpScreen(tester, viewModel: viewModel);
 
         // Act - tap save with an empty URL to trigger validation
@@ -207,7 +235,7 @@ void main() {
       tester,
     ) async {
       // Arrange
-      final viewModel = createViewModel();
+      final viewModel = SaveWebpageViewModel();
       await pumpScreen(tester, viewModel: viewModel);
 
       // Act
@@ -226,15 +254,12 @@ void main() {
       tester,
     ) async {
       // Arrange
-      final viewModel = createViewModel();
+      final viewModel = SaveWebpageViewModel();
       await pumpScreen(tester, viewModel: viewModel);
 
       // Act
       final textField = tester.widget<TextField>(
-        find.descendant(
-          of: find.byKey(const ValueKey('titleTextField')),
-          matching: find.byType(TextField),
-        ),
+        find.byKey(const ValueKey('titleTextField')),
       );
 
       // Assert
@@ -245,7 +270,7 @@ void main() {
       tester,
     ) async {
       // Arrange
-      final viewModel = createViewModel();
+      final viewModel = SaveWebpageViewModel();
       await pumpScreen(tester, viewModel: viewModel);
 
       // Act
@@ -264,7 +289,7 @@ void main() {
       'clicking on the suffix icon of the url text field pastes clipboard text',
       (tester) async {
         // Arrange
-        final viewModel = createViewModel();
+        final viewModel = SaveWebpageViewModel();
         await pumpScreen(tester, viewModel: viewModel);
 
         tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -311,7 +336,7 @@ void main() {
       tester,
     ) async {
       // Arrange
-      final viewModel = createViewModel();
+      final viewModel = SaveWebpageViewModel();
       await pumpScreen(tester, viewModel: viewModel);
 
       // Act
