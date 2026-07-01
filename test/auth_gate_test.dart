@@ -4,11 +4,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:checks/checks.dart';
+import 'package:provider/provider.dart';
 
 // TODO: Replace these with your actual application imports
 import 'package:articly/main.dart';
 import 'package:articly/data/services/auth_service.dart';
 import 'package:articly/presentation/authentication/widgets/auth_page.dart';
+import 'package:articly/presentation/website_displaying/widgets/home_page.dart';
+import 'package:articly/data/models/saved_item.dart';
+import 'package:articly/theme/theme_model.dart';
+import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/utils/command.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 // --- 1. Setup Custom Extension for package:checks ---
@@ -26,6 +32,55 @@ extension FinderChecks on Subject<Finder> {
 }
 
 // --- 2. Create Fakes ---
+
+// A minimal SavedItemsProvider fake to avoid real Firestore calls in widget tests.
+class _FakeSavedItemsProvider extends ChangeNotifier implements SavedItemsProvider {
+  Command _loadCommand = Command();
+  Command _saveCommand = Command();
+  Command _editCommand = Command();
+  Command _deleteCommand = Command();
+  Map<String, SavedItem> _items = {};
+
+  @override
+  Command get loadCommand => _loadCommand;
+  @override
+  Command get saveCommand => _saveCommand;
+  @override
+  Command get editCommand => _editCommand;
+  @override
+  Command get deleteCommand => _deleteCommand;
+  @override
+  Map<String, SavedItem> get items => _items;
+
+  @override
+  Future<void> load() async {
+    _loadCommand = Command()..start()..finish(null);
+    _items = {};
+    notifyListeners();
+  }
+
+  @override
+  Future<void> save(SavedItem item) async {
+    _saveCommand = Command()..start()..finish(null);
+    _items['test-id'] = item;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> edit(SavedItem item) async {
+    _editCommand = Command()..start()..finish(null);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    _deleteCommand = Command()..start()..finish(null);
+    notifyListeners();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
 
 /// Fake representation of the FirebaseAuth User.
 /// By implementing `User`, Dart accepts this anywhere a FirebaseAuth User is required.
@@ -72,7 +127,13 @@ void main() {
   });
 
   Widget createWidgetUnderTest() {
-    return MaterialApp(home: AuthGate(authService: fakeAuthService));
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThemeModel>(create: (_) => ThemeModel()),
+        ChangeNotifierProvider<SavedItemsProvider>(create: (_) => _FakeSavedItemsProvider()),
+      ],
+      child: MaterialApp(home: AuthGate(authService: fakeAuthService)),
+    );
   }
 
   group('AuthGate Widget Tests', () {
@@ -149,7 +210,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      check(find.text('Home')).findsOneWidget();
+      check(find.byType(HomePage)).findsOneWidget();
     });
   });
 }

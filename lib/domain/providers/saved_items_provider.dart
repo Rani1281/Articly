@@ -16,6 +16,7 @@ class SavedItemsProvider extends ChangeNotifier {
   final Command loadCommand = Command();
   final Command saveCommand = Command();
   final Command editCommand = Command();
+  final Command deleteCommand = Command();
 
   final log = Logger('SavedItemsProvider');
 
@@ -47,7 +48,9 @@ class SavedItemsProvider extends ChangeNotifier {
 
     try {
       final id = await _repo.saveItem(item);
-      _items[id] = item;
+      // create a new item that has the new id
+      final newItem = item.copyWith(id: id);
+      _items[id] = newItem;
       log.finest('Successfully saved item in Firestore and in memory!');
     } catch (e) {
       log.shout('An error occurred: $e');
@@ -76,6 +79,29 @@ class SavedItemsProvider extends ChangeNotifier {
       error = 'Something went wrong. Please try again later';
     } finally {
       editCommand.finish(error);
+      notifyListeners();
+    }
+  }
+
+  /// Delete an item by its id
+  Future<void> delete(String id) async {
+    log.info('Deleting started...');
+    String? error;
+    deleteCommand.start();
+    notifyListeners();
+
+    try {
+      await _repo.deleteItem(id);
+      // delete in memory after in Firestore in case of failure
+      _items.remove(id);
+      log.finest(
+        'Successfully removed the item "$id" in Firestore and in memory!',
+      );
+    } catch (e) {
+      log.shout('An error occurred: $e');
+      error = 'Something went wrong. Please try again later';
+    } finally {
+      deleteCommand.finish(error);
       notifyListeners();
     }
   }

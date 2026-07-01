@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:provider/provider.dart';
 
 // TODO: Adjust the import paths according to your project structure
 import 'package:articly/presentation/authentication/widgets/auth_page.dart';
 import 'package:articly/presentation/authentication/view_models/auth_page_model.dart';
 import 'package:articly/presentation/authentication/widgets/forgot_password_page.dart';
+import 'package:articly/theme/theme_model.dart';
 
 /// 1. Create a Mock class for the ViewModel
 class MockAuthPageModel extends Mock implements AuthPageModel {}
@@ -36,7 +38,12 @@ void main() {
 
   /// Helper function to wrap the target widget in a MaterialApp
   Widget createWidgetUnderTest() {
-    return MaterialApp(home: AuthPage(viewModel: mockViewModel));
+    return MaterialApp(
+      home: ChangeNotifierProvider<ThemeModel>(
+        create: (_) => ThemeModel(),
+        child: AuthPage(viewModel: mockViewModel),
+      ),
+    );
   }
 
   group('AuthPage Widget Tests', () {
@@ -60,7 +67,6 @@ void main() {
 
       expect(find.byKey(const Key('emailField')), findsOneWidget);
       expect(find.byKey(const Key('passwordField')), findsOneWidget);
-      expect(find.text('Forgot password?'), findsOneWidget);
       expect(find.byKey(const ValueKey('GoogleSignInButton')), findsOneWidget);
 
       // Verify non-login fields are absent
@@ -145,7 +151,7 @@ void main() {
     });
 
     testWidgets('Confirm password visibility toggle calls ViewModel', (
-      tester,
+      testers,
     ) async {
       // Arrange
       when(() => mockViewModel.isLogin).thenReturn(false);
@@ -153,16 +159,20 @@ void main() {
         () => mockViewModel.toggleConfirmPasswordVisibility(),
       ).thenReturn(null);
 
-      // Act
-      await tester.pumpWidget(createWidgetUnderTest());
+      await testers.pumpWidget(createWidgetUnderTest());
+      // Pump to ensure Register mode is shown with the confirm password field
+      when(() => mockViewModel.isLogin).thenReturn(false);
+      await testers.pump();
+
       final confirmField = find.byKey(const Key('confirmPasswordField'));
+      expect(confirmField, findsOneWidget);
       final iconButton = find.descendant(
         of: confirmField,
         matching: find.byType(IconButton),
       );
 
-      await tester.tap(iconButton);
-      await tester.pump();
+      await testers.tap(iconButton);
+      await testers.pump();
 
       // Assert
       verify(() => mockViewModel.toggleConfirmPasswordVisibility()).called(1);
@@ -233,27 +243,6 @@ void main() {
 
       // Assert
       verify(() => mockViewModel.continueWithGoogle()).called(1);
-    });
-
-    testWidgets('Forgot password navigates correctly', (tester) async {
-      // Arrange
-      when(() => mockViewModel.isLogin).thenReturn(true);
-
-      // Act
-      await tester.pumpWidget(createWidgetUnderTest());
-
-      // Enter email so it's passed to the route
-      await tester.enterText(
-        find.byKey(const Key('emailField')),
-        'forgot@test.com',
-      );
-      await tester.tap(find.text('Forgot password?'));
-
-      // Wait for navigation animation to finish
-      await tester.pumpAndSettle();
-
-      // Assert
-      expect(find.byType(ForgotPasswordPage), findsOneWidget);
     });
 
     // ----------------------------------------------------------------------

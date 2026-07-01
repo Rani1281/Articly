@@ -21,6 +21,12 @@ class FakeSavedItemsProvider extends ChangeNotifier
   Map<String, SavedItem> get items => _items;
 
   @override
+  Future<void> load() async {
+    _loadCommand = Command()..start()..finish(null);
+    notifyListeners();
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => null;
 
   void setLoadRunning() {
@@ -71,7 +77,7 @@ void main() {
 
       expect(find.byType(Scaffold), findsOneWidget);
       expect(find.byType(SliverAppBar), findsOneWidget);
-      expect(find.byIcon(Icons.account_circle), findsOneWidget);
+      expect(find.widgetWithIcon(IconButton, Icons.account_circle), findsOneWidget);
       expect(find.byType(FloatingActionButton), findsOneWidget);
       expect(find.byIcon(Icons.add), findsOneWidget);
     });

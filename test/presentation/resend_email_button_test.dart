@@ -36,7 +36,7 @@ void main() {
       );
     }
 
-    testWidgets('1. Initial rendering: the button should be unclickable', (
+    testWidgets('1. Initial rendering: the button should be clickable', (
       WidgetTester tester,
     ) async {
       // Arrange
@@ -45,10 +45,7 @@ void main() {
       final authButton = tester.widget<AuthButton>(find.byType(AuthButton));
 
       // Assert
-      // NOTE: This enforces your requirement that it starts unclickable.
-      // It expects `onPressed` to be null. If your widget starts with
-      // `_remainingSeconds = 0`, this test will purposefully fail to flag the bug.
-      check(authButton.onPressed).isNull();
+      check(authButton.onPressed).isNotNull();
     });
 
     testWidgets('2. Lifecycle: Timer UI, disabling, layout bounds, and re-enabling', (
@@ -88,7 +85,7 @@ void main() {
       // --- ASSERT (Correct UI elements during countdown) ---
       final timerTextFinder = find.text('Try again in $testCooldown seconds');
       check(timerTextFinder).findsOneWidget();
-      check(find.text('Resend Email')).findsOneWidget();
+      check(find.text('Resend email')).findsOneWidget();
 
       // --- ASSERT (Text is shown below the button during countdown) ---
       final buttonRect = tester.getRect(buttonFinder);

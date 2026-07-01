@@ -1,4 +1,5 @@
 import 'package:articly/data/models/saved_item.dart';
+import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,7 +7,11 @@ import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SavedItemViewModel extends ChangeNotifier {
-  SavedItemViewModel(this._currentItem) {
+  SavedItemViewModel({
+    required SavedItem currentItem,
+    required SavedItemsProvider provider,
+  }) : _currentItem = currentItem,
+       _provider = provider {
     title = _currentItem.title;
     uri = _currentItem.uri;
     notes = _currentItem.notes;
@@ -30,7 +35,21 @@ class SavedItemViewModel extends ChangeNotifier {
   bool _isExpanded = false;
   bool get isExpanded => _isExpanded;
 
+  bool _isVisible = true;
+  bool get isVisible => _isVisible;
+  set isVisible(bool value) {
+    _isVisible = value;
+    notifyListeners();
+  }
+
+  final SavedItemsProvider _provider;
+  Command get deleteItemCommand => _provider.deleteCommand;
+
   final Command openUrlCommand = Command();
+
+  // SavedItemsProvider getDeleteCommand(BuildContext context) {
+  //   return Provider.of<SavedItemsProvider>(context);
+  // }
 
   void toggleExpand() {
     _isExpanded = !_isExpanded;
@@ -97,5 +116,27 @@ class SavedItemViewModel extends ChangeNotifier {
     }
 
     return true;
+  }
+
+  /// Delete the item in all places (UI, memory, Firestore)
+  Future<void> deleteItem() async {
+    if (_currentItem.id == null || _currentItem.id!.isEmpty) {
+      log.severe(
+        'The current item\'s id is null or empty, so can\'t delete it...',
+      );
+      return Future.value();
+    }
+
+    // Make the item no longer visible in the UI
+    _isVisible = false;
+    notifyListeners();
+
+    await _provider.delete(_currentItem.id!);
+
+    if (!deleteItemCommand.completed) {
+      // revert the changes if failed
+      _isVisible = true;
+      notifyListeners();
+    }
   }
 }
