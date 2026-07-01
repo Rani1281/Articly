@@ -152,21 +152,20 @@ void main() {
   });
 
   group('updateItem', () {
-    test(
-      'throws an exception if the user is not authenticated',
-      () async {
-        when(() => mockAuth.currentUser).thenReturn(null);
+    test('throws an exception if the user is not authenticated', () async {
+      when(() => mockAuth.currentUser).thenReturn(null);
 
-        final item = SavedItem(
-          id: 'item-id-123',
-          type: ItemType.webpage,
-          readingStatus: ReadingStatus.unread,
-        );
+      final item = SavedItem(
+        id: 'item-id-123',
+        type: ItemType.webpage,
+        readingStatus: ReadingStatus.unread,
+      );
 
-        expect(() async => await repository.updateItem(item),
-            throwsA(isA<Exception>()));
-      },
-    );
+      expect(
+        () async => await repository.updateItem(item),
+        throwsA(isA<Exception>()),
+      );
+    });
 
     test('throws an exception if the item id is null', () async {
       when(() => mockAuth.currentUser).thenReturn(mockUser);
@@ -176,8 +175,25 @@ void main() {
         readingStatus: ReadingStatus.unread,
       );
 
-      expect(() async => await repository.updateItem(item),
-          throwsA(isA<Exception>()));
+      expect(
+        () async => await repository.updateItem(item),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('throws an exception if the item id is empty', () async {
+      when(() => mockAuth.currentUser).thenReturn(mockUser);
+
+      final item = SavedItem(
+        id: '',
+        type: ItemType.webpage,
+        readingStatus: ReadingStatus.unread,
+      );
+
+      expect(
+        () async => await repository.updateItem(item),
+        throwsA(isA<Exception>()),
+      );
     });
 
     test('updates the item document in Firestore', () async {
@@ -193,9 +209,7 @@ void main() {
       when(
         () => userDoc.collection('savedItems'),
       ).thenReturn(savedItemsCollection);
-      when(
-        () => savedItemsCollection.doc('item-id-123'),
-      ).thenReturn(itemDoc);
+      when(() => savedItemsCollection.doc('item-id-123')).thenReturn(itemDoc);
       when(() => itemDoc.update(any())).thenAnswer((_) async {});
 
       final item = SavedItem(
@@ -207,6 +221,45 @@ void main() {
       await repository.updateItem(item);
 
       verify(() => itemDoc.update(any())).called(1);
+    });
+  });
+
+  group('deleteItem', () {
+    test('should throw an exception if user doesn\'t exist', () {
+      when(() => mockAuth.currentUser).thenReturn(null);
+
+      expect(
+        () async => await repository.deleteItem('item-id-123'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('should throw an exception if the id is empty', () {
+      expect(
+        () async => await repository.deleteItem(''),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('should call .delete on the document reference', () async {
+      final usersCollection = MockCollectionReference();
+      final userDoc = MockDocumentReference();
+      final savedItemsCollection = MockCollectionReference();
+      final itemDoc = MockDocumentReference();
+
+      when(() => mockAuth.currentUser).thenReturn(mockUser);
+      when(() => mockUser.uid).thenReturn('test-uid');
+      when(() => mockDb.collection('users')).thenReturn(usersCollection);
+      when(() => usersCollection.doc('test-uid')).thenReturn(userDoc);
+      when(
+        () => userDoc.collection('savedItems'),
+      ).thenReturn(savedItemsCollection);
+      when(() => savedItemsCollection.doc('item-id-123')).thenReturn(itemDoc);
+      when(() => itemDoc.delete()).thenAnswer((_) async {});
+
+      await repository.deleteItem('item-id-123');
+
+      verify(() => itemDoc.delete()).called(1);
     });
   });
 }

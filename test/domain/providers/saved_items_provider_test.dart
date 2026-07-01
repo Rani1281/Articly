@@ -269,5 +269,85 @@ void main() {
         check(provider.items).isEmpty();
       });
     });
+
+    group('delete()', () {
+      late SavedItemsProvider provider;
+      // first load fake items
+      setUp(() async {
+        final item1 = SavedItem(
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.unread,
+        );
+        final item2 = SavedItem(
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.read,
+        );
+
+        when(
+          () => mockRepo.fetchItems(),
+        ).thenAnswer((_) async => {'id1': item1, 'id2': item2});
+
+        provider = SavedItemsProvider(repo: mockRepo);
+        await provider.load();
+      });
+
+      test(
+        'finalizes deleteCommand\'s fields right and notifies listeners',
+        () async {
+          when(() => mockRepo.deleteItem('id1')).thenAnswer((_) async => {});
+
+          final provider = SavedItemsProvider(repo: mockRepo);
+
+          int countNotified = 0;
+          provider.addListener(() => countNotified++);
+
+          await provider.delete('id1');
+
+          check(provider.deleteCommand.running).isFalse();
+          check(provider.deleteCommand.completed).isTrue();
+          check(provider.deleteCommand.error).isNull();
+          check(provider.items).isEmpty();
+          check(countNotified).equals(2);
+        },
+      );
+
+      test('calls deleteItem on the repository', () async {
+        final provider = SavedItemsProvider(repo: mockRepo);
+        await provider.delete('id1');
+
+        verify(() => mockRepo.deleteItem('id1')).called(1);
+      });
+
+      test(
+        'on success, removes the item with the deleted id in the items map, and success in command',
+        () async {
+          when(() => mockRepo.deleteItem('id1')).thenAnswer((_) async => {});
+          await provider.delete('id1');
+
+          print(provider.items);
+
+          check(provider.items.length).equals(1);
+          check(provider.items.containsKey('id1')).isFalse();
+
+          check(provider.deleteCommand.completed).isTrue();
+          check(provider.deleteCommand.error).isNull();
+        },
+      );
+
+      test(
+        'on fail, sets the command fields with an error and notifies listeners',
+        () async {
+          when(
+            () => mockRepo.deleteItem('id1'),
+          ).thenThrow(Exception('Network error'));
+          final provider = SavedItemsProvider(repo: mockRepo);
+          await provider.delete('id1');
+
+          check(provider.deleteCommand.running).isFalse();
+          check(provider.deleteCommand.error).isNotNull();
+          check(provider.deleteCommand.completed).isFalse();
+        },
+      );
+    });
   });
 }

@@ -119,8 +119,8 @@ class SavedItemViewModel extends ChangeNotifier {
   }
 
   /// Delete the item in all places (UI, memory, Firestore)
-  Future<void> deleteItem(String? itemId) async {
-    if (itemId == null || itemId.isEmpty) {
+  Future<void> deleteItem() async {
+    if (_currentItem.id == null || _currentItem.id!.isEmpty) {
       log.severe(
         'The current item\'s id is null or empty, so can\'t delete it...',
       );
@@ -131,7 +131,7 @@ class SavedItemViewModel extends ChangeNotifier {
     _isVisible = false;
     notifyListeners();
 
-    await _provider.delete(itemId);
+    await _provider.delete(_currentItem.id!);
 
     if (!deleteItemCommand.completed) {
       // revert the changes if failed

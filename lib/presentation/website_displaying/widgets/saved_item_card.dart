@@ -163,7 +163,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                               final confirmed = await _showDeleteDialog();
                               if (confirmed == true) {
                                 // ! Don't await this to show immediate results in the app. Deletion will happen in the background.
-                                _viewModel.deleteItem(_currentItem.id);
+                                _viewModel.deleteItem();
                               }
                             },
                           ),

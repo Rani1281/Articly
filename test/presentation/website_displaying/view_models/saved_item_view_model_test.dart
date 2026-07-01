@@ -17,11 +17,11 @@ void main() {
     final mockFirebaseAuth = MockFirebaseAuth();
     final mockFirebaseFirestore = MockFirebaseFirestore();
 
-    final meaninglessRepository = SavedItemsRepository(
+    final mockRepo = SavedItemsRepository(
       db: mockFirebaseFirestore,
       auth: mockFirebaseAuth,
     );
-    final meaninglessProvider = SavedItemsProvider(repo: meaninglessRepository);
+    final provider = SavedItemsProvider(repo: mockRepo);
 
     group('constructor', () {
       test('correctly builds the object from a SavedItem', () {
@@ -36,13 +36,14 @@ void main() {
 
         final viewModel = SavedItemViewModel(
           currentItem: item,
-          provider: meaninglessProvider,
+          provider: provider,
         );
 
         check(viewModel.currentItem).equals(item);
         check(viewModel.title).equals('Test Title');
         check(viewModel.uri).equals(Uri.parse('https://example.com'));
         check(viewModel.notes).equals('Test Notes');
+        check(viewModel.isVisible).isTrue();
       });
     });
 
@@ -61,7 +62,7 @@ void main() {
 
           final viewModel = SavedItemViewModel(
             currentItem: item,
-            provider: meaninglessProvider,
+            provider: provider,
           );
 
           var notified = false;
@@ -86,6 +87,61 @@ void main() {
           check(viewModel.notes).equals('New Notes');
           check(notified).isTrue();
         },
+      );
+    });
+
+    group('deleteItem()', () {
+      test(
+        'returns if the id is null (doesn\'t call _provider.delete nor notify listeners)',
+        () async {
+          int notifiedCount = 0;
+
+          final viewModel = SavedItemViewModel(
+            currentItem: SavedItem(
+              type: ItemType.webpage,
+              readingStatus: ReadingStatus.unread,
+            ),
+            provider: provider,
+          );
+
+          viewModel.addListener(() => notifiedCount++);
+
+          await viewModel.deleteItem();
+
+          check(notifiedCount).equals(0);
+        },
+      );
+
+      test(
+        'returns if the id is empty (doesn\'t call _provider.delete nor notify listeners)',
+        () async {
+          int notifiedCount = 0;
+
+          final viewModel = SavedItemViewModel(
+            currentItem: SavedItem(
+              id: '',
+              type: ItemType.webpage,
+              readingStatus: ReadingStatus.unread,
+            ),
+            provider: provider,
+          );
+
+          viewModel.addListener(() => notifiedCount++);
+
+          await viewModel.deleteItem();
+
+          check(notifiedCount).equals(0);
+          verifyNever(() => provider.delete(''));
+        },
+      );
+
+      test('sets the visibility to false and notifies listeners', () {});
+
+      test('calls provider.delete()', () {});
+
+      test(
+        'resets visibility to true and notified listeners if the operation wasn\'t successful (if not completed)',
+        () {},
       );
     });
   });
