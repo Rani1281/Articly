@@ -48,7 +48,9 @@ class SavedItemsProvider extends ChangeNotifier {
 
     try {
       final id = await _repo.saveItem(item);
-      _items[id] = item;
+      // create a new item that has the new id
+      final newItem = item.copyWith(id: id);
+      _items[id] = newItem;
       log.finest('Successfully saved item in Firestore and in memory!');
     } catch (e) {
       log.shout('An error occurred: $e');

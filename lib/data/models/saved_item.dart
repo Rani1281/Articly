@@ -27,7 +27,7 @@ class SavedItem {
 
   Map<String, dynamic> toFirestore({bool isEdit = false}) {
     return {
-      if (id != null) 'id': id,
+      // if (id != null) 'id': id,
       'type': type.name,
       if (uri != null && uri!.toString().isNotEmpty) 'url': uri.toString(),
       'readingStatus': readingStatus.name,
@@ -70,6 +70,28 @@ class SavedItem {
       notes: data?['notes'] as String?,
       remindReading: data?['remindReading'] as bool?,
       createdAt: (data?['createdAt'] as Timestamp?)?.toDate(),
+    );
+  }
+
+  SavedItem copyWith({
+    String? id,
+    ItemType? type,
+    ReadingStatus? readingStatus,
+    Uri? uri,
+    String? title,
+    String? notes,
+    bool? remindReading,
+    DateTime? createdAt,
+  }) {
+    return SavedItem(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      readingStatus: readingStatus ?? this.readingStatus,
+      uri: uri ?? this.uri,
+      title: title ?? this.title,
+      notes: notes ?? this.notes,
+      remindReading: remindReading ?? this.remindReading,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 
