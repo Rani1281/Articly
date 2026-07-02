@@ -35,44 +35,52 @@ class LabeledDropdown extends StatelessWidget {
           ),
           SizedBox(height: 5),
         ],
-        DropdownButtonFormField<String>(
-          borderRadius: BorderRadius.circular(8),
-          initialValue: initialValue,
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: TextStyle(
-              // color: Color(0xFF98A2B3),
-              color: hintColor,
-              fontWeight: FontWeight.normal,
+        ButtonTheme(
+          alignedDropdown:
+              true, // Aligns the dropdown menu width perfectly to the button's boundaries
+          child: DropdownButtonFormField<String>(
+            isExpanded:
+                true, // Expands the content inner space and avoids RenderFlex overflow with long texts
+            borderRadius: BorderRadius.circular(12),
+            dropdownColor: Theme.of(context)
+                .colorScheme
+                .surfaceContainer, // Added dropdownColor for better visual
+            initialValue: initialValue,
+            decoration: InputDecoration(
+              hintText: hintText,
+              hintStyle: TextStyle(
+                color: hintColor,
+                fontWeight: FontWeight.normal,
+              ),
+              filled: true,
+              fillColor: (isDark ?? false)
+                  ? Theme.of(context).colorScheme.surfaceContainer
+                  : Colors.white,
+              contentPadding: const EdgeInsets.all(14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: borderColor),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: borderColor, width: 1.5),
+              ),
             ),
-            filled: true,
-            fillColor: (isDark ?? false)
-                ? Theme.of(context).colorScheme.surfaceContainer
-                : Colors.white,
-            contentPadding: const EdgeInsets.all(14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: borderColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: borderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: borderColor, width: 1.5),
-            ),
+            icon: Icon(Icons.keyboard_arrow_down, color: hintColor),
+            items: items.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(value: value, child: Text(value));
+            }).toList(),
+            onChanged: (String? newValue) {
+              // setState(() {
+              selectedItem?.value = newValue;
+              debugPrint('New value: ${selectedItem?.value}');
+              // });
+            },
           ),
-          icon: Icon(Icons.keyboard_arrow_down, color: hintColor),
-          items: items.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(value: value, child: Text(value));
-          }).toList(),
-          onChanged: (String? newValue) {
-            // setState(() {
-            selectedItem?.value = newValue;
-            debugPrint('New value: ${selectedItem?.value}');
-            // });
-          },
         ),
       ],
     );

@@ -133,70 +133,74 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                         horizontal: 8.0,
                         vertical: 4.0,
                       ),
-                      child: Row(
-                        children: [
-                          _buildActionIcon(
-                            Icons.edit_outlined,
-                            "Edit",
-                            onPressed: () async {
-                              SavedItem? newItem =
-                                  await Navigator.push<SavedItem>(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => SaveWebpageScreen(
-                                        currentItem: _viewModel.currentItem,
-                                        isEdit: true,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: widget.viewModel.toggleExpand,
+                        child: Row(
+                          children: [
+                            _buildActionIcon(
+                              Icons.edit_outlined,
+                              "Edit",
+                              onPressed: () async {
+                                SavedItem? newItem =
+                                    await Navigator.push<SavedItem>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SaveWebpageScreen(
+                                          currentItem: _viewModel.currentItem,
+                                          isEdit: true,
+                                        ),
                                       ),
+                                    );
+                                if (newItem != null) {
+                                  setState(() {
+                                    _viewModel.currentItem = newItem;
+                                  });
+                                }
+                              },
+                            ),
+                            _buildActionIcon(
+                              Icons.delete_outline,
+                              "Delete",
+                              onPressed: () async {
+                                final confirmed = await _showDeleteDialog();
+                                if (confirmed == true) {
+                                  // ! Don't await this to show immediate results in the app. Deletion will happen in the background.
+                                  _viewModel.deleteItem();
+                                }
+                              },
+                            ),
+                            _buildActionIcon(
+                              Icons.content_copy_outlined,
+                              "Copy",
+                              onPressed: () async {
+                                await widget.viewModel.copyContents();
+                                if (mounted) {
+                                  MySnackBar(
+                                    context,
+                                    message: 'Copied to clipboard',
+                                  ).show();
+                                }
+                              },
+                            ),
+                            const Spacer(),
+                            // Expand/Collapse Toggle Button
+                            _currentItem.notes == null
+                                ? const SizedBox()
+                                : IconButton(
+                                    icon: Icon(
+                                      widget.viewModel.isExpanded
+                                          ? Icons.keyboard_arrow_up
+                                          : Icons.keyboard_arrow_down,
+                                      color: Colors.grey.shade700,
                                     ),
-                                  );
-                              if (newItem != null) {
-                                setState(() {
-                                  _viewModel.currentItem = newItem;
-                                });
-                              }
-                            },
-                          ),
-                          _buildActionIcon(
-                            Icons.delete_outline,
-                            "Delete",
-                            onPressed: () async {
-                              final confirmed = await _showDeleteDialog();
-                              if (confirmed == true) {
-                                // ! Don't await this to show immediate results in the app. Deletion will happen in the background.
-                                _viewModel.deleteItem();
-                              }
-                            },
-                          ),
-                          _buildActionIcon(
-                            Icons.content_copy_outlined,
-                            "Copy",
-                            onPressed: () async {
-                              await widget.viewModel.copyContents();
-                              if (mounted) {
-                                MySnackBar(
-                                  context,
-                                  message: 'Copied to clipboard',
-                                ).show();
-                              }
-                            },
-                          ),
-                          const Spacer(),
-                          // Expand/Collapse Toggle Button
-                          _currentItem.notes == null
-                              ? const SizedBox()
-                              : IconButton(
-                                  icon: Icon(
-                                    widget.viewModel.isExpanded
-                                        ? Icons.keyboard_arrow_up
-                                        : Icons.keyboard_arrow_down,
-                                    color: Colors.grey.shade700,
+                                    onPressed: widget.viewModel.toggleExpand,
+                                    tooltip: widget.viewModel.isExpanded
+                                        ? "Show less"
+                                        : "Show notes",
                                   ),
-                                  onPressed: widget.viewModel.toggleExpand,
-                                  tooltip: widget.viewModel.isExpanded
-                                      ? "Show less"
-                                      : "Show notes",
-                                ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
 
@@ -284,6 +288,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                           onTap: _openUrl,
                           // softWrap: true,
                           style: TextStyle(
+                            decoration: TextDecoration.underline,
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Theme.of(context).colorScheme.onSurface,
@@ -294,7 +299,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                     ),
                     const SizedBox(width: 5),
                     Icon(
-                      Icons.north_east,
+                      Icons.open_in_new,
                       size: 20,
                       color: Colors.grey.shade500,
                     ),

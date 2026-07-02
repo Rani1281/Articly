@@ -212,6 +212,9 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
                               ?.copyWith(fontWeight: FontWeight.w600),
                           maxLength: SaveWebpageViewModel.titleMaxChars,
                           decoration: InputDecoration(
+                            fillColor: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                             hintText: 'Add title',
                             errorText: widget.viewModel.titleError,
                             counterText: '',
