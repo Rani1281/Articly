@@ -1,4 +1,6 @@
+import 'package:articly/theme/theme_model.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class LabeledDropdown extends StatelessWidget {
   const LabeledDropdown({
@@ -20,6 +22,10 @@ class LabeledDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeModel>(
+      context,
+      listen: false,
+    ).isDark(context);
     final Color borderColor = Theme.of(
       context,
     ).colorScheme.surfaceContainerHighest;
@@ -53,7 +59,7 @@ class LabeledDropdown extends StatelessWidget {
                 fontWeight: FontWeight.normal,
               ),
               filled: true,
-              fillColor: (isDark ?? false)
+              fillColor: isDark
                   ? Theme.of(context).colorScheme.surfaceContainer
                   : Colors.white,
               contentPadding: const EdgeInsets.all(14),

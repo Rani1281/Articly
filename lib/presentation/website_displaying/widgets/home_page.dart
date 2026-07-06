@@ -2,7 +2,9 @@ import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
+import 'package:articly/presentation/website_saving/widgets/labeled_dropdown.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
+import 'package:articly/theme/theme_model.dart';
 import 'package:articly/utils/my_action_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -15,8 +17,17 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final _dropdownItems = const ['Creation date', 'Name (A-Z)'];
+  String _initialValue = 'Creation date';
+
+  late final ValueNotifier<String> _selectedSortingNotifier;
+
   @override
   void initState() {
+    // TODO: set _initialValue to the one returned from SharedPrerences
+    // _initialValue = widget.viewModel.orderBy;
+    _selectedSortingNotifier = ValueNotifier(_initialValue);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<SavedItemsProvider>(context, listen: false);
 
@@ -110,28 +121,51 @@ class _HomePageState extends State<HomePage> {
                             );
                           }
                           final items = provider.items.values.toList();
-                          return ListView.builder(
-                            physics: const NeverScrollableScrollPhysics(),
-                            shrinkWrap: true,
-                            itemCount: items.length,
-                            // reverse so that new items will appear on the top
-                            reverse: true,
-                            itemBuilder: (context, index) {
-                              final item = items[index];
-                              // if (_items[index].type == ItemType.webpage)
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 5,
-                                ),
-                                child: SavedWebpageCard(
-                                  key: ValueKey(item.id),
-                                  viewModel: SavedItemViewModel(
-                                    currentItem: item,
-                                    provider: provider,
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  // ! [ SORTING TYPE DROPDOWN ]
+                                  LabeledDropdown(
+                                    selectedItem: _selectedSortingNotifier,
+                                    items: _dropdownItems,
+                                    label: 'Sort by',
                                   ),
-                                ),
-                              );
-                            },
+                                  IconButton(
+                                    onPressed: () {
+                                      // TODO: switch the value of isDescending
+                                      // _viewModel.switchIsDescending();
+                                    },
+                                    // TODO: show a different arrow according to isDescending
+                                    // icon: Icon(_viewModel.isDescending ? Icons.arrow_downward : Icons.arrow_upward)
+                                    icon: Icon(Icons.arrow_downward),
+                                  ),
+                                ],
+                              ),
+                              ListView.builder(
+                                physics: const NeverScrollableScrollPhysics(),
+                                shrinkWrap: true,
+                                itemCount: items.length,
+                                // reverse so that new items will appear on the top
+                                reverse: true,
+                                itemBuilder: (context, index) {
+                                  final item = items[index];
+                                  // if (_items[index].type == ItemType.webpage)
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 5,
+                                    ),
+                                    child: SavedWebpageCard(
+                                      key: ValueKey(item.id),
+                                      viewModel: SavedItemViewModel(
+                                        currentItem: item,
+                                        provider: provider,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                           );
                         },
                       ),
