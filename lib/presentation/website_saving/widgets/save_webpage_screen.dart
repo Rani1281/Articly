@@ -126,6 +126,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
       title: title,
       notes: notes,
       remindReading: _remindMe,
+      createdAt: DateTime.now(),
     );
 
     log.info('Created item:\n$item');
