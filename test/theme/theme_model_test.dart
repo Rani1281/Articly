@@ -6,28 +6,29 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   // Sets up a clean slate for SharedPreferences memory mock before every test
-  setUp(() {
+  setUp(() async {
     SharedPreferences.setMockInitialValues({});
   });
 
   group('ThemeModel Tests', () {
     test(
-      'Constructor initializes with ThemeMode.system and falls back to SharedPreferences.getInstance()',
+      'Constructor calls load when built and sets the value of the theme mode',
       () async {
         // Arrange
         // Inject a 'dark' value into the mock preferences.
         SharedPreferences.setMockInitialValues({'theme_mode': 'dark'});
+        final prefs = await SharedPreferences.getInstance();
 
         // Act
         // Passing no future implicitly tests the `SharedPreferences.getInstance()` fallback.
-        final model = ThemeModel();
+        final model = ThemeModel(prefs: prefs);
 
         // Assert
         // 1. Initial state should be system
-        check(model.themeMode).equals(ThemeMode.system);
+        check(model.themeMode).equals(ThemeMode.dark);
 
         // Act
-        await model.load();
+        model.load();
 
         // Assert
         // 2. If it successfully reads 'dark', we know the default prefs future successfully hooked up to getInstance()
@@ -40,21 +41,21 @@ void main() {
       () async {
         // Arrange
         final prefs = await SharedPreferences.getInstance();
-        final model = ThemeModel(prefsFuture: Future.value(prefs));
+        final model = ThemeModel(prefs: prefs);
 
         // Act & Assert (Light)
         await prefs.setString('theme_mode', 'light');
-        await model.load();
+        model.load();
         check(model.themeMode).equals(ThemeMode.light);
 
         // Act & Assert (Dark)
         await prefs.setString('theme_mode', 'dark');
-        await model.load();
+        model.load();
         check(model.themeMode).equals(ThemeMode.dark);
 
         // Act & Assert (System)
         await prefs.setString('theme_mode', 'system');
-        await model.load();
+        model.load();
         check(model.themeMode).equals(ThemeMode.system);
       },
     );
@@ -64,14 +65,14 @@ void main() {
       () async {
         // Arrange
         final prefs = await SharedPreferences.getInstance();
-        final model = ThemeModel(prefsFuture: Future.value(prefs));
+        final model = ThemeModel(prefs: prefs);
 
         // Manually set to dark first to ensure load() actually overwrites it
         await model.setThemeMode(ThemeMode.dark);
         await prefs.remove('theme_mode'); // Clear out value
 
         // Act
-        await model.load();
+        model.load();
 
         // Assert
         check(model.themeMode).equals(ThemeMode.system);
@@ -83,7 +84,7 @@ void main() {
       () async {
         // Arrange
         final prefs = await SharedPreferences.getInstance();
-        final model = ThemeModel(prefsFuture: Future.value(prefs));
+        final model = ThemeModel(prefs: prefs);
 
         bool listenerCalled = false;
         model.addListener(() {
@@ -104,8 +105,9 @@ void main() {
     testWidgets('isDark returns true when theme is dark, false when light', (
       tester,
     ) async {
+      final prefs = await SharedPreferences.getInstance();
       // Arrange
-      final model = ThemeModel();
+      final model = ThemeModel(prefs: prefs);
       await tester.pumpWidget(Builder(builder: (context) => const SizedBox()));
       final BuildContext context = tester.element(find.byType(SizedBox));
 
@@ -121,8 +123,9 @@ void main() {
     testWidgets(
       'isDark returns correct boolean based on MediaQuery when theme is system',
       (tester) async {
+        final prefs = await SharedPreferences.getInstance();
         // Arrange
-        final model = ThemeModel();
+        final model = ThemeModel(prefs: prefs);
         await model.setThemeMode(ThemeMode.system);
 
         // Act & Assert (System detects Dark platform brightness)

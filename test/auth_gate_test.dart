@@ -16,6 +16,7 @@ import 'package:articly/theme/theme_model.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/utils/command.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // --- 1. Setup Custom Extension for package:checks ---
 extension FinderChecks on Subject<Finder> {
@@ -34,7 +35,8 @@ extension FinderChecks on Subject<Finder> {
 // --- 2. Create Fakes ---
 
 // A minimal SavedItemsProvider fake to avoid real Firestore calls in widget tests.
-class _FakeSavedItemsProvider extends ChangeNotifier implements SavedItemsProvider {
+class _FakeSavedItemsProvider extends ChangeNotifier
+    implements SavedItemsProvider {
   Command _loadCommand = Command();
   Command _saveCommand = Command();
   Command _editCommand = Command();
@@ -54,27 +56,35 @@ class _FakeSavedItemsProvider extends ChangeNotifier implements SavedItemsProvid
 
   @override
   Future<void> load() async {
-    _loadCommand = Command()..start()..finish(null);
+    _loadCommand = Command()
+      ..start()
+      ..finish(null);
     _items = {};
     notifyListeners();
   }
 
   @override
   Future<void> save(SavedItem item) async {
-    _saveCommand = Command()..start()..finish(null);
+    _saveCommand = Command()
+      ..start()
+      ..finish(null);
     _items['test-id'] = item;
     notifyListeners();
   }
 
   @override
   Future<void> edit(SavedItem item) async {
-    _editCommand = Command()..start()..finish(null);
+    _editCommand = Command()
+      ..start()
+      ..finish(null);
     notifyListeners();
   }
 
   @override
   Future<void> delete(String id) async {
-    _deleteCommand = Command()..start()..finish(null);
+    _deleteCommand = Command()
+      ..start()
+      ..finish(null);
     notifyListeners();
   }
 
@@ -117,9 +127,13 @@ class FakeAuthService extends Fake implements AuthService {
 // --- 3. Widget Tests ---
 void main() {
   late FakeAuthService fakeAuthService;
+  late SharedPreferences prefs;
 
-  setUp(() {
+  setUp(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
     fakeAuthService = FakeAuthService();
+    prefs = await SharedPreferences.getInstance();
   });
 
   tearDown(() {
@@ -129,8 +143,12 @@ void main() {
   Widget createWidgetUnderTest() {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<ThemeModel>(create: (_) => ThemeModel()),
-        ChangeNotifierProvider<SavedItemsProvider>(create: (_) => _FakeSavedItemsProvider()),
+        ChangeNotifierProvider<ThemeModel>(
+          create: (_) => ThemeModel(prefs: prefs),
+        ),
+        ChangeNotifierProvider<SavedItemsProvider>(
+          create: (_) => _FakeSavedItemsProvider(),
+        ),
       ],
       child: MaterialApp(home: AuthGate(authService: fakeAuthService)),
     );

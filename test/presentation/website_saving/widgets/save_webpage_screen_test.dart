@@ -57,7 +57,8 @@ void main() {
       SaveWebpageViewModel? viewModel,
       SavedItemsProvider? savedItemsProvider,
     }) async {
-      final themeModel = ThemeModel();
+      final prefs = await SharedPreferences.getInstance();
+      final themeModel = ThemeModel(prefs: prefs);
       await tester.pumpWidget(
         MaterialApp(
           home: MultiProvider(
@@ -93,7 +94,11 @@ void main() {
       // Arrange
       final viewModel = SaveWebpageViewModel();
       final provider = _createProvider(shouldFail: true);
-      await pumpScreen(tester, viewModel: viewModel, savedItemsProvider: provider);
+      await pumpScreen(
+        tester,
+        viewModel: viewModel,
+        savedItemsProvider: provider,
+      );
 
       // Act - trigger a save that will fail
       await tester.enterText(
@@ -164,6 +169,7 @@ void main() {
       'automatically pops the page when the operation was successful',
       (tester) async {
         // Arrange - push the screen onto a navigator
+        final prefs = await SharedPreferences.getInstance();
         final viewModel = SaveWebpageViewModel();
         final provider = _createProvider();
         final homeKey = GlobalKey();
@@ -180,7 +186,7 @@ void main() {
                         // ignore: always_specify_types
                         providers: [
                           ChangeNotifierProvider<ThemeModel>(
-                            create: (_) => ThemeModel(),
+                            create: (_) => ThemeModel(prefs: prefs),
                           ),
                           ChangeNotifierProvider<SavedItemsProvider>.value(
                             value: provider,

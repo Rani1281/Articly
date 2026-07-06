@@ -8,20 +8,23 @@ import 'package:articly/presentation/authentication/widgets/auth_page.dart';
 import 'package:articly/presentation/authentication/view_models/auth_page_model.dart';
 import 'package:articly/presentation/authentication/widgets/forgot_password_page.dart';
 import 'package:articly/theme/theme_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// 1. Create a Mock class for the ViewModel
 class MockAuthPageModel extends Mock implements AuthPageModel {}
 
 void main() {
   late MockAuthPageModel mockViewModel;
+  late SharedPreferences prefs;
 
   // Register a fallback value for VoidCallback (required by mocktail for Listenable)
   setUpAll(() {
     registerFallbackValue(() {});
   });
 
-  setUp(() {
+  setUp(() async {
     mockViewModel = MockAuthPageModel();
+    prefs = await SharedPreferences.getInstance();
 
     // Stub Listenable methods required by ListenableBuilder
     when(() => mockViewModel.addListener(any())).thenAnswer((_) {});
@@ -40,7 +43,7 @@ void main() {
   Widget createWidgetUnderTest() {
     return MaterialApp(
       home: ChangeNotifierProvider<ThemeModel>(
-        create: (_) => ThemeModel(),
+        create: (_) => ThemeModel(prefs: prefs),
         child: AuthPage(viewModel: mockViewModel),
       ),
     );

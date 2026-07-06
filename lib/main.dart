@@ -13,6 +13,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 import 'package:logging/logging.dart';
 
@@ -34,9 +35,11 @@ void main() async {
     FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
   }
 
-  final themeModel = ThemeModel();
-  await themeModel.load();
-  // runApp(ChangeNotifierProvider.value(value: themeModel, child: const MyApp()));
+  final prefs = await SharedPreferences.getInstance();
+  final themeModel = ThemeModel(prefs: prefs);
+
+  // TODO: maybe put HomePageViewModel here?
+
   runApp(
     MultiProvider(
       providers: [

@@ -33,7 +33,7 @@ void main() {
         check(item.createdAt).equals(createdAt);
       });
 
-      test('defaults ungiven optional fields to null', () {
+      test('defaults ungiven optional fields to null (except createdAt)', () {
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
@@ -46,7 +46,20 @@ void main() {
         check(item.title).isNull();
         check(item.notes).isNull();
         check(item.remindReading).isNull();
-        check(item.createdAt).isNull();
+        check(item.createdAt).isNotNull();
+      });
+
+      test('Sets createdAt to the current date if not specified', () {
+        final createdAt = DateTime.now();
+
+        final item = SavedItem(
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.read,
+        );
+
+        expect(item.createdAt.day, createdAt.day);
+        expect(item.createdAt.month, createdAt.month);
+        expect(item.createdAt.year, createdAt.year);
       });
     });
 
@@ -64,7 +77,6 @@ void main() {
 
         final result = item.toFirestore();
 
-        check(result.containsKey('id')).isTrue();
         check(result.containsKey('type')).isTrue();
         check(result.containsKey('url')).isTrue();
         check(result.containsKey('readingStatus')).isTrue();
@@ -73,27 +85,13 @@ void main() {
         check(result.containsKey('remindReading')).isTrue();
         check(result.containsKey('createdAt')).isTrue();
 
-        check(result['id']).equals('test-id');
         check(result['type']).equals('webpage');
         check(result['url']).equals('https://example.com');
         check(result['readingStatus']).equals('reading');
         check(result['title']).equals('Title');
         check(result['notes']).equals('Notes');
         check(result['remindReading']).equals(false);
-        check(result['createdAt']).isA<FieldValue>();
-      });
-
-      test('includes id in the map when it is non-null', () {
-        final item = SavedItem(
-          id: 'abc-123',
-          type: ItemType.webpage,
-          readingStatus: ReadingStatus.unread,
-        );
-
-        final result = item.toFirestore();
-
-        check(result.containsKey('id')).isTrue();
-        check(result['id']).equals('abc-123');
+        check(result['createdAt']).isA<Timestamp>();
       });
 
       test('does not include id in the map when it is null', () {
@@ -116,7 +114,7 @@ void main() {
         final result = item.toFirestore(isEdit: false);
 
         check(result.containsKey('createdAt')).isTrue();
-        check(result['createdAt']).isA<FieldValue>();
+        check(result['createdAt']).isA<Timestamp>();
       });
 
       test('does not include createdAt when isEdit is true', () {
@@ -144,7 +142,7 @@ void main() {
         check(result['type']).equals('webpage');
         check(result['readingStatus']).equals('unread');
         check(result.containsKey('createdAt')).isTrue();
-        check(result['createdAt']).isA<FieldValue>();
+        check(result['createdAt']).isA<Timestamp>();
         check(result.containsKey('url')).isFalse();
         check(result.containsKey('title')).isFalse();
         check(result.containsKey('notes')).isFalse();
@@ -162,7 +160,7 @@ void main() {
         check(result['type']).equals('webpage');
         check(result['readingStatus']).equals('unread');
         check(result.containsKey('createdAt')).isTrue();
-        check(result['createdAt']).isA<FieldValue>();
+        check(result['createdAt']).isA<Timestamp>();
         check(result.containsKey('url')).isFalse();
         check(result.containsKey('title')).isFalse();
         check(result.containsKey('notes')).isFalse();
@@ -233,7 +231,7 @@ void main() {
         check(item.title).isNull();
         check(item.notes).isNull();
         check(item.remindReading).isNull();
-        check(item.createdAt).isNull();
+        check(item.createdAt).isNotNull();
       });
 
       test('uses defaults for invalid enum strings', () {
