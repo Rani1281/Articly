@@ -10,7 +10,7 @@ class SavedItem {
   final String? title;
   final String? notes;
   final bool? remindReading;
-  final DateTime? createdAt; // only use when retrieving data
+  final DateTime createdAt;
 
   final log = Logger('SavedItem');
 
@@ -22,8 +22,8 @@ class SavedItem {
     this.title,
     this.notes,
     this.remindReading,
-    this.createdAt, // only pass this during fromFirestore
-  });
+    DateTime? createdAt, // only pass this during fromFirestore
+  }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toFirestore({bool isEdit = false}) {
     return {
@@ -35,7 +35,7 @@ class SavedItem {
       if (notes != null && notes!.isNotEmpty) 'notes': notes,
       if (remindReading != null) 'remindReading': remindReading,
       // Only use this field on creation. If it's for updating, don't set this field:
-      if (!isEdit) 'createdAt': FieldValue.serverTimestamp(),
+      if (!isEdit) 'createdAt': Timestamp.fromDate(createdAt),
     };
   }
 
