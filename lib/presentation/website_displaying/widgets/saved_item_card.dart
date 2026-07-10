@@ -3,7 +3,6 @@ import 'package:articly/presentation/website_displaying/view_models/saved_item_v
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/utils/my_snack_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/link.dart'; // Added for web link preview
 
 class SavedWebpageCard extends StatefulWidget {

@@ -105,7 +105,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
   void _save(BuildContext context) async {
     // selected values are "Unread, Reading, Read", so lowercase them
     final readingStatus = ReadingStatus.values.firstWhere(
-      (status) => status.name == _selectedStatusNotifier.value?.toLowerCase(),
+      (status) => status.name == _selectedStatusNotifier.value.toLowerCase(),
       orElse: () => ReadingStatus.unread,
     );
     final url = _urlController.text.trim();

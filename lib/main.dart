@@ -1,4 +1,5 @@
 import 'package:articly/data/services/auth_service.dart';
+import 'package:articly/data/services/shared_preferences_service.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/authentication/view_models/auth_page_model.dart';
 import 'package:articly/presentation/authentication/view_models/verify_email_view_model.dart';
@@ -36,15 +37,15 @@ void main() async {
   }
 
   final prefs = await SharedPreferences.getInstance();
-  final themeModel = ThemeModel(prefs: prefs);
+  final prefsService = SharedPreferencesService(prefs: prefs);
 
-  // TODO: maybe put HomePageViewModel here?
+  final themeModel = ThemeModel(prefs: prefs);
 
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: prefsService),
         ChangeNotifierProvider.value(value: themeModel),
-        // Don't await loading
         ChangeNotifierProvider(create: (_) => SavedItemsProvider()),
       ],
       child: MyApp(),
@@ -117,7 +118,8 @@ class AuthGate extends StatelessWidget {
         }
 
         log.info('Moving to home page...');
-        return HomePage();
+
+        return HomePage(context);
       },
     );
   }

@@ -1,6 +1,4 @@
-import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/data/repositories/saved_items_repository.dart';
-import 'package:checks/checks.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mocktail/mocktail.dart';

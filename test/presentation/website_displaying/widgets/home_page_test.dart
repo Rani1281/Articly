@@ -22,7 +22,9 @@ class FakeSavedItemsProvider extends ChangeNotifier
 
   @override
   Future<void> load() async {
-    _loadCommand = Command()..start()..finish(null);
+    _loadCommand = Command()
+      ..start()
+      ..finish(null);
     notifyListeners();
   }
 
@@ -53,6 +55,15 @@ class FakeSavedItemsProvider extends ChangeNotifier
   }
 }
 
+class HomePageWrapper extends StatelessWidget {
+  const HomePageWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return HomePage(context);
+  }
+}
+
 void main() {
   late FakeSavedItemsProvider fakeProvider;
 
@@ -64,7 +75,7 @@ void main() {
     return MaterialApp(
       home: ChangeNotifierProvider<SavedItemsProvider>.value(
         value: fakeProvider,
-        child: const HomePage(),
+        child: HomePageWrapper(),
       ),
     );
   }
@@ -77,7 +88,10 @@ void main() {
 
       expect(find.byType(Scaffold), findsOneWidget);
       expect(find.byType(SliverAppBar), findsOneWidget);
-      expect(find.widgetWithIcon(IconButton, Icons.account_circle), findsOneWidget);
+      expect(
+        find.widgetWithIcon(IconButton, Icons.account_circle),
+        findsOneWidget,
+      );
       expect(find.byType(FloatingActionButton), findsOneWidget);
       expect(find.byIcon(Icons.add), findsOneWidget);
     });

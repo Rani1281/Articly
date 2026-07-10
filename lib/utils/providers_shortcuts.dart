@@ -1,0 +1,19 @@
+import 'package:articly/data/services/shared_preferences_service.dart';
+import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/theme/theme_model.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+class MyProviders {
+  const MyProviders(this.context);
+
+  final BuildContext context;
+
+  SavedItemsProvider savedItemsProvider() =>
+      Provider.of<SavedItemsProvider>(context, listen: false);
+
+  SharedPreferencesService sharedPreferencesService() =>
+      Provider.of<SharedPreferencesService>(context, listen: false);
+
+  ThemeModel themeModel() => Provider.of<ThemeModel>(context, listen: false);
+}

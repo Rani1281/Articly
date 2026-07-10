@@ -2,7 +2,6 @@ import 'package:articly/presentation/authentication/view_models/auth_page_model.
 import 'package:articly/presentation/authentication/widgets/auth_button.dart';
 import 'package:articly/presentation/authentication/widgets/auth_text_field.dart';
 import 'package:articly/theme/theme_model.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

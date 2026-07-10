@@ -1,4 +1,5 @@
 class Command {
+  bool activated = false;
   bool running = false;
 
   String? error;
@@ -12,6 +13,7 @@ class Command {
   // }
 
   void start() {
+    activated = true;
     running = true;
     error = null;
     completed = false;

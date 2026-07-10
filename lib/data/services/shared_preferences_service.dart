@@ -1,6 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SharedPreferencesService {
+class SharedPreferencesService extends ChangeNotifier {
   SharedPreferencesService({required this.prefs});
 
   final SharedPreferences prefs;
@@ -32,13 +33,5 @@ class SharedPreferencesService {
 
   Future<bool?> setIsDescending(bool value) async {
     return await prefs.setBool(_isDescendingKey, value);
-  }
-
-  String? getFilter() {
-    return prefs.getString(_filterKey);
-  }
-
-  Future<bool?> setFilter(String value) async {
-    return await prefs.setString(_filterKey, value);
   }
 }

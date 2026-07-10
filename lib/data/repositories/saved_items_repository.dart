@@ -49,7 +49,6 @@ class SavedItemsRepository {
         .collection(usersCollection)
         .doc(user.uid)
         .collection(savedItemsCollection)
-        .orderBy('createdAt', descending: false)
         .get();
 
     // return by ascending so that when adding new items the order will be maintained

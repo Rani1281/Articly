@@ -11,6 +11,7 @@ class LabeledDropdown extends StatelessWidget {
     this.initialValue,
     this.hintText,
     this.isDark,
+    this.onChanged,
   });
 
   final String? label;
@@ -19,6 +20,7 @@ class LabeledDropdown extends StatelessWidget {
   final String? initialValue;
   final String? hintText;
   final bool? isDark;
+  final void Function(String? newValue)? onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -81,10 +83,7 @@ class LabeledDropdown extends StatelessWidget {
               return DropdownMenuItem<String>(value: value, child: Text(value));
             }).toList(),
             onChanged: (String? newValue) {
-              // setState(() {
               selectedItem?.value = newValue;
-              debugPrint('New value: ${selectedItem?.value}');
-              // });
             },
           ),
         ),

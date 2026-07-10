@@ -49,7 +49,9 @@ void main() {
       'Login succeeds: Calls service.login(), returns null, does not call register/updateUsername',
       () async {
         // Arrange
-        when(() => mockService.login(any(), any())).thenAnswer((_) async {});
+        when(() => mockService.login(any(), any())).thenAnswer((_) async {
+          return null;
+        });
 
         // Act
         final result = await model.authenticate(
@@ -73,7 +75,9 @@ void main() {
       () async {
         // Arrange
         model.toggleForm(); // Switch to registration mode
-        when(() => mockService.register(any(), any())).thenAnswer((_) async {});
+        when(() => mockService.register(any(), any())).thenAnswer((_) async {
+          return null;
+        });
         when(() => mockService.updateUsername(any())).thenAnswer((_) async {});
 
         // Act
@@ -95,7 +99,9 @@ void main() {
       () async {
         // Arrange
         model.toggleForm();
-        when(() => mockService.register(any(), any())).thenAnswer((_) async {});
+        when(() => mockService.register(any(), any())).thenAnswer((_) async {
+          return null;
+        });
         when(() => mockService.updateUsername(any())).thenAnswer((_) async {});
 
         // Act
@@ -164,7 +170,9 @@ void main() {
         // Arrange
         model.toggleForm();
         const errorMessage = 'Username taken';
-        when(() => mockService.register(any(), any())).thenAnswer((_) async {});
+        when(() => mockService.register(any(), any())).thenAnswer((_) async {
+          return null;
+        });
         when(
           () => mockService.updateUsername(any()),
         ).thenThrow(FakeCustomAuthException(errorMessage));
@@ -227,7 +235,9 @@ void main() {
       () async {
         // Arrange
         model.toggleForm();
-        when(() => mockService.register(any(), any())).thenAnswer((_) async {});
+        when(() => mockService.register(any(), any())).thenAnswer((_) async {
+          return null;
+        });
         when(
           () => mockService.updateUsername(any()),
         ).thenThrow(Exception('Unexpected failure'));

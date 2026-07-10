@@ -2,7 +2,6 @@ import 'package:articly/main.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:firebase_core_platform_interface/test.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';

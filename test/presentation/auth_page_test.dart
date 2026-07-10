@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 // TODO: Adjust the import paths according to your project structure
 import 'package:articly/presentation/authentication/widgets/auth_page.dart';
 import 'package:articly/presentation/authentication/view_models/auth_page_model.dart';
-import 'package:articly/presentation/authentication/widgets/forgot_password_page.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

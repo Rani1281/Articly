@@ -47,16 +47,5 @@ void main() {
 
       expect(result, value);
     });
-
-    test('setFilter sets the value for getFilter to read', () async {
-      await prefs.clear();
-      const value = 'read';
-
-      await service.setFilter(value);
-
-      final result = service.getFilter();
-
-      expect(result, value);
-    });
   });
 }

@@ -27,7 +27,7 @@ void main() {
 
   group('SaveWebsiteScreen', () {
     // A minimal fake SavedItemsProvider to avoid real Firestore calls.
-    SavedItemsProvider _createProvider({
+    SavedItemsProvider createProvider({
       bool shouldFail = false,
       bool neverCompletes = false,
     }) {
@@ -65,7 +65,7 @@ void main() {
             providers: [
               ChangeNotifierProvider<ThemeModel>.value(value: themeModel),
               ChangeNotifierProvider<SavedItemsProvider>.value(
-                value: savedItemsProvider ?? _createProvider(),
+                value: savedItemsProvider ?? createProvider(),
               ),
             ],
             child: SaveWebpageScreen(viewModel: viewModel),
@@ -93,7 +93,7 @@ void main() {
     ) async {
       // Arrange
       final viewModel = SaveWebpageViewModel();
-      final provider = _createProvider(shouldFail: true);
+      final provider = createProvider(shouldFail: true);
       await pumpScreen(
         tester,
         viewModel: viewModel,
@@ -117,7 +117,7 @@ void main() {
       (tester) async {
         // Arrange
         final viewModel = SaveWebpageViewModel();
-        final provider = _createProvider(neverCompletes: true);
+        final provider = createProvider(neverCompletes: true);
         await pumpScreen(
           tester,
           viewModel: viewModel,
@@ -142,7 +142,7 @@ void main() {
       (tester) async {
         // Arrange
         final viewModel = SaveWebpageViewModel();
-        final provider = _createProvider(neverCompletes: true);
+        final provider = createProvider(neverCompletes: true);
         await pumpScreen(
           tester,
           viewModel: viewModel,
@@ -171,7 +171,7 @@ void main() {
         // Arrange - push the screen onto a navigator
         final prefs = await SharedPreferences.getInstance();
         final viewModel = SaveWebpageViewModel();
-        final provider = _createProvider();
+        final provider = createProvider();
         final homeKey = GlobalKey();
         await tester.pumpWidget(
           MaterialApp(
