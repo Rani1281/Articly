@@ -9,7 +9,6 @@ class SharedPreferencesService extends ChangeNotifier {
   static const _themeKey = 'theme_mode';
   static const _orderByKey = 'orderBy';
   static const _isDescendingKey = 'descending';
-  static const _filterKey = 'filter';
 
   String? getTheme() {
     return prefs.getString(_themeKey);

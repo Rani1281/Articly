@@ -1,0 +1,14 @@
+- [x] Make methods public in `home_page_view_model.dart`
+- [x] Implement `home_page_view_model_test.dart`
+    - [x] Setup mocks and boilerplate
+    - [x] Implement 'Constructor' group
+    - [x] Implement 'processItems' group
+    - [x] Implement 'loadData' group
+    - [x] Implement 'sortItems' group
+    - [x] Implement 'sortByCreationDate' group
+    - [x] Implement 'sortByName' group
+    - [x] Implement 'filterItems' group
+    - [x] Implement 'switchTab' group
+    - [x] Implement 'setOrderBy' group
+    - [x] Implement 'switchIsDescending' group
+- [x] Run and verify tests

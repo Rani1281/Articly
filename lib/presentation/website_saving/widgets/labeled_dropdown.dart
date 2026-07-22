@@ -84,6 +84,7 @@ class LabeledDropdown extends StatelessWidget {
             }).toList(),
             onChanged: (String? newValue) {
               selectedItem?.value = newValue;
+              onChanged?.call(newValue);
             },
           ),
         ),

@@ -18,6 +18,8 @@ class HomePageViewModel extends ChangeNotifier {
   OrderType _orderBy = OrderType.creationDate;
   OrderType get orderBy => _orderBy;
 
+  OrderType? _prevOrderBy;
+
   bool _isDescending = true;
   bool get isDescending => _isDescending;
 
@@ -32,20 +34,23 @@ class HomePageViewModel extends ChangeNotifier {
 
   Future<void> processItems({bool reload = false}) async {
     processItemsCommand.start();
+    notifyListeners();
 
     if (!_provider.loadCommand.activated || reload) {
-      await _loadData();
+      await loadData();
     }
 
-    _sortItems();
-    _filterItems();
+    _items = _provider.items.values.toList();
+
+    sortItems();
+    filterItems();
 
     processItemsCommand.finish(_provider.loadCommand.error);
 
     notifyListeners();
   }
 
-  Future<void> _loadData() async {
+  Future<void> loadData() async {
     _orderBy = OrderType.values.firstWhere(
       (type) => type.name == _prefsService.getOrderBy(),
       orElse: () => OrderType.creationDate,
@@ -56,20 +61,27 @@ class HomePageViewModel extends ChangeNotifier {
     _items = _provider.items.values.toList();
   }
 
-  void _sortItems() {
+  void sortItems() {
+    // return if the previous ordering is the same as the current
     if (_items.length <= 1) return;
+
+    if (_prevOrderBy == _orderBy) {
+      debugPrint('Skipped sorting');
+      return;
+    }
 
     switch (_orderBy) {
       case OrderType.creationDate:
-        _sortByCreationDate();
+        sortByCreationDate();
         break;
       case OrderType.name:
-        _sortByName();
+        debugPrint('Sorting by name');
+        sortByName();
         break;
     }
   }
 
-  void _sortByCreationDate() {
+  void sortByCreationDate() {
     if (_isDescending) {
       _items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } else {
@@ -77,7 +89,7 @@ class HomePageViewModel extends ChangeNotifier {
     }
   }
 
-  void _sortByName() {
+  void sortByName() {
     if (_isDescending) {
       _items.sort((a, b) {
         final nameA = a.title?.toLowerCase() ?? '';
@@ -94,7 +106,7 @@ class HomePageViewModel extends ChangeNotifier {
   }
 
   // Filter by by tab
-  void _filterItems() {
+  void filterItems() {
     if (_filter == FilterType.none) return;
 
     _items = _items
@@ -103,14 +115,17 @@ class HomePageViewModel extends ChangeNotifier {
   }
 
   void switchTab(int tabIndex) {
-    // will work for "unread, reading, read" but for "all" will set to none
-    _filter = FilterType.values[tabIndex];
+    final value = FilterType.values[tabIndex];
+    if (value == _filter) return;
+
+    _filter = value;
     notifyListeners();
   }
 
   Future<void> setOrderBy(OrderType value) async {
     if (value == _orderBy) return;
 
+    _prevOrderBy = _orderBy;
     _orderBy = value;
     notifyListeners();
 

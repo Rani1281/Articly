@@ -42,7 +42,9 @@ class _HomePageState extends State<HomePage>
     _viewModel = widget.viewModel;
 
     // start processing the items
-    _viewModel.processItems();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _viewModel.processItems(),
+    );
 
     // Initialize TabController with 4 items
     _tabController = TabController(length: 4, vsync: this);
@@ -120,9 +122,12 @@ class _HomePageState extends State<HomePage>
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => SaveWebpageScreen())),
+        onPressed: () async {
+          await Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => SaveWebpageScreen()));
+          _viewModel.processItems(); // reload after coming back to the page
+        },
         child: const Icon(Icons.add),
       ),
     );
@@ -133,7 +138,12 @@ class _HomePageState extends State<HomePage>
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [_buildSortingTypeDropdown(), _buildDescendingSwitch()],
+          children: [
+            Text('Sorting', style: Theme.of(context).textTheme.labelMedium),
+            const SizedBox(width: 8),
+            _buildSortingTypeDropdown(),
+            _buildDescendingSwitch(),
+          ],
         ),
         const SizedBox(height: 8),
         _buildListView(),
@@ -167,16 +177,16 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _buildDescendingSwitch() {
-    return Padding(
-      padding: const EdgeInsets.only(top: 25.0),
-      child: IconButton(
-        onPressed: () {
-          _viewModel.switchIsDescending();
-          _viewModel.processItems();
-          // TODO: later, maybe just reverse the ListView instead of re-sorting the list
-        },
-        icon: Icon(
-          _viewModel.isDescending ? Icons.arrow_downward : Icons.arrow_upward,
+    return IconButton(
+      onPressed: () {
+        _viewModel.switchIsDescending();
+        _viewModel.processItems();
+        // TODO: later, maybe just reverse the ListView instead of re-sorting the list
+      },
+      icon: Tooltip(
+        message: 'Flip',
+        child: Icon(
+          _viewModel.isDescending ? Icons.arrow_upward : Icons.arrow_downward,
         ),
       ),
     );
@@ -191,7 +201,6 @@ class _HomePageState extends State<HomePage>
       child: LabeledDropdown(
         selectedItem: selectedSortingNotifier,
         items: sortingOptions.values.toList(),
-        label: 'Sort by',
         initialValue: selectedSortingNotifier.value,
         onChanged: (newValue) {
           if (newValue == null) return;
@@ -200,6 +209,7 @@ class _HomePageState extends State<HomePage>
           if (newValue == 'Name (A-Z)') {
             orderBy = OrderType.name;
           }
+          debugPrint('Selected orderBy: $orderBy');
 
           // don't wait for these operations (should be fast)
           _viewModel.setOrderBy(orderBy);

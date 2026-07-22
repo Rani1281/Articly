@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 class AppTheme {
   static Color seedColor = Colors.blue;
   // static const Color darkSeedColor = Color.fromARGB(255, 0, 0, 0);
+  static const Color lightSeedColor = Colors.red;
 
-  static ColorScheme get lightScheme =>
-      ColorScheme.fromSeed(seedColor: seedColor, brightness: Brightness.light);
+  static ColorScheme get lightScheme => ColorScheme.fromSeed(
+    seedColor: lightSeedColor,
+    brightness: Brightness.light,
+  );
 
   static ColorScheme get darkScheme =>
       ColorScheme.fromSeed(seedColor: seedColor, brightness: Brightness.dark);
