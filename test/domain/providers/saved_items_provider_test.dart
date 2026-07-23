@@ -102,14 +102,14 @@ void main() {
       });
 
       test('initializes saveCommand and notifies listeners on start', () async {
-        when(() => mockRepo.saveItem(any())).thenAnswer((_) async => 'new-id');
+        when(() => mockRepo.addItem(any())).thenAnswer((_) async => 'new-id');
 
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
         );
 
-        await provider.save(item);
+        await provider.add(item);
 
         check(provider.saveCommand.running).isFalse();
         check(provider.saveCommand.completed).isTrue();
@@ -120,7 +120,7 @@ void main() {
         'adds new item with its generated Firestore id on success',
         () async {
           when(
-            () => mockRepo.saveItem(any()),
+            () => mockRepo.addItem(any()),
           ).thenAnswer((_) async => 'firestore-id-123');
 
           final item = SavedItem(
@@ -129,7 +129,7 @@ void main() {
             uri: Uri.parse('https://example.com'),
           );
 
-          await provider.save(item);
+          await provider.add(item);
 
           check(provider.items.length).equals(1);
           check(provider.items.containsKey('firestore-id-123')).isTrue();
@@ -142,16 +142,14 @@ void main() {
       );
 
       test('sets error and finishes saveCommand on failure', () async {
-        when(
-          () => mockRepo.saveItem(any()),
-        ).thenThrow(Exception('Save failed'));
+        when(() => mockRepo.addItem(any())).thenThrow(Exception('Save failed'));
 
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
         );
 
-        await provider.save(item);
+        await provider.add(item);
 
         check(provider.saveCommand.running).isFalse();
         check(provider.saveCommand.completed).isFalse();

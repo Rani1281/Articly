@@ -116,7 +116,7 @@ void main() {
       );
 
       expect(
-        () async => await repository.saveItem(item),
+        () async => await repository.addItem(item),
         throwsA(isA<Exception>()),
       );
     });
@@ -145,7 +145,7 @@ void main() {
         readingStatus: ReadingStatus.unread,
       );
 
-      final result = await repository.saveItem(item);
+      final result = await repository.addItem(item);
 
       check(result).equals(expectedId);
     });

@@ -1,7 +1,10 @@
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
+import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
+import 'package:articly/utils/command.dart';
 import 'package:articly/utils/my_snack_bar.dart';
+import 'package:articly/utils/providers_shortcuts.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/link.dart'; // Added for web link preview
 
@@ -15,6 +18,8 @@ class SavedWebpageCard extends StatefulWidget {
   final SavedItemViewModel viewModel;
   final bool isDark;
 
+  Command get deleteItemCommand => viewModel.deleteItemCommand;
+
   @override
   State<SavedWebpageCard> createState() => _SavedWebpageCardState();
 }
@@ -22,6 +27,8 @@ class SavedWebpageCard extends StatefulWidget {
 class _SavedWebpageCardState extends State<SavedWebpageCard> {
   late final SavedItemViewModel _viewModel;
   late SavedItem _currentItem;
+
+  bool showedSuccessMessage = false;
 
   @override
   void initState() {
@@ -36,8 +43,9 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
     final cmd = _viewModel.deleteItemCommand;
     if (!cmd.completed && cmd.hasError) {
       MySnackBar(context, message: _viewModel.deleteItemCommand.error!).show();
-    } else if (cmd.completed) {
+    } else if (!showedSuccessMessage && cmd.completed) {
       MySnackBar(context, message: 'Deleted the item successfully!').show();
+      showedSuccessMessage = true;
     }
   }
 
@@ -134,7 +142,9 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                       ),
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: widget.viewModel.toggleExpand,
+                        onTap: () {
+                          widget.viewModel.toggleExpand();
+                        },
                         child: Row(
                           children: [
                             _buildActionIcon(
@@ -148,12 +158,18 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                                         builder: (_) => SaveWebpageScreen(
                                           currentItem: _viewModel.currentItem,
                                           isEdit: true,
+                                          viewModel: SaveWebpageViewModel(
+                                            MyProviders(
+                                              context,
+                                            ).savedItemsProvider(),
+                                          ),
                                         ),
                                       ),
                                     );
                                 if (newItem != null) {
                                   setState(() {
                                     _viewModel.currentItem = newItem;
+                                    _currentItem = newItem;
                                   });
                                 }
                               },

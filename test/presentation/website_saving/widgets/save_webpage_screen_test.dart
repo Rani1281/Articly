@@ -35,13 +35,13 @@ void main() {
 
       if (neverCompletes) {
         when(
-          () => repo.saveItem(any()),
+          () => repo.addItem(any()),
         ).thenAnswer((_) => Completer<String>().future);
       } else if (shouldFail) {
-        when(() => repo.saveItem(any())).thenThrow(Exception('Save failed'));
+        when(() => repo.addItem(any())).thenThrow(Exception('Save failed'));
       } else {
         when(
-          () => repo.saveItem(any()),
+          () => repo.addItem(any()),
         ).thenAnswer((_) async => 'users/uid/savedItems/123');
       }
       when(() => repo.updateItem(any())).thenAnswer((_) async {});

@@ -13,6 +13,7 @@ class LabeledTextField extends StatelessWidget {
     this.errorText,
     this.maxLength,
     this.showMaxLength = false,
+    this.autoFocus = false,
   });
 
   final TextEditingController? controller;
@@ -25,6 +26,7 @@ class LabeledTextField extends StatelessWidget {
   final String? errorText;
   final int? maxLength;
   final bool showMaxLength;
+  final bool autoFocus;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +47,7 @@ class LabeledTextField extends StatelessWidget {
         ],
         TextField(
           maxLength: maxLength,
-
+          autofocus: autoFocus,
           maxLines: maxLines,
           controller: controller,
           decoration: InputDecoration(

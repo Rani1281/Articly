@@ -3,6 +3,7 @@ import 'package:articly/presentation/authentication/widgets/profile_page.dart';
 import 'package:articly/presentation/website_displaying/view_models/home_page_view_model.dart';
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
+import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
 import 'package:articly/presentation/website_saving/widgets/labeled_dropdown.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/utils/my_action_button.dart';
@@ -123,10 +124,15 @@ class _HomePageState extends State<HomePage>
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => SaveWebpageScreen()));
-          _viewModel.processItems(); // reload after coming back to the page
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => SaveWebpageScreen(
+                viewModel: SaveWebpageViewModel(
+                  MyProviders(context).savedItemsProvider(),
+                ),
+              ),
+            ),
+          );
         },
         child: const Icon(Icons.add),
       ),
@@ -272,13 +278,23 @@ class _HomePageState extends State<HomePage>
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('No saved sources yet'),
+          Text(
+            _tabController.index == 0
+                ? 'No saved sources yet'
+                : 'No saved sources for the current status',
+          ),
           const SizedBox(height: 20),
           MyActionButton(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => SaveWebpageScreen()),
+                MaterialPageRoute(
+                  builder: (_) => SaveWebpageScreen(
+                    viewModel: SaveWebpageViewModel(
+                      MyProviders(context).savedItemsProvider(),
+                    ),
+                  ),
+                ),
               );
             },
             text: 'Add a webpage',

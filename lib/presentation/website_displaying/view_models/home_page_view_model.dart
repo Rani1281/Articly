@@ -3,17 +3,23 @@ import 'package:articly/data/services/shared_preferences_service.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 class HomePageViewModel extends ChangeNotifier {
   HomePageViewModel({
     required SavedItemsProvider provider,
     required SharedPreferencesService prefsService,
   }) : _provider = provider,
-       _prefsService = prefsService;
+       _prefsService = prefsService {
+    // listen to the provider to re-process items after they have changed
+    _provider.addListener(() => processItems());
+  }
 
   final SavedItemsProvider _provider;
   SavedItemsProvider get provider => _provider;
   final SharedPreferencesService _prefsService;
+
+  bool loadedData = false;
 
   OrderType _orderBy = OrderType.creationDate;
   OrderType get orderBy => _orderBy;
@@ -25,6 +31,8 @@ class HomePageViewModel extends ChangeNotifier {
 
   FilterType _filter = FilterType.none;
 
+  final log = Logger('HomePageViewModel');
+
   static const tabs = ['all', 'unread', 'reading', 'read'];
 
   List<SavedItem> _items = [];
@@ -33,11 +41,14 @@ class HomePageViewModel extends ChangeNotifier {
   final processItemsCommand = Command();
 
   Future<void> processItems({bool reload = false}) async {
+    log.info('Started processing items...');
+    String? error;
     processItemsCommand.start();
     notifyListeners();
 
-    if (!_provider.loadCommand.activated || reload) {
-      await loadData();
+    if (!loadedData || reload) {
+      error = await loadData();
+      loadedData = true;
     }
 
     _items = _provider.items.values.toList();
@@ -45,20 +56,19 @@ class HomePageViewModel extends ChangeNotifier {
     sortItems();
     filterItems();
 
-    processItemsCommand.finish(_provider.loadCommand.error);
-
+    processItemsCommand.finish(error);
     notifyListeners();
   }
 
-  Future<void> loadData() async {
+  Future<String?> loadData() async {
     _orderBy = OrderType.values.firstWhere(
       (type) => type.name == _prefsService.getOrderBy(),
       orElse: () => OrderType.creationDate,
     );
     _isDescending = _prefsService.getIsDescending() ?? true;
 
-    await _provider.load();
-    _items = _provider.items.values.toList();
+    // don't notify listeners because that will call `processItems` again
+    return await _provider.load(notify: false);
   }
 
   void sortItems() {

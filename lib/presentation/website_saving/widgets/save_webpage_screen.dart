@@ -11,12 +11,12 @@ import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 
 class SaveWebpageScreen extends StatefulWidget {
-  SaveWebpageScreen({
+  const SaveWebpageScreen({
     super.key,
-    SaveWebpageViewModel? viewModel,
+    required this.viewModel,
     this.currentItem,
     this.isEdit = false,
-  }) : viewModel = viewModel ?? SaveWebpageViewModel();
+  });
 
   final SaveWebpageViewModel viewModel;
 
@@ -28,6 +28,8 @@ class SaveWebpageScreen extends StatefulWidget {
 }
 
 class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
+  late final SaveWebpageViewModel _viewModel;
+
   String _initialValue = 'Unread';
   // final List<String> _statuses = ['Unread', 'Reading', 'Read'];
   final Map<String, ReadingStatus> _statuses = {
@@ -52,6 +54,8 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
   void initState() {
     super.initState();
 
+    _viewModel = widget.viewModel;
+
     final values = {
       ReadingStatus.unread: 'Unread',
       ReadingStatus.reading: 'Reading',
@@ -70,39 +74,9 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     }
 
     _selectedStatusNotifier = ValueNotifier(_initialValue);
-
-    // _titleController.text =
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      provider = context.read<SavedItemsProvider>();
-      provider.addListener(_onProviderChanged);
-    });
   }
 
-  void _onProviderChanged() {
-    if (widget.isEdit) {
-      final cmd = provider.editCommand;
-      if (!cmd.completed && cmd.hasError) {
-        MySnackBar(context, message: provider.editCommand.error!).show();
-      } else if (cmd.completed) {
-        MySnackBar(context, message: 'Edited the webpage successfully!').show();
-      }
-    } else {
-      final cmd = provider.saveCommand;
-      if (!cmd.completed && cmd.hasError) {
-        MySnackBar(context, message: provider.saveCommand.error!).show();
-      } else if (cmd.completed) {
-        MySnackBar(context, message: 'Saved the webpage successfully!').show();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    provider.removeListener(_onProviderChanged);
-    super.dispose();
-  }
-
-  void _save(BuildContext context) async {
+  _save() async {
     // selected values are "Unread, Reading, Read", so lowercase them
     final readingStatus = ReadingStatus.values.firstWhere(
       (status) => status.name == _selectedStatusNotifier.value.toLowerCase(),
@@ -112,37 +86,25 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     final title = _titleController.text;
     final notes = _notesController.text;
 
-    final isValid = widget.viewModel.validateFields(url, title, notes);
-    if (!isValid) {
-      log.warning('Some info is invalid, so not saving the webpage');
-      return;
-    }
-
-    final item = SavedItem(
-      id: widget.currentItem?.id, // will be set if is edit
-      type: ItemType.webpage,
+    final SavedItem? item = await _viewModel.saveWebpage(
       readingStatus: readingStatus,
-      uri: Uri.tryParse(url),
+      url: url,
       title: title,
       notes: notes,
-      remindReading: _remindMe,
-      createdAt: DateTime.now(),
+      remindMe: _remindMe,
+      id: widget.currentItem?.id,
+      isEdit: widget.isEdit,
+      // if an item is given, use its createdAt, and otherwise use the current time
+      createdAt: widget.currentItem?.createdAt ?? DateTime.now(),
     );
 
-    log.info('Created item:\n$item');
+    if (!mounted) return;
 
-    bool completed = false;
-    final provider = Provider.of<SavedItemsProvider>(context, listen: false);
-
-    if (!widget.isEdit) {
-      await provider.save(item);
-      completed = provider.saveCommand.completed;
+    final cmd = _viewModel.saveCommand;
+    if (cmd.hasError && !cmd.completed) {
+      MySnackBar(context, message: 'Saving failed').show();
     } else {
-      await provider.edit(item);
-      completed = provider.editCommand.completed;
-    }
-
-    if (completed && mounted) {
+      MySnackBar(context, message: 'Saved webpage successfully!').show();
       Navigator.pop(context, item);
     }
   }
@@ -169,14 +131,8 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       key: ValueKey('saveButton'),
-                      onTap:
-                          (provider.saveCommand.running ||
-                              provider.editCommand.running)
-                          ? null
-                          : () => _save(context),
-                      child:
-                          provider.saveCommand.running ||
-                              provider.editCommand.running
+                      onTap: (_viewModel.saveCommand.running) ? null : _save,
+                      child: _viewModel.saveCommand.running
                           ? SizedBox(
                               height: 20,
                               width: 20,
@@ -234,6 +190,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
                         LabeledTextField(
                           key: ValueKey('urlTextField'),
                           controller: _urlController,
+                          autoFocus: true,
                           label: 'Url',
                           hintText: 'https://example.com/page',
                           isDark: isDark,

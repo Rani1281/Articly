@@ -64,7 +64,7 @@ class _FakeSavedItemsProvider extends ChangeNotifier
   }
 
   @override
-  Future<void> save(SavedItem item) async {
+  Future<void> add(SavedItem item) async {
     _saveCommand = Command()
       ..start()
       ..finish(null);

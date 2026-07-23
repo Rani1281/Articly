@@ -1,5 +1,6 @@
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
 import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,12 +11,25 @@ class SavedItemViewModel extends ChangeNotifier {
   SavedItemViewModel({
     required SavedItem currentItem,
     required SavedItemsProvider provider,
+    // required this.saveWebpageViewModel,
   }) : _currentItem = currentItem,
        _provider = provider {
     title = _currentItem.title;
     uri = _currentItem.uri;
     notes = _currentItem.notes;
+
+    // saveWebpageViewModel.addListener(_checkSavingStatus());
   }
+
+  /// if saving a webpage was completed,
+  /// rebuild the item card (in case it was the one that was updated)
+  // _checkSavingStatus() {
+  //   if (saveWebpageViewModel.saveCommand.completed) {
+  //     notifyListeners();
+  //   }
+  // }
+
+  // final SaveWebpageViewModel saveWebpageViewModel;
 
   SavedItem _currentItem;
 
@@ -43,8 +57,8 @@ class SavedItemViewModel extends ChangeNotifier {
   }
 
   final SavedItemsProvider _provider;
-  Command get deleteItemCommand => _provider.deleteCommand;
 
+  final Command deleteItemCommand = Command();
   final Command openUrlCommand = Command();
 
   // SavedItemsProvider getDeleteCommand(BuildContext context) {
@@ -127,16 +141,19 @@ class SavedItemViewModel extends ChangeNotifier {
       return Future.value();
     }
 
-    // Make the item no longer visible in the UI
-    _isVisible = false;
+    deleteItemCommand.start();
     notifyListeners();
 
-    await _provider.delete(_currentItem.id!);
+    // Make the item no longer visible in the UI
+    _isVisible = false;
+    final error = await _provider.delete(_currentItem.id!);
 
     if (!deleteItemCommand.completed) {
-      // revert the changes if failed
+      // make the item visible again if the operation failed
       _isVisible = true;
-      notifyListeners();
     }
+
+    deleteItemCommand.finish(error);
+    notifyListeners();
   }
 }

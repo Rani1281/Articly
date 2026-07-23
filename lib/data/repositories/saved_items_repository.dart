@@ -17,7 +17,7 @@ class SavedItemsRepository {
   final log = Logger('SavedItemsRepository');
 
   // Returns the id of the added document
-  Future<String> saveItem(SavedItem item) async {
+  Future<String> addItem(SavedItem item) async {
     final user = _auth.currentUser;
     if (user == null) {
       throw Exception(

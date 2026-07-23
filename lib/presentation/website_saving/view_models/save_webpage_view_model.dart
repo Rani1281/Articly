@@ -1,13 +1,14 @@
+import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
+import '../../../data/models/saved_item.dart';
+
 class SaveWebpageViewModel extends ChangeNotifier {
-  // bool _remindMe = false;
-  // bool get remindMe => _remindMe;
-  // set remindMe(bool value) {
-  //   _remindMe = value;
-  //   notifyListeners();
-  // }
+  SaveWebpageViewModel(this._provider);
+
+  final SavedItemsProvider _provider;
 
   String? _urlError;
   String? get urlError => _urlError;
@@ -21,6 +22,8 @@ class SaveWebpageViewModel extends ChangeNotifier {
   static const int titleMaxChars = 200;
   static const int urlMaxChars = 2048;
   static const int notesMaxChars = 10000;
+
+  final Command saveCommand = Command();
 
   final log = Logger('SaveWebpageViewModel');
 
@@ -79,5 +82,49 @@ class SaveWebpageViewModel extends ChangeNotifier {
     _titleError = null;
     _notesError = null;
     notifyListeners();
+  }
+
+  Future<SavedItem?> saveWebpage({
+    required ReadingStatus readingStatus,
+    required String url,
+    required String title,
+    required String notes,
+    required bool remindMe,
+    required String? id,
+    required bool isEdit,
+    required DateTime createdAt,
+  }) async {
+    String? error;
+    saveCommand.start();
+    notifyListeners();
+
+    final isValid = validateFields(url, title, notes);
+    if (!isValid) {
+      log.warning('Some info is invalid, so not saving the webpage');
+      return null;
+    }
+
+    final item = SavedItem(
+      id: id, // will be set if is edit
+      type: ItemType.webpage,
+      readingStatus: readingStatus,
+      uri: Uri.tryParse(url),
+      title: title,
+      notes: notes,
+      remindReading: remindMe,
+      createdAt: createdAt,
+    );
+
+    log.info('Created item:\n$item');
+
+    if (!isEdit) {
+      error = await _provider.add(item);
+    } else {
+      error = await _provider.edit(item);
+    }
+
+    saveCommand.finish(error);
+    notifyListeners();
+    return item;
   }
 }

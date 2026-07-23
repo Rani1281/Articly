@@ -13,19 +13,12 @@ class SavedItemsProvider extends ChangeNotifier {
 
   final SavedItemsRepository _repo;
 
-  final Command loadCommand = Command();
-  final Command saveCommand = Command();
-  final Command editCommand = Command();
-  final Command deleteCommand = Command();
-
   final log = Logger('SavedItemsProvider');
 
-  // Loads the user's saved items
-  Future<void> load() async {
-    log.info('Loading started...');
+  // Loads the user's saved items, return error or null
+  Future<String?> load({bool notify = true}) async {
     String? error;
-    loadCommand.start();
-    notifyListeners();
+
     try {
       _items = await _repo.fetchItems();
       log.finest('Successfully loaded all user saved items!');
@@ -33,21 +26,20 @@ class SavedItemsProvider extends ChangeNotifier {
       log.shout('An error occurred: $e');
       error =
           'Something went wrong. Please check your internet connection and try again';
-    } finally {
-      loadCommand.finish(error);
+    }
+
+    if (notify) {
       notifyListeners();
     }
+    return error;
   }
 
-  /// Create a new item
-  Future<void> save(SavedItem item) async {
-    log.info('Saving started...');
+  /// Create a new item, return error or null
+  Future<String?> add(SavedItem item) async {
     String? error;
-    saveCommand.start();
-    notifyListeners();
 
     try {
-      final id = await _repo.saveItem(item);
+      final id = await _repo.addItem(item);
       // create a new item that has the new id
       final newItem = item.copyWith(id: id);
       _items[id] = newItem;
@@ -56,18 +48,15 @@ class SavedItemsProvider extends ChangeNotifier {
       log.shout('An error occurred: $e');
       error =
           'Something went wrong. Please check your internet connection and try again';
-    } finally {
-      saveCommand.finish(error);
-      notifyListeners();
     }
+
+    notifyListeners();
+    return error;
   }
 
   /// Edit an existing item
-  Future<void> edit(SavedItem item) async {
-    log.info('Editing started...');
+  Future<String?> edit(SavedItem item) async {
     String? error;
-    editCommand.start();
-    notifyListeners();
 
     try {
       await _repo.updateItem(item);
@@ -77,18 +66,16 @@ class SavedItemsProvider extends ChangeNotifier {
     } catch (e) {
       log.shout('An error occurred: $e');
       error = 'Something went wrong. Please try again later';
-    } finally {
-      editCommand.finish(error);
-      notifyListeners();
     }
+
+    notifyListeners();
+    return error;
   }
 
-  /// Delete an item by its id
-  Future<void> delete(String id) async {
-    log.info('Deleting started...');
+  /// Delete an item by its id, returns an error message.
+  /// Notifies listeners only when finished
+  Future<String?> delete(String id) async {
     String? error;
-    deleteCommand.start();
-    notifyListeners();
 
     try {
       await _repo.deleteItem(id);
@@ -100,9 +87,9 @@ class SavedItemsProvider extends ChangeNotifier {
     } catch (e) {
       log.shout('An error occurred: $e');
       error = 'Something went wrong. Please try again later';
-    } finally {
-      deleteCommand.finish(error);
-      notifyListeners();
     }
+
+    notifyListeners();
+    return error;
   }
 }
