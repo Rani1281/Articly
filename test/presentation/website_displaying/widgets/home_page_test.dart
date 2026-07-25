@@ -21,11 +21,12 @@ class FakeSavedItemsProvider extends ChangeNotifier
   Map<String, SavedItem> get items => _items;
 
   @override
-  Future<void> load() async {
+  Future<String?> load({bool notify = false}) async {
     _loadCommand = Command()
       ..start()
       ..finish(null);
     notifyListeners();
+    return null;
   }
 
   @override

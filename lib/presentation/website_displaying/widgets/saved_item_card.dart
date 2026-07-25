@@ -50,12 +50,13 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
   }
 
   _openUrl() async {
-    if (_currentItem.uri == null) {
+    final currentItem = widget.viewModel.currentItem;
+    if (currentItem.uri == null) {
       return null;
     }
-    await _viewModel.openUrl();
-    if (!_viewModel.openUrlCommand.completed &&
-        _viewModel.openUrlCommand.hasError &&
+    await widget.viewModel.openUrl();
+    if (!widget.viewModel.openUrlCommand.completed &&
+        widget.viewModel.openUrlCommand.hasError &&
         mounted) {
       MySnackBar(context, message: _viewModel.openUrlCommand.error!).show();
     }
@@ -83,17 +84,17 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
 
   @override
   void dispose() {
-    _viewModel.removeListener(_checkDeletion);
+    widget.viewModel.removeListener(_checkDeletion);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    _currentItem = _viewModel.currentItem;
     return ListenableBuilder(
-      listenable: _viewModel,
+      listenable: widget.viewModel,
       builder: (context, _) {
-        return !_viewModel.isVisible
+        final currentItem = widget.viewModel.currentItem;
+        return !widget.viewModel.isVisible
             ? const SizedBox()
             : Container(
                 decoration: BoxDecoration(
@@ -118,10 +119,10 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                   children: [
                     // Top Header Section
                     // Wrap the header in a Link widget to generate the native HTML <a> tag on Web
-                    _currentItem.uri == null
+                    currentItem.uri == null
                         ? buildHeader()
                         : Link(
-                            uri: _currentItem.uri,
+                            uri: currentItem.uri,
                             target: LinkTarget.blank,
                             builder: (context, followLink) => buildHeader(),
                           ),
@@ -142,9 +143,7 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                       ),
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: () {
-                          widget.viewModel.toggleExpand();
-                        },
+                        onTap: widget.viewModel.toggleExpand,
                         child: Row(
                           children: [
                             _buildActionIcon(
@@ -200,7 +199,8 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                             ),
                             const Spacer(),
                             // Expand/Collapse Toggle Button
-                            _currentItem.notes == null
+                            _currentItem.notes == null ||
+                                    _currentItem.notes!.isEmpty
                                 ? const SizedBox()
                                 : IconButton(
                                     icon: Icon(
@@ -220,7 +220,8 @@ class _SavedWebpageCardState extends State<SavedWebpageCard> {
                     ),
 
                     // Expandable Notes Area
-                    if (_currentItem.notes != null) ...[
+                    if (_currentItem.notes != null &&
+                        _currentItem.notes!.isNotEmpty) ...[
                       AnimatedSize(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,

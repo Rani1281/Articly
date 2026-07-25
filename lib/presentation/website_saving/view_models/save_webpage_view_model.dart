@@ -40,37 +40,31 @@ class SaveWebpageViewModel extends ChangeNotifier {
   }
 
   /// Validates all fields. If one is invalid, immediately returns false and updates the value of the error message.
-  bool validateFields(String url, String title, String notes) {
+  bool validateFields(Uri? uri, String? title, String? notes) {
     _clearErrors();
 
-    if (url.isEmpty) {
+    if (uri == null || uri.toString().isEmpty) {
       _urlError = 'Url is required';
-      notifyListeners();
       return false;
     }
 
-    if (url.length > urlMaxChars) {
+    if (uri.toString().length > urlMaxChars) {
       _urlError = 'Url is too long';
-      notifyListeners();
       return false;
     }
 
-    final parsedUri = Uri.tryParse(url);
-    if (!isUrlValid(parsedUri)) {
+    if (!isUrlValid(uri)) {
       _urlError = 'Invalid url';
-      notifyListeners();
       return false;
     }
 
-    if (title.length > titleMaxChars) {
+    if (title != null && title.length > titleMaxChars) {
       _titleError = 'Title is too long';
-      notifyListeners();
       return false;
     }
 
-    if (notes.length > notesMaxChars) {
+    if (notes != null && notes.length > notesMaxChars) {
       _notesError = 'Notes are too long';
-      notifyListeners();
       return false;
     }
 
@@ -81,50 +75,36 @@ class SaveWebpageViewModel extends ChangeNotifier {
     _urlError = null;
     _titleError = null;
     _notesError = null;
-    notifyListeners();
   }
 
-  Future<SavedItem?> saveWebpage({
-    required ReadingStatus readingStatus,
-    required String url,
-    required String title,
-    required String notes,
-    required bool remindMe,
-    required String? id,
+  Future<void> saveWebpage({
+    required SavedItem savedItem,
     required bool isEdit,
-    required DateTime createdAt,
   }) async {
+    // first check the validity without starting the command yet because this is not an async operation
+    final isValid = validateFields(
+      savedItem.uri,
+      savedItem.title,
+      savedItem.notes,
+    );
+
+    if (!isValid) {
+      log.info('Some info is invalid, so not saving the webpage');
+      notifyListeners();
+      return Future.value();
+    }
+
     String? error;
     saveCommand.start();
     notifyListeners();
 
-    final isValid = validateFields(url, title, notes);
-    if (!isValid) {
-      log.warning('Some info is invalid, so not saving the webpage');
-      return null;
-    }
-
-    final item = SavedItem(
-      id: id, // will be set if is edit
-      type: ItemType.webpage,
-      readingStatus: readingStatus,
-      uri: Uri.tryParse(url),
-      title: title,
-      notes: notes,
-      remindReading: remindMe,
-      createdAt: createdAt,
-    );
-
-    log.info('Created item:\n$item');
-
     if (!isEdit) {
-      error = await _provider.add(item);
+      error = await _provider.add(savedItem);
     } else {
-      error = await _provider.edit(item);
+      error = await _provider.edit(savedItem);
     }
 
     saveCommand.finish(error);
     notifyListeners();
-    return item;
   }
 }

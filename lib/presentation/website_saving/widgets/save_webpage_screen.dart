@@ -86,23 +86,24 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     final title = _titleController.text;
     final notes = _notesController.text;
 
-    final SavedItem? item = await _viewModel.saveWebpage(
+    final item = SavedItem(
+      id: widget.currentItem?.id, // will be set if is edit
+      type: ItemType.webpage,
       readingStatus: readingStatus,
-      url: url,
+      uri: Uri.tryParse(url),
       title: title,
       notes: notes,
-      remindMe: _remindMe,
-      id: widget.currentItem?.id,
-      isEdit: widget.isEdit,
-      // if an item is given, use its createdAt, and otherwise use the current time
+      remindReading: _remindMe,
       createdAt: widget.currentItem?.createdAt ?? DateTime.now(),
     );
+
+    await _viewModel.saveWebpage(savedItem: item, isEdit: widget.isEdit);
 
     if (!mounted) return;
 
     final cmd = _viewModel.saveCommand;
     if (cmd.hasError && !cmd.completed) {
-      MySnackBar(context, message: 'Saving failed').show();
+      MySnackBar(context, message: cmd.error!).show();
     } else {
       MySnackBar(context, message: 'Saved webpage successfully!').show();
       Navigator.pop(context, item);

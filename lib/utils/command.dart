@@ -1,11 +1,18 @@
 class Command {
-  bool activated = false;
-  bool running = false;
+  Command({
+    this.activated = false,
+    this.running = false,
+    this.error,
+    this.completed = false,
+  });
+
+  bool activated;
+  bool running;
 
   String? error;
   bool get hasError => error != null;
 
-  bool completed = false; // if the action completed successfully (no errors)
+  bool completed; // if the action completed successfully (no errors)
 
   /// Doesn't include error handling
   // Future<void> execute() async {
@@ -19,7 +26,7 @@ class Command {
     completed = false;
   }
 
-  void finish(String? errorMessage) {
+  void finish([String? errorMessage]) {
     running = false;
     error = errorMessage;
     completed = errorMessage == null ? true : false;

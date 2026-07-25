@@ -22,36 +22,37 @@ void main() {
 
   group('SavedItemsProvider', () {
     group('initialization', () {
-      test('calls load() on construction', () async {
-        when(() => mockRepo.fetchItems()).thenAnswer((_) async => {});
-
-        final provider = SavedItemsProvider(repo: mockRepo);
-
-        await provider.load();
-
-        verify(() => mockRepo.fetchItems()).called(1);
-        check(provider.loadCommand.completed).isTrue();
-      });
-    });
-
-    group('load()', () {
       test(
-        'initializes loadCommand and notifies listeners on success',
+        'calls load() on construction and notifies listeners once after action',
         () async {
           when(() => mockRepo.fetchItems()).thenAnswer((_) async => {});
 
           final provider = SavedItemsProvider(repo: mockRepo);
+          int notifiedCount = 0;
+          provider.addListener(() => notifiedCount++);
 
           await provider.load();
 
-          check(provider.loadCommand.running).isFalse();
-          check(provider.loadCommand.completed).isTrue();
-          check(provider.loadCommand.error).isNull();
-          check(provider.items).isEmpty();
+          verify(() => mockRepo.fetchItems()).called(1);
+          check(notifiedCount).equals(1);
         },
       );
 
-      test('sets items map on success', () async {
+      test('does not notify listeners if notify is set to false', () async {
+        when(() => mockRepo.fetchItems()).thenAnswer((_) async => {});
+
+        final provider = SavedItemsProvider(repo: mockRepo);
+        int notifiedCount = 0;
+        provider.addListener(() => notifiedCount++);
+
+        await provider.load(notify: false);
+
+        check(notifiedCount).equals(0);
+      });
+    });
+
+    group('load()', () {
+      test('sets items map on success and returns null', () async {
         final item1 = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
@@ -66,30 +67,30 @@ void main() {
 
         final provider = SavedItemsProvider(repo: mockRepo);
 
-        await provider.load();
+        final result = await provider.load();
 
         check(provider.items.length).equals(2);
         check(provider.items.containsKey('id1')).isTrue();
         check(provider.items.containsKey('id2')).isTrue();
-        check(provider.loadCommand.running).isFalse();
-        check(provider.loadCommand.completed).isTrue();
-        check(provider.loadCommand.error).isNull();
+        check(result).isNull();
       });
 
-      test('sets error and finishes loadCommand on failure', () async {
-        when(() => mockRepo.fetchItems()).thenThrow(Exception('Network error'));
+      test(
+        'returns error and finishes on failure, while items stay empty',
+        () async {
+          when(
+            () => mockRepo.fetchItems(),
+          ).thenThrow(Exception('Network error'));
 
-        final provider = SavedItemsProvider(repo: mockRepo);
+          final provider = SavedItemsProvider(repo: mockRepo);
 
-        await provider.load();
+          final result = await provider.load();
 
-        check(provider.loadCommand.running).isFalse();
-        check(provider.loadCommand.completed).isFalse();
-        check(provider.loadCommand.hasError).isTrue();
-        check(provider.loadCommand.error).isNotNull();
-        check(provider.loadCommand.error!).contains('Something went wrong');
-        check(provider.items).isEmpty();
-      });
+          check(result).isA<String>();
+          check(result!).contains('Something went wrong');
+          check(provider.items).isEmpty();
+        },
+      );
     });
 
     group('save()', () {
@@ -101,47 +102,33 @@ void main() {
         await provider.load();
       });
 
-      test('initializes saveCommand and notifies listeners on start', () async {
-        when(() => mockRepo.addItem(any())).thenAnswer((_) async => 'new-id');
+      test('adds new item with its generated Firestore id, notifies listeners, '
+          'and returns null on success', () async {
+        when(
+          () => mockRepo.addItem(any()),
+        ).thenAnswer((_) async => 'firestore-id-123');
+
+        int notifyCount = 0;
+        provider.addListener(() => notifyCount++);
 
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
+          uri: Uri.parse('https://example.com'),
         );
 
-        await provider.add(item);
+        final result = await provider.add(item);
 
-        check(provider.saveCommand.running).isFalse();
-        check(provider.saveCommand.completed).isTrue();
-        check(provider.saveCommand.error).isNull();
+        check(provider.items.length).equals(1);
+        check(provider.items.containsKey('firestore-id-123')).isTrue();
+        check(
+          provider.items['firestore-id-123']!.uri,
+        ).equals(Uri.parse('https://example.com'));
+        check(result).isNull();
+        check(notifyCount).equals(1);
       });
 
-      test(
-        'adds new item with its generated Firestore id on success',
-        () async {
-          when(
-            () => mockRepo.addItem(any()),
-          ).thenAnswer((_) async => 'firestore-id-123');
-
-          final item = SavedItem(
-            type: ItemType.webpage,
-            readingStatus: ReadingStatus.unread,
-            uri: Uri.parse('https://example.com'),
-          );
-
-          await provider.add(item);
-
-          check(provider.items.length).equals(1);
-          check(provider.items.containsKey('firestore-id-123')).isTrue();
-          check(
-            provider.items['firestore-id-123']!.uri,
-          ).equals(Uri.parse('https://example.com'));
-          check(provider.saveCommand.completed).isTrue();
-          check(provider.saveCommand.error).isNull();
-        },
-      );
-
-      test('sets error and finishes saveCommand on failure', () async {
+      test('returns an error on failure', () async {
         when(() => mockRepo.addItem(any())).thenThrow(Exception('Save failed'));
 
         final item = SavedItem(
@@ -149,52 +136,14 @@ void main() {
           readingStatus: ReadingStatus.unread,
         );
 
-        await provider.add(item);
+        final result = await provider.add(item);
 
-        check(provider.saveCommand.running).isFalse();
-        check(provider.saveCommand.completed).isFalse();
-        check(provider.saveCommand.hasError).isTrue();
-        check(provider.saveCommand.error).isNotNull();
-        check(provider.saveCommand.error!).contains('Something went wrong');
+        check(result!).contains('Something went wrong');
         check(provider.items).isEmpty();
       });
     });
 
     group('edit()', () {
-      //   test('initializes editCommand and notifies listeners on start', () async {
-      //     when(
-      //       () => mockRepo.updateItem(any()),
-      //     ).thenAnswer((_) => Future.value());
-      //     when(() => mockRepo.fetchItems()).thenAnswer((_) async => {});
-
-      //     final provider = SavedItemsProvider(repo: mockRepo);
-      //     await provider.load();
-
-      //     final item = SavedItem(
-      //       id: 'item-id',
-      //       type: ItemType.webpage,
-      //       readingStatus: ReadingStatus.unread,
-      //     );
-
-      //     var notified = false;
-      //     provider.addListener(() {
-      //       notified = true;
-      //     });
-
-      //     // Do not await, so it stays running
-      //     final future = provider.edit(item);
-
-      //     // Should be in running state
-      //     check(provider.editCommand.running).isTrue();
-      //     check(provider.editCommand.completed).isFalse();
-      //     check(provider.editCommand.error).isNull();
-      //     check(notified).isTrue();
-
-      //     // Complete the mock
-      //     completer.complete();
-      //     await future;
-      //   });
-
       test('calls _repo.updateItem() with the given item', () async {
         when(() => mockRepo.updateItem(any())).thenAnswer((_) async {});
         when(() => mockRepo.fetchItems()).thenAnswer((_) async => {});
@@ -213,7 +162,7 @@ void main() {
         verify(() => mockRepo.updateItem(item)).called(1);
       });
 
-      test('updates items map and finalizes editCommand on success', () async {
+      test('updates items map and returns null on success', () async {
         when(() => mockRepo.updateItem(any())).thenAnswer((_) async {});
         when(() => mockRepo.fetchItems()).thenAnswer((_) async => {});
 
@@ -228,7 +177,7 @@ void main() {
           title: 'Updated Title',
         );
 
-        await provider.edit(item);
+        final result = await provider.edit(item);
 
         check(provider.items.length).equals(1);
         check(provider.items.containsKey('item-id-abc')).isTrue();
@@ -236,9 +185,7 @@ void main() {
         check(
           provider.items['item-id-abc']!.uri,
         ).equals(Uri.parse('https://example.com'));
-        check(provider.editCommand.running).isFalse();
-        check(provider.editCommand.completed).isTrue();
-        check(provider.editCommand.error).isNull();
+        check(result).isNull();
       });
 
       test('does not change items map and sets error on failure', () async {
@@ -256,14 +203,9 @@ void main() {
           readingStatus: ReadingStatus.unread,
         );
 
-        await provider.edit(item);
+        final result = await provider.edit(item);
 
-        check(provider.editCommand.running).isFalse();
-        check(provider.editCommand.completed).isFalse();
-        check(provider.editCommand.hasError).isTrue();
-        check(
-          provider.editCommand.error,
-        ).equals('Something went wrong. Please try again later');
+        check(result!).contains('Something went wrong');
         check(provider.items).isEmpty();
       });
     });
@@ -290,7 +232,7 @@ void main() {
       });
 
       test(
-        'finalizes deleteCommand\'s fields right and notifies listeners',
+        'finalizes deleteCommand\'s fields right and notifies listeners once',
         () async {
           when(() => mockRepo.deleteItem('id1')).thenAnswer((_) async => {});
 
@@ -301,11 +243,8 @@ void main() {
 
           await provider.delete('id1');
 
-          check(provider.deleteCommand.running).isFalse();
-          check(provider.deleteCommand.completed).isTrue();
-          check(provider.deleteCommand.error).isNull();
           check(provider.items).isEmpty();
-          check(countNotified).equals(2);
+          check(countNotified).equals(1);
         },
       );
 
@@ -317,18 +256,14 @@ void main() {
       });
 
       test(
-        'on success, removes the item with the deleted id in the items map, and success in command',
+        'on success, removes the item with the deleted id in the items map, and returns null',
         () async {
           when(() => mockRepo.deleteItem('id1')).thenAnswer((_) async => {});
-          await provider.delete('id1');
+          final result = await provider.delete('id1');
 
-          print(provider.items);
-
+          check(result).isNull();
           check(provider.items.length).equals(1);
           check(provider.items.containsKey('id1')).isFalse();
-
-          check(provider.deleteCommand.completed).isTrue();
-          check(provider.deleteCommand.error).isNull();
         },
       );
 
@@ -339,11 +274,10 @@ void main() {
             () => mockRepo.deleteItem('id1'),
           ).thenThrow(Exception('Network error'));
           final provider = SavedItemsProvider(repo: mockRepo);
-          await provider.delete('id1');
+          final result = await provider.delete('id1');
 
-          check(provider.deleteCommand.running).isFalse();
-          check(provider.deleteCommand.error).isNotNull();
-          check(provider.deleteCommand.completed).isFalse();
+          check(result).isA<String>();
+          check(result!).contains('Something went wrong');
         },
       );
     });

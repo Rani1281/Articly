@@ -6,6 +6,7 @@ import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/theme/theme_model.dart';
+import 'package:articly/utils/command.dart';
 import 'package:checks/checks.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,14 +17,30 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class _MockSavedItemsRepository extends Mock implements SavedItemsRepository {}
 
+class _MockSavedItemsViewModel extends Mock implements SaveWebpageViewModel {}
+
 void main() {
+  late _MockSavedItemsViewModel mockViewModel;
+
   // Initialize mock SharedPreferences so ThemeModel can be created in tests.
   setUpAll(() {
+    mockViewModel = _MockSavedItemsViewModel();
     SharedPreferences.setMockInitialValues({});
     registerFallbackValue(
       SavedItem(type: ItemType.webpage, readingStatus: ReadingStatus.unread),
     );
+
+    when(
+      () => mockViewModel.saveWebpage(
+        savedItem: any<SavedItem>(named: 'savedItem'),
+        isEdit: any<bool>(named: 'isEdit'),
+      ),
+    ).thenAnswer((_) => Future.value(null));
   });
+
+  SaveWebpageViewModel buildViewModel() {
+    return mockViewModel;
+  }
 
   group('SaveWebsiteScreen', () {
     // A minimal fake SavedItemsProvider to avoid real Firestore calls.
@@ -68,15 +85,23 @@ void main() {
                 value: savedItemsProvider ?? createProvider(),
               ),
             ],
-            child: SaveWebpageScreen(viewModel: viewModel),
+            child: SaveWebpageScreen(viewModel: buildViewModel()),
           ),
         ),
       );
     }
 
     testWidgets('renders all widgets correctly', (tester) async {
+      final doneCommand = Command(
+        activated: true,
+        running: false,
+        completed: true,
+      );
+
+      when(() => mockViewModel.saveCommand).thenReturn(doneCommand);
+
       // Arrange
-      final viewModel = SaveWebpageViewModel();
+      final viewModel = buildViewModel();
       await pumpScreen(tester, viewModel: viewModel);
 
       // Assert
@@ -91,8 +116,17 @@ void main() {
     testWidgets('shows a snack bar when an error appears in savingError', (
       tester,
     ) async {
+      final errorCommand = Command(
+        activated: true,
+        running: false,
+        error: 'ERROR MESSAGE',
+        completed: false,
+      );
+
+      when(() => mockViewModel.saveCommand).thenReturn(errorCommand);
+
       // Arrange
-      final viewModel = SaveWebpageViewModel();
+      final viewModel = buildViewModel();
       final provider = createProvider(shouldFail: true);
       await pumpScreen(
         tester,
@@ -103,20 +137,29 @@ void main() {
       // Act - trigger a save that will fail
       await tester.enterText(
         find.byKey(const ValueKey('urlTextField')),
-        'https://example.com',
+        'localhost:54321',
       );
       await tester.tap(find.byKey(const ValueKey('saveButton')));
       await tester.pumpAndSettle();
 
       // Assert - expect the error snack bar
       expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.text('ERROR MESSAGE'), findsOneWidget);
     });
 
     testWidgets(
       'shows a circular progress indicator when in the middle of saving',
       (tester) async {
+        final loadingCommand = Command(
+          activated: true,
+          running: true,
+          completed: false,
+        );
+
+        when(() => mockViewModel.saveCommand).thenReturn(loadingCommand);
+
         // Arrange
-        final viewModel = SaveWebpageViewModel();
+        final viewModel = buildViewModel();
         final provider = createProvider(neverCompletes: true);
         await pumpScreen(
           tester,
@@ -140,8 +183,15 @@ void main() {
     testWidgets(
       'save button is unpressable when the app is in the middle of saving',
       (tester) async {
+        final loadingCommand = Command(
+          activated: true,
+          running: true,
+          completed: false,
+        );
+
+        when(() => mockViewModel.saveCommand).thenReturn(loadingCommand);
         // Arrange
-        final viewModel = SaveWebpageViewModel();
+        final viewModel = buildViewModel();
         final provider = createProvider(neverCompletes: true);
         await pumpScreen(
           tester,
@@ -168,9 +218,16 @@ void main() {
     testWidgets(
       'automatically pops the page when the operation was successful',
       (tester) async {
+        final loadingCommand = Command(
+          activated: true,
+          running: false,
+          completed: true,
+        );
+
+        when(() => mockViewModel.saveCommand).thenReturn(loadingCommand);
         // Arrange - push the screen onto a navigator
         final prefs = await SharedPreferences.getInstance();
-        final viewModel = SaveWebpageViewModel();
+        final viewModel = buildViewModel();
         final provider = createProvider();
         final homeKey = GlobalKey();
         await tester.pumpWidget(
@@ -224,8 +281,16 @@ void main() {
       'shows an error message below a text field after an error message was '
       'set and rebuild happened',
       (tester) async {
+        final errorCommand = Command(
+          activated: true,
+          running: false,
+          error: 'Url is required',
+          completed: false,
+        );
+
+        when(() => mockViewModel.saveCommand).thenReturn(errorCommand);
         // Arrange
-        final viewModel = SaveWebpageViewModel();
+        final viewModel = buildViewModel();
         await pumpScreen(tester, viewModel: viewModel);
 
         // Act - tap save with an empty URL to trigger validation
@@ -241,7 +306,7 @@ void main() {
       tester,
     ) async {
       // Arrange
-      final viewModel = SaveWebpageViewModel();
+      final viewModel = buildViewModel();
       await pumpScreen(tester, viewModel: viewModel);
 
       // Act
@@ -260,7 +325,7 @@ void main() {
       tester,
     ) async {
       // Arrange
-      final viewModel = SaveWebpageViewModel();
+      final viewModel = buildViewModel();
       await pumpScreen(tester, viewModel: viewModel);
 
       // Act
@@ -276,7 +341,7 @@ void main() {
       tester,
     ) async {
       // Arrange
-      final viewModel = SaveWebpageViewModel();
+      final viewModel = buildViewModel();
       await pumpScreen(tester, viewModel: viewModel);
 
       // Act
@@ -295,7 +360,7 @@ void main() {
       'clicking on the suffix icon of the url text field pastes clipboard text',
       (tester) async {
         // Arrange
-        final viewModel = SaveWebpageViewModel();
+        final viewModel = buildViewModel();
         await pumpScreen(tester, viewModel: viewModel);
 
         tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -342,7 +407,7 @@ void main() {
       tester,
     ) async {
       // Arrange
-      final viewModel = SaveWebpageViewModel();
+      final viewModel = buildViewModel();
       await pumpScreen(tester, viewModel: viewModel);
 
       // Act

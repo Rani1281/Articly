@@ -76,7 +76,6 @@ class HomePageViewModel extends ChangeNotifier {
     if (_items.length <= 1) return;
 
     if (_prevOrderBy == _orderBy) {
-      debugPrint('Skipped sorting');
       return;
     }
 
@@ -85,7 +84,6 @@ class HomePageViewModel extends ChangeNotifier {
         sortByCreationDate();
         break;
       case OrderType.name:
-        debugPrint('Sorting by name');
         sortByName();
         break;
     }

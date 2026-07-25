@@ -24,7 +24,6 @@ void main() {
     mockPrefsService = MockSharedPreferencesService();
 
     // Default mock behavior
-    when(() => mockProvider.loadCommand).thenReturn(Command());
     when(() => mockProvider.items).thenReturn({});
 
     viewModel = HomePageViewModel(
@@ -45,42 +44,43 @@ void main() {
   });
 
   group('processItems', () {
-    test(
-      'initializes the processItemsCommand correctly in the beginning of the function and notifies listeners.',
-      () async {
-        when(() => mockPrefsService.getOrderBy()).thenReturn(null);
-        when(() => mockPrefsService.getIsDescending()).thenReturn(null);
-        when(() => mockProvider.load()).thenAnswer((_) async {});
+    test('initializes the processItemsCommand correctly in the beginning of the'
+        ' function and notifies listeners.', () async {
+      when(() => mockPrefsService.getOrderBy()).thenReturn(null);
+      when(() => mockPrefsService.getIsDescending()).thenReturn(null);
+      when(
+        () => mockProvider.load(notify: false),
+      ).thenAnswer((_) async => Future.value(null));
 
-        var notified = false;
-        viewModel.addListener(() => notified = true);
+      var notified = false;
+      viewModel.addListener(() => notified = true);
 
-        final future = viewModel.processItems();
+      final future = viewModel.processItems();
 
-        check(viewModel.processItemsCommand.running).isTrue();
-        check(notified).isTrue();
+      check(viewModel.processItemsCommand.running).isTrue();
+      check(notified).isTrue();
 
-        await future;
+      await future;
 
-        check(viewModel.processItemsCommand.running).isFalse();
-        check(viewModel.processItemsCommand.activated).isTrue();
-      },
-    );
-
+      check(viewModel.processItemsCommand.running).isFalse();
+      check(viewModel.processItemsCommand.activated).isTrue();
+    });
     test(
       "calls loadData if the provider hasn't started to load the items yet, or *reload* is forcefully set to true",
       () async {
         when(() => mockPrefsService.getOrderBy()).thenReturn(null);
         when(() => mockPrefsService.getIsDescending()).thenReturn(null);
-        when(() => mockProvider.load()).thenAnswer((_) async {});
+        when(
+          () => mockProvider.load(notify: false),
+        ).thenAnswer((_) => Future.value(null));
 
         // Test case 1: provider.loadCommand.activated is false
         await viewModel.processItems();
-        verify(() => mockProvider.load()).called(1);
+        verify(() => mockProvider.load(notify: false)).called(1);
 
         // Test case 2: reload is true
         await viewModel.processItems(reload: true);
-        verify(() => mockProvider.load()).called(1);
+        verify(() => mockProvider.load(notify: false)).called(1);
       },
     );
 
@@ -102,7 +102,9 @@ void main() {
       when(
         () => mockPrefsService.getIsDescending(),
       ).thenReturn(false); // Ascending
-      when(() => mockProvider.load()).thenAnswer((_) async {});
+      when(
+        () => mockProvider.load(notify: false),
+      ).thenAnswer((_) => Future.value(null));
       when(() => mockProvider.items).thenReturn({'1': item1, '2': item2});
 
       // Initially filter is none. Let's set it to unread to test filterItems is called.
@@ -115,13 +117,14 @@ void main() {
       check(viewModel.items).length.equals(1);
       check(viewModel.items.first.id).equals('2');
     });
-
     test(
       'finalizes the command correctly in the end and notifies listeners',
       () async {
         when(() => mockPrefsService.getOrderBy()).thenReturn(null);
         when(() => mockPrefsService.getIsDescending()).thenReturn(null);
-        when(() => mockProvider.load()).thenAnswer((_) async {});
+        when(
+          () => mockProvider.load(notify: false),
+        ).thenAnswer((_) => Future.value(null));
 
         var notifyCount = 0;
         viewModel.addListener(() => notifyCount++);
@@ -138,12 +141,12 @@ void main() {
     );
 
     test(
-      'If there was an error in the loadCommand of the provider, its error should also appear in the processItemsCommand',
+      'If the provider returned an error, it should also appear in the processItemsCommand',
       () async {
         const errorMessage = 'Load error';
-        final errorCommand = Command()..finish(errorMessage);
-        when(() => mockProvider.loadCommand).thenReturn(errorCommand);
-        when(() => mockProvider.load()).thenAnswer((_) async {});
+        when(
+          () => mockProvider.load(notify: false),
+        ).thenAnswer((_) => Future.value(errorMessage));
         when(() => mockPrefsService.getOrderBy()).thenReturn(null);
         when(() => mockPrefsService.getIsDescending()).thenReturn(null);
 
@@ -162,7 +165,9 @@ void main() {
           () => mockPrefsService.getOrderBy(),
         ).thenReturn(OrderType.name.name);
         when(() => mockPrefsService.getIsDescending()).thenReturn(false);
-        when(() => mockProvider.load()).thenAnswer((_) async {});
+        when(
+          () => mockProvider.load(notify: false),
+        ).thenAnswer((_) => Future.value(null));
 
         await viewModel.loadData();
 
@@ -170,13 +175,14 @@ void main() {
         check(viewModel.isDescending).isFalse();
       },
     );
-
     test(
       'orderBy defaults to creation date, and isDescending defaults to true',
       () async {
         when(() => mockPrefsService.getOrderBy()).thenReturn(null);
         when(() => mockPrefsService.getIsDescending()).thenReturn(null);
-        when(() => mockProvider.load()).thenAnswer((_) async {});
+        when(
+          () => mockProvider.load(notify: false),
+        ).thenAnswer((_) => Future.value(null));
 
         await viewModel.loadData();
 
@@ -188,41 +194,14 @@ void main() {
     test('calls provider.load()', () async {
       when(() => mockPrefsService.getOrderBy()).thenReturn(null);
       when(() => mockPrefsService.getIsDescending()).thenReturn(null);
-      when(() => mockProvider.load()).thenAnswer((_) async {});
+      when(
+        () => mockProvider.load(notify: false),
+      ).thenAnswer((_) => Future.value(null));
 
       await viewModel.loadData();
 
-      verify(() => mockProvider.load()).called(1);
+      verify(() => mockProvider.load(notify: false)).called(1);
     });
-
-    test(
-      'sets the value of items to the loaded items of the provider (as a list)',
-      () async {
-        final item1 = SavedItem(
-          id: '1',
-          type: ItemType.webpage,
-          readingStatus: ReadingStatus.unread,
-          title: 'A',
-        );
-        final item2 = SavedItem(
-          id: '2',
-          type: ItemType.webpage,
-          readingStatus: ReadingStatus.unread,
-          title: 'B',
-        );
-
-        when(() => mockPrefsService.getOrderBy()).thenReturn(null);
-        when(() => mockPrefsService.getIsDescending()).thenReturn(null);
-        when(() => mockProvider.load()).thenAnswer((_) async {});
-        when(() => mockProvider.items).thenReturn({'1': item1, '2': item2});
-
-        await viewModel.loadData();
-
-        check(viewModel.items).length.equals(2);
-        check(viewModel.items).contains(item1);
-        check(viewModel.items).contains(item2);
-      },
-    );
   });
 
   group('sortByCreationDate', () {

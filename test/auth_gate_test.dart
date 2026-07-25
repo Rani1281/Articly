@@ -55,37 +55,41 @@ class _FakeSavedItemsProvider extends ChangeNotifier
   Map<String, SavedItem> get items => _items;
 
   @override
-  Future<void> load() async {
+  Future<String?> load({bool notify = false}) async {
     _loadCommand = Command()
       ..start()
       ..finish(null);
     _items = {};
     notifyListeners();
+    return null;
   }
 
   @override
-  Future<void> add(SavedItem item) async {
+  Future<String?> add(SavedItem item) async {
     _saveCommand = Command()
       ..start()
       ..finish(null);
     _items['test-id'] = item;
     notifyListeners();
+    return null;
   }
 
   @override
-  Future<void> edit(SavedItem item) async {
+  Future<String?> edit(SavedItem item) async {
     _editCommand = Command()
       ..start()
       ..finish(null);
     notifyListeners();
+    return null;
   }
 
   @override
-  Future<void> delete(String id) async {
+  Future<String?> delete(String id) async {
     _deleteCommand = Command()
       ..start()
       ..finish(null);
     notifyListeners();
+    return null;
   }
 
   @override
