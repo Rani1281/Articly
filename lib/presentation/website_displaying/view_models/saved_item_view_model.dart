@@ -70,7 +70,7 @@ class SavedItemViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  final log = Logger('HomePageViewModel');
+  final log = Logger('SavedItemViewModel');
 
   Future<void> copyContents() async {
     // Add to a list all existing

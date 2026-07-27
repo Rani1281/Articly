@@ -41,7 +41,6 @@ class HomePageViewModel extends ChangeNotifier {
   final processItemsCommand = Command();
 
   Future<void> processItems({bool reload = false}) async {
-    log.info('Started processing items...');
     String? error;
     processItemsCommand.start();
     notifyListeners();
