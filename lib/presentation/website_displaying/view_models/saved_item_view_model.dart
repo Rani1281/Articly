@@ -1,6 +1,5 @@
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
-import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
 import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
