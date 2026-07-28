@@ -7,6 +7,7 @@ import 'package:articly/presentation/authentication/widgets/auth_page.dart';
 import 'package:articly/presentation/authentication/widgets/verify_email_page.dart';
 import 'package:articly/presentation/core/error_page.dart';
 import 'package:articly/presentation/website_displaying/widgets/home_page.dart';
+import 'package:articly/presentation/website_displaying/widgets/new_home_page.dart';
 import 'package:articly/theme/app_theme.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -65,8 +66,8 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeModel.themeMode,
-      home: AuthGate(),
-      // home: SaveWebsiteScreen(),
+      // home: AuthGate(),
+      home: SavedContentScreen(),
     );
   }
 }
