@@ -45,8 +45,6 @@ class SavedItemViewModel extends ChangeNotifier {
   late String? title;
   late Uri? uri;
   late String? notes;
-  bool _isExpanded = false;
-  bool get isExpanded => _isExpanded;
 
   bool _isVisible = true;
   bool get isVisible => _isVisible;
@@ -64,10 +62,10 @@ class SavedItemViewModel extends ChangeNotifier {
   //   return Provider.of<SavedItemsProvider>(context);
   // }
 
-  void toggleExpand() {
-    _isExpanded = !_isExpanded;
-    notifyListeners();
-  }
+  // void toggleExpand() {
+  //   _isExpanded = !_isExpanded;
+  //   notifyListeners();
+  // }
 
   final log = Logger('SavedItemViewModel');
 
@@ -147,7 +145,7 @@ class SavedItemViewModel extends ChangeNotifier {
     _isVisible = false;
     final error = await _provider.delete(_currentItem.id!);
 
-    if (!deleteItemCommand.completed) {
+    if (error != null) {
       // make the item visible again if the operation failed
       _isVisible = true;
     }

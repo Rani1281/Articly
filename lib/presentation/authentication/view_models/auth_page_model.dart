@@ -174,11 +174,10 @@ class AuthPageModel extends ChangeNotifier {
       log.shout('An error occurred: ${e.toString()}');
       _error =
           'Something went wrong, please check your details or try again later';
-    } finally {
-      if (_disposed) return;
-      _isRunningGoogle = false;
-      _notify();
     }
+    if (_disposed) return;
+    _isRunningGoogle = false;
+    _notify();
   }
 
   // ! <--- Validation Methods --->

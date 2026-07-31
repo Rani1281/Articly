@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:articly/presentation/website_displaying/widgets/new_home_page.dart';
 import 'package:checks/context.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +11,6 @@ import 'package:provider/provider.dart';
 import 'package:articly/main.dart';
 import 'package:articly/data/services/auth_service.dart';
 import 'package:articly/presentation/authentication/widgets/auth_page.dart';
-import 'package:articly/presentation/website_displaying/widgets/home_page.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
@@ -26,7 +26,9 @@ extension FinderChecks on Subject<Finder> {
       if (count == 1) return null;
       return Rejection(
         actual: ['$count widgets found'],
-        which: ['Expected exactly 1 widget matching: ${actual.description}'],
+        which: [
+          'Expected exactly 1 widget matching: ${actual.describeMatch(Plurality.one)}',
+        ],
       );
     });
   }
@@ -42,15 +44,6 @@ class _FakeSavedItemsProvider extends ChangeNotifier
   Command _editCommand = Command();
   Command _deleteCommand = Command();
   Map<String, SavedItem> _items = {};
-
-  @override
-  Command get loadCommand => _loadCommand;
-  @override
-  Command get saveCommand => _saveCommand;
-  @override
-  Command get editCommand => _editCommand;
-  @override
-  Command get deleteCommand => _deleteCommand;
   @override
   Map<String, SavedItem> get items => _items;
 
@@ -232,7 +225,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      check(find.byType(HomePage)).findsOneWidget();
+      check(find.byType(NewHomePage)).findsOneWidget();
     });
   });
 }

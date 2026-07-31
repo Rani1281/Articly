@@ -1,6 +1,5 @@
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/data/repositories/saved_items_repository.dart';
-import 'package:articly/utils/command.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 

@@ -5,18 +5,22 @@ import 'package:articly/presentation/website_saving/widgets/labeled_dropdown.dar
 import 'package:articly/presentation/website_saving/widgets/labeled_text_field.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:articly/utils/my_snack_bar.dart';
+import 'package:articly/utils/providers_shortcuts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 
 class SaveWebpageScreen extends StatefulWidget {
-  const SaveWebpageScreen({
+  SaveWebpageScreen(
+    BuildContext context, {
     super.key,
-    required this.viewModel,
+    SaveWebpageViewModel? viewModel,
     this.currentItem,
     this.isEdit = false,
-  });
+  }) : viewModel =
+           viewModel ??
+           SaveWebpageViewModel(MyProviders(context).savedItemsProvider());
 
   final SaveWebpageViewModel viewModel;
 
@@ -232,7 +236,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
                           selectedItem: _selectedStatusNotifier,
                           label: 'Status',
                           items: _statuses.keys.toList(),
-                          initialValue: _initialValue,
+                          value: _initialValue,
                           isDark: isDark,
                         ),
                         const SizedBox(height: 20),

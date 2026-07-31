@@ -10,6 +10,7 @@ class SavedItem {
   final String? title;
   final String? notes;
   final bool? remindReading;
+  final String? imageUrl;
   final DateTime createdAt;
 
   final log = Logger('SavedItem');
@@ -22,6 +23,7 @@ class SavedItem {
     this.title,
     this.notes,
     this.remindReading,
+    this.imageUrl,
     DateTime? createdAt, // only pass this during fromFirestore
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -34,6 +36,7 @@ class SavedItem {
       if (title != null && title!.isNotEmpty) 'title': title,
       if (notes != null && notes!.isNotEmpty) 'notes': notes,
       if (remindReading != null) 'remindReading': remindReading,
+      if (imageUrl != null && imageUrl!.isNotEmpty) 'imageUrl': imageUrl,
       // Only use this field on creation. If it's for updating, don't set this field:
       if (!isEdit) 'createdAt': Timestamp.fromDate(createdAt),
     };
@@ -69,6 +72,7 @@ class SavedItem {
       title: data?['title'] as String?,
       notes: data?['notes'] as String?,
       remindReading: data?['remindReading'] as bool?,
+      imageUrl: data?['imageUrl'] as String?,
       createdAt: (data?['createdAt'] as Timestamp?)?.toDate(),
     );
   }
@@ -81,6 +85,7 @@ class SavedItem {
     String? title,
     String? notes,
     bool? remindReading,
+    String? imageUrl,
     DateTime? createdAt,
   }) {
     return SavedItem(
@@ -91,13 +96,14 @@ class SavedItem {
       title: title ?? this.title,
       notes: notes ?? this.notes,
       remindReading: remindReading ?? this.remindReading,
+      imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
   @override
   String toString() {
-    return 'id: $id,\ntype: $type,\nreadingStatus: $readingStatus,\nurl: $uri,\ntitle: $title,\nnotes: $notes,\nremindReading: $remindReading';
+    return 'id: $id,\ntype: $type,\nreadingStatus: $readingStatus,\nurl: $uri,\ntitle: $title,\nnotes: $notes,\nremindReading: $remindReading, \nimageUrl: $imageUrl';
   }
 }
 

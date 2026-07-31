@@ -8,7 +8,7 @@ class LabeledDropdown extends StatelessWidget {
     this.label,
     required this.items,
     this.selectedItem,
-    this.initialValue,
+    this.value,
     this.hintText,
     this.isDark,
     this.onChanged,
@@ -17,7 +17,7 @@ class LabeledDropdown extends StatelessWidget {
   final String? label;
   final List<String> items;
   final ValueNotifier<String?>? selectedItem;
-  final String? initialValue;
+  final String? value;
   final String? hintText;
   final bool? isDark;
   final void Function(String? newValue)? onChanged;
@@ -53,7 +53,7 @@ class LabeledDropdown extends StatelessWidget {
             dropdownColor: Theme.of(context)
                 .colorScheme
                 .surfaceContainer, // Added dropdownColor for better visual
-            initialValue: initialValue,
+            initialValue: value,
             decoration: InputDecoration(
               hintText: hintText,
               hintStyle: TextStyle(

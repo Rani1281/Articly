@@ -1,157 +1,193 @@
+import 'package:articly/presentation/authentication/widgets/profile_page.dart';
+import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
+import 'package:articly/presentation/website_displaying/widgets/new_saved_item_card.dart';
+import 'package:articly/presentation/website_saving/widgets/labeled_dropdown.dart';
+import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
+import 'package:articly/utils/my_action_button.dart';
 import 'package:articly/utils/providers_shortcuts.dart';
 import 'package:flutter/material.dart';
 
-// Data Model to represent each saved item
-class SavedItem {
-  final String title;
-  final String status;
-  final String imageUrl;
-  final String url; // Added full url
+import '../view_models/home_page_view_model.dart';
 
-  SavedItem({
-    required this.title,
-    required this.status,
-    required this.imageUrl,
-    required this.url,
-  });
+class NewHomePage extends StatefulWidget {
+  NewHomePage(BuildContext context, {super.key, HomePageViewModel? viewModel})
+    : viewModel =
+          viewModel ??
+          HomePageViewModel(
+            provider: MyProviders(context).savedItemsProvider(),
+            prefsService: MyProviders(context).sharedPreferencesService(),
+          );
 
-  // Getter to extract just the host domain (e.g. "booking.com")
-  String get shortDomain {
-    try {
-      final uri = Uri.parse(url);
-      String host = uri.host;
-      if (host.startsWith('www.')) {
-        host = host.substring(4);
-      }
-      return host;
-    } catch (e) {
-      return url; // fallback just in case of parse error
-    }
-  }
-}
-
-class SavedContentScreen extends StatefulWidget {
-  const SavedContentScreen({super.key});
+  final HomePageViewModel viewModel;
 
   @override
-  State<SavedContentScreen> createState() => _SavedContentScreenState();
+  State<NewHomePage> createState() => _NewHomePageState();
 }
 
-class _SavedContentScreenState extends State<SavedContentScreen> {
-  // Toggle state: 'false' so List View is the default
+class _NewHomePageState extends State<NewHomePage>
+    with SingleTickerProviderStateMixin {
+  late final HomePageViewModel _viewModel;
+
   bool _isGridView = false;
 
-  Color getStatusColor(String status) {
-    switch (status) {
-      case "Read":
-        return Colors.green;
-      case "Unread":
-        return Colors.red;
-      case "Reading":
-        return Colors.amber;
-      default:
-        return Colors.grey;
-    }
+  final sortingOptions = {
+    OrderType.creationDate: 'Creation date',
+    OrderType.name: 'Name (A-Z)',
+  };
+
+  // final _dropdownItems = const ['Creation date', 'Name (A-Z)'];
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    _viewModel = widget.viewModel;
+
+    // start processing the items
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _viewModel.processItems(),
+    );
+
+    // Initialize TabController with 4 items
+    _tabController = TabController(length: 4, vsync: this);
+
+    // Listen to tab changes to rebuild the tab selection and re-process the items based on the new filter
+    _tabController.addListener(() {
+      _viewModel.switchTab(_tabController.index);
+      _viewModel.processItems();
+    });
+
+    super.initState();
   }
 
-  // Sample data simulating the content with full urls added
-  final List<SavedItem> _savedItems = [
-    SavedItem(
-      title: "Cake recipe",
-      status: "Read",
-      url: "https://www.foodnetwork.com/recipes/basic-cake-recipe",
-      imageUrl:
-          "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=400&h=200",
-    ),
-    SavedItem(
-      title: "Vector databases: Explanation & Examples",
-      status: "Unread",
-      url: "https://towardsdatascience.com/vector-databases-explained",
-      imageUrl:
-          "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?auto=format&fit=crop&q=80&w=400&h=200",
-    ),
-    SavedItem(
-      title: "Best Travel Destinations in 2026",
-      status: "Reading",
-      url: "https://www.booking.com/articles/destinations-2026",
-      imageUrl:
-          "https://images.unsplash.com/photo-1488085061387-422e29b40080?auto=format&fit=crop&q=80&w=400&h=200",
-    ),
-    // The "Template" edge-case item with a very long text to demonstrate truncation for both title and url
-    SavedItem(
-      title:
-          "Extremely long title placeholder to demonstrate how the layout handles truncation beyond two lines in grid and one line in list",
-      status: "Status",
-      url:
-          "https://www.a-very-long-domain-name-that-will-definitely-overflow-the-container.com/article/123",
-      imageUrl:
-          "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=400&h=200",
-    ),
-  ];
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    await _viewModel.processItems(reload: true);
+    if (mounted &&
+        _viewModel.processItemsCommand.hasError &&
+        _viewModel.items.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_viewModel.processItemsCommand.error!)),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final tabs = const [
+      Tab(text: 'All'),
+      Tab(text: 'Unread'),
+      Tab(text: 'Reading'),
+      Tab(text: 'Read'),
+    ];
+
     return Scaffold(
-      // TODO: add app bar for switching reading modes
-      // LayoutBuilder and SingleChildScrollView combination enforces a minimum
-      // width for the screen, preventing the zero-width squishing bug on web.
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          const double minAppWidth = 360.0;
-          final double currentWidth = constraints.maxWidth > minAppWidth
-              ? constraints.maxWidth
-              : minAppWidth;
+      appBar: _buildAppBar(tabs: tabs),
 
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const ClampingScrollPhysics(),
-            child: SizedBox(
-              width: currentWidth,
-              height: constraints
-                  .maxHeight, // Fixes height for the Expanded view below
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    // View Switcher (Grid / List)
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: SegmentedButton<bool>(
-                        showSelectedIcon: false,
-                        segments: const [
-                          ButtonSegment(
-                            value: false,
-                            icon: Icon(Icons.view_list_rounded),
-                            // label: Text("List View"),
-                          ),
-                          ButtonSegment(
-                            value: true,
-                            icon: Icon(Icons.grid_view_rounded),
-                            // label: Text("Grid View"),
-                          ),
-                        ],
-                        selected: {_isGridView},
-                        onSelectionChanged: (Set<bool> newSelection) {
-                          setState(() {
-                            _isGridView = newSelection.first;
-                          });
-                        },
+      body: SelectionArea(
+        child: RefreshIndicator(
+          onRefresh: _refresh,
+          // LayoutBuilder and SingleChildScrollView combination enforces a minimum
+          // width for the screen, preventing the zero-width squishing bug on web.
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const double minAppWidth = 200.0;
+              final double currentWidth = constraints.maxWidth > minAppWidth
+                  ? constraints.maxWidth
+                  : minAppWidth;
+
+              return SizedBox(
+                width: currentWidth,
+                // TODO: check if allows to scroll because of this.
+                height: constraints
+                    .maxHeight, // Fixes height for the Expanded view below
+                child: ListenableBuilder(
+                  listenable: _viewModel,
+                  builder: (context, child) {
+                    if (_viewModel.processItemsCommand.running) {
+                      return _buildRunningView();
+                    }
+                    if (_viewModel.processItemsCommand.hasError &&
+                        !_viewModel.processItemsCommand.completed) {
+                      return _buildErrorView();
+                    }
+
+                    if (_viewModel.items.isEmpty) {
+                      return _buildNoItemsView();
+                    }
+
+                    return _buildView();
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => SaveWebpageScreen(context)));
+        },
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Column _buildView() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // View Switcher (Grid / List)
+              Tooltip(
+                message: 'View',
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: SegmentedButton<bool>(
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment(
+                        value: false,
+                        icon: Icon(Icons.view_list_rounded),
+                        // label: Text("List View"),
                       ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    // Main Content Area
-                    Expanded(
-                      child: _isGridView ? _buildGridView() : _buildListView(),
-                    ),
-                  ],
+                      ButtonSegment(
+                        value: true,
+                        icon: Icon(Icons.grid_view_rounded),
+                        // label: Text("Grid View"),
+                      ),
+                    ],
+                    selected: {_isGridView},
+                    onSelectionChanged: (Set<bool> newSelection) {
+                      setState(() {
+                        _isGridView = newSelection.first;
+                      });
+                    },
+                  ),
                 ),
               ),
-            ),
-          );
-        },
-      ),
+              // const SizedBox(width: 8),
+              Spacer(),
+              _buildSortingTypeDropdown(),
+              const SizedBox(width: 5),
+              _buildDescendingSwitch(),
+            ],
+          ),
+        ),
+        // const SizedBox(height: 10),
+
+        // Main Content Area
+        Expanded(child: _isGridView ? _buildGridView() : _buildListView()),
+      ],
     );
   }
 
@@ -159,136 +195,24 @@ class _SavedContentScreenState extends State<SavedContentScreen> {
   // GRID VIEW IMPLEMENTATION
   // =========================================================================
   Widget _buildGridView() {
-    final isDarkMode = MyProviders(context).themeModel().isDark(context);
-    final colorScheme = Theme.of(context).colorScheme;
+    // final isDarkMode = MyProviders(context).themeModel().isDark(context);
+    // final colorScheme = Theme.of(context).colorScheme;
     return GridView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.only(bottom: 80, left: 8.0, right: 8.0),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 280,
         childAspectRatio: 1.15,
-        crossAxisSpacing: 6,
-        mainAxisSpacing: 6,
+        crossAxisSpacing: 3,
+        mainAxisSpacing: 3,
       ),
-      itemCount: _savedItems.length,
+      itemCount: _viewModel.items.length,
       itemBuilder: (context, index) {
-        final item = _savedItems[index];
-        return Card(
-          elevation: 2,
-          color: !isDarkMode
-              ? colorScheme.surfaceContainerLowest
-              : colorScheme.surfaceContainer,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: colorScheme.onSurface.withValues(alpha: 0.1),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Top text section
-              Padding(
-                padding: const EdgeInsets.only(
-                  top: 12,
-                  left: 12,
-                  right: 12,
-                  bottom: 6,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Padding(
-                          padding: EdgeInsets.only(top: 2.0, right: 8.0),
-                          child: Icon(
-                            Icons.link_rounded,
-                            size: 20,
-                            color: Colors.blueGrey,
-                          ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 3.5),
-                            child: Text(
-                              item.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                height: 1.2,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 4.0),
-                          child: Icon(
-                            Icons.more_vert,
-                            size: 20,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    // Status & Domain Row
-                    Row(
-                      children: [
-                        // Domain (Truncates if too long)
-                        Expanded(
-                          child: Text(
-                            item.shortDomain,
-                            textAlign: TextAlign.left,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.blueGrey.shade300,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          "• ",
-                          style: TextStyle(color: Colors.blue, fontSize: 16),
-                        ),
-                        // Status (Always full form)
-                        Text(
-                          item.status,
-                          style: const TextStyle(
-                            color: Colors.blue,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Bottom image section
-              Expanded(
-                child: Container(
-                  margin: const EdgeInsets.only(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey.shade200,
-                    image: DecorationImage(
-                      image: NetworkImage(item.imageUrl),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+        final item = _viewModel.items[index];
+        return NewSavedItemCard(
+          isGridView: _isGridView,
+          viewModel: SavedItemViewModel(
+            currentItem: item,
+            provider: MyProviders(context).savedItemsProvider(),
           ),
         );
       },
@@ -300,99 +224,141 @@ class _SavedContentScreenState extends State<SavedContentScreen> {
   // =========================================================================
   Widget _buildListView() {
     return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      itemCount: _savedItems.length,
-      separatorBuilder: (context, index) => Divider(height: 1),
+      padding: const EdgeInsets.only(top: 8.0, bottom: 70),
+      itemCount: _viewModel.items.length,
+      separatorBuilder: (context, index) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Divider(height: 1),
+      ),
       itemBuilder: (context, index) {
-        final item = _savedItems[index];
+        final item = _viewModel.items[index];
         return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Circular Link Icon
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.3),
-                    width: 1.5,
-                  ),
-                ),
-                child: const Icon(
-                  Icons.link_rounded,
-                  size: 20,
-                  color: Colors.blueGrey,
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              // Text Content
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    // Status & Domain Row
-                    Row(
-                      children: [
-                        // Domain (Truncates if too long)
-                        Expanded(
-                          child: Text(
-                            item.shortDomain,
-                            textAlign: TextAlign.left,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.blueGrey.shade300,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-
-                        // Status (Always full form)
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-
-              const Text(
-                "• ",
-                style: TextStyle(color: Colors.blue, fontSize: 16),
-              ),
-              Text(
-                item.status,
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Options Icon
-              const Icon(Icons.more_vert, color: Colors.grey),
-            ],
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: NewSavedItemCard(
+            isGridView: _isGridView,
+            viewModel: SavedItemViewModel(
+              currentItem: item,
+              provider: MyProviders(context).savedItemsProvider(),
+            ),
           ),
         );
       },
+    );
+  }
+
+  AppBar _buildAppBar({required List<Tab> tabs}) {
+    // Define the different underline colors for each tab
+    final List<Color> tabIndicatorColors = [
+      Colors.blueGrey, // All
+      Colors.red, // Unread
+      Colors.orange, // Reading
+      Colors.green, // Read
+    ];
+
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    return AppBar(
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.account_circle),
+          onPressed: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => ProfilePage()));
+          },
+        ),
+      ],
+      // Added the TabBar at the bottom of the normal AppBar
+      bottom: TabBar(
+        controller: _tabController,
+        indicatorColor: tabIndicatorColors[_tabController.index],
+        labelColor: textColor,
+        unselectedLabelColor: textColor.withValues(alpha: 0.6),
+        tabs: tabs,
+      ),
+    );
+  }
+
+  Widget _buildDescendingSwitch() {
+    return IconButton(
+      onPressed: () {
+        _viewModel.switchIsDescending();
+        _viewModel.processItems();
+        // TODO: later, maybe just reverse the ListView instead of re-sorting the list
+      },
+      icon: Tooltip(
+        message: 'Flip direction',
+        child: Icon(
+          _viewModel.isDescending ? Icons.arrow_upward : Icons.arrow_downward,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortingTypeDropdown() {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: 170),
+      child: Tooltip(
+        message: 'Sorting',
+        child: LabeledDropdown(
+          items: sortingOptions.values.toList(),
+          value: sortingOptions[_viewModel.orderBy],
+          onChanged: (newValue) {
+            if (newValue == null) return;
+
+            OrderType orderBy = OrderType.creationDate;
+            if (newValue == 'Name (A-Z)') {
+              orderBy = OrderType.name;
+            }
+            debugPrint('Selected orderBy: $orderBy');
+
+            // don't wait for these operations (should be fast)
+            _viewModel.setOrderBy(orderBy);
+            _viewModel.processItems();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRunningView() {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height - 200,
+      child: Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget _buildErrorView() {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height - 200,
+      child: Center(child: Text(_viewModel.processItemsCommand.error!)),
+    );
+  }
+
+  Widget _buildNoItemsView() {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height - 200,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            _tabController.index == 0
+                ? 'No saved sources yet'
+                : 'No saved sources for the current status',
+          ),
+          const SizedBox(height: 20),
+          MyActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => SaveWebpageScreen(context)),
+              );
+            },
+            text: 'Add a webpage',
+            icon: Icon(Icons.add),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -19,6 +19,15 @@ class _MockSavedItemsRepository extends Mock implements SavedItemsRepository {}
 
 class _MockSavedItemsViewModel extends Mock implements SaveWebpageViewModel {}
 
+class SaveWebpageScreenWrapper extends StatelessWidget {
+  const SaveWebpageScreenWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SaveWebpageScreen(context);
+  }
+}
+
 void main() {
   late _MockSavedItemsViewModel mockViewModel;
 
@@ -85,7 +94,7 @@ void main() {
                 value: savedItemsProvider ?? createProvider(),
               ),
             ],
-            child: SaveWebpageScreen(viewModel: buildViewModel()),
+            child: SaveWebpageScreenWrapper(),
           ),
         ),
       );
@@ -227,7 +236,6 @@ void main() {
         when(() => mockViewModel.saveCommand).thenReturn(loadingCommand);
         // Arrange - push the screen onto a navigator
         final prefs = await SharedPreferences.getInstance();
-        final viewModel = buildViewModel();
         final provider = createProvider();
         final homeKey = GlobalKey();
         await tester.pumpWidget(
@@ -249,7 +257,7 @@ void main() {
                             value: provider,
                           ),
                         ],
-                        child: SaveWebpageScreen(viewModel: viewModel),
+                        child: SaveWebpageScreenWrapper(),
                       ),
                     ),
                   );

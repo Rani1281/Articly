@@ -24,19 +24,17 @@ class HomePageViewModel extends ChangeNotifier {
   OrderType _orderBy = OrderType.creationDate;
   OrderType get orderBy => _orderBy;
 
-  OrderType? _prevOrderBy;
-
   bool _isDescending = true;
   bool get isDescending => _isDescending;
 
   FilterType _filter = FilterType.none;
 
+  List<SavedItem> _items = [];
+  List<SavedItem> get items => _items;
+
   final log = Logger('HomePageViewModel');
 
   static const tabs = ['all', 'unread', 'reading', 'read'];
-
-  List<SavedItem> _items = [];
-  List<SavedItem> get items => _items;
 
   final processItemsCommand = Command();
 
@@ -60,6 +58,7 @@ class HomePageViewModel extends ChangeNotifier {
   }
 
   Future<String?> loadData() async {
+    // TODO: Also load isGridView from SharedPreferences
     _orderBy = OrderType.values.firstWhere(
       (type) => type.name == _prefsService.getOrderBy(),
       orElse: () => OrderType.creationDate,
@@ -73,10 +72,6 @@ class HomePageViewModel extends ChangeNotifier {
   void sortItems() {
     // return if the previous ordering is the same as the current
     if (_items.length <= 1) return;
-
-    if (_prevOrderBy == _orderBy) {
-      return;
-    }
 
     switch (_orderBy) {
       case OrderType.creationDate:
@@ -132,7 +127,6 @@ class HomePageViewModel extends ChangeNotifier {
   Future<void> setOrderBy(OrderType value) async {
     if (value == _orderBy) return;
 
-    _prevOrderBy = _orderBy;
     _orderBy = value;
     notifyListeners();
 

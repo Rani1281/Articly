@@ -6,7 +6,6 @@ import 'package:articly/presentation/authentication/view_models/verify_email_vie
 import 'package:articly/presentation/authentication/widgets/auth_page.dart';
 import 'package:articly/presentation/authentication/widgets/verify_email_page.dart';
 import 'package:articly/presentation/core/error_page.dart';
-import 'package:articly/presentation/website_displaying/widgets/home_page.dart';
 import 'package:articly/presentation/website_displaying/widgets/new_home_page.dart';
 import 'package:articly/theme/app_theme.dart';
 import 'package:articly/theme/theme_model.dart';
@@ -66,8 +65,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeModel.themeMode,
-      // home: AuthGate(),
-      home: SavedContentScreen(),
+      home: AuthGate(),
     );
   }
 }
@@ -120,7 +118,7 @@ class AuthGate extends StatelessWidget {
 
         log.info('Moving to home page...');
 
-        return HomePage(context);
+        return NewHomePage(context);
       },
     );
   }

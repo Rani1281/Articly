@@ -176,7 +176,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ElevatedButton.icon(
                         onPressed: () async {
                           final confirmed = await _showLogoutDialog();
-                          if (confirmed == true) {
+                          if (confirmed == true && mounted) {
                             widget._viewModel.logOut();
                             Navigator.of(context).pop();
                             // ! Note: this only pops the current route, matching the current homepage -> profile page structure, so if nesting more pages, deleting all navigation stack beforehand is necessary.

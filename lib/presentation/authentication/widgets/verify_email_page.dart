@@ -2,11 +2,12 @@ import 'dart:async';
 import 'package:articly/presentation/authentication/view_models/verify_email_view_model.dart';
 import 'package:articly/presentation/authentication/widgets/auth_button.dart';
 import 'package:articly/presentation/authentication/widgets/cooldown_widget.dart';
-import 'package:articly/presentation/website_displaying/widgets/home_page.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import '../../website_displaying/widgets/new_home_page.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   VerifyEmailScreen({super.key, VerifyEmailViewModel? viewModel})
@@ -43,7 +44,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => HomePage(context)),
+              MaterialPageRoute(builder: (_) => NewHomePage(context)),
               (route) => false,
             );
           }
