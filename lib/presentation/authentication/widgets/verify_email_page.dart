@@ -7,7 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../website_displaying/widgets/new_home_page.dart';
+import '../../website_displaying/widgets/home_page.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   VerifyEmailScreen({super.key, VerifyEmailViewModel? viewModel})
@@ -44,7 +44,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => NewHomePage(context)),
+              MaterialPageRoute(builder: (_) => HomePage(context)),
               (route) => false,
             );
           }

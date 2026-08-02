@@ -1,6 +1,6 @@
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
-import 'package:articly/presentation/website_displaying/widgets/new_home_page.dart';
+import 'package:articly/presentation/website_displaying/widgets/home_page.dart';
 import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -55,7 +55,7 @@ class HomePageWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NewHomePage(context);
+    return HomePage(context);
   }
 }
 

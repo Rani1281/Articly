@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:articly/presentation/website_displaying/widgets/new_home_page.dart';
+import 'package:articly/presentation/website_displaying/widgets/home_page.dart';
 import 'package:checks/context.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -225,7 +225,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Assert
-      check(find.byType(NewHomePage)).findsOneWidget();
+      check(find.byType(HomePage)).findsOneWidget();
     });
   });
 }
