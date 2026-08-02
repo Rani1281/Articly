@@ -159,12 +159,13 @@ void main() {
 
   group('loadData', () {
     test(
-      'sets orderBy and isDescending internal fields according to the values stored in SharedPreferences',
+      'sets orderBy, isDescending and isGridView internal fields according to the values stored in SharedPreferences',
       () async {
         when(
           () => mockPrefsService.getOrderBy(),
         ).thenReturn(OrderType.name.name);
         when(() => mockPrefsService.getIsDescending()).thenReturn(false);
+        when(() => mockPrefsService.getIsGridView()).thenReturn(true);
         when(
           () => mockProvider.load(notify: false),
         ).thenAnswer((_) => Future.value(null));
@@ -173,13 +174,15 @@ void main() {
 
         check(viewModel.orderBy).equals(OrderType.name);
         check(viewModel.isDescending).isFalse();
+        check(viewModel.isGridView).isTrue();
       },
     );
     test(
-      'orderBy defaults to creation date, and isDescending defaults to true',
+      'orderBy defaults to creation date, isDescending defaults to true, and isGridView to false',
       () async {
         when(() => mockPrefsService.getOrderBy()).thenReturn(null);
         when(() => mockPrefsService.getIsDescending()).thenReturn(null);
+        when(() => mockPrefsService.getIsGridView()).thenReturn(null);
         when(
           () => mockProvider.load(notify: false),
         ).thenAnswer((_) => Future.value(null));
@@ -414,6 +417,39 @@ void main() {
         check(viewModel.isDescending).isTrue();
         check(notified).isTrue();
         verify(() => mockPrefsService.setIsDescending(true)).called(1);
+      },
+    );
+  });
+
+  group('setIsGridView', () {
+    test(
+      'if the given value is the same as the previous, returns and does not notify listeners',
+      () {
+        // Default is false
+        var notified = false;
+        viewModel.addListener(() => notified = true);
+
+        viewModel.setIsGridView(false);
+
+        check(notified).isFalse();
+      },
+    );
+
+    test(
+      'otherwise, sets the isGridView to the new value, notifies listeners, and then calls prefsService.setIsGridView(...)',
+      () async {
+        when(
+          () => mockPrefsService.setIsGridView(any()),
+        ).thenAnswer((_) async => true);
+
+        var notified = false;
+        viewModel.addListener(() => notified = true);
+
+        await viewModel.setIsGridView(true);
+
+        check(viewModel.isGridView).equals(true);
+        check(notified).isTrue();
+        verify(() => mockPrefsService.setIsGridView(true)).called(1);
       },
     );
   });

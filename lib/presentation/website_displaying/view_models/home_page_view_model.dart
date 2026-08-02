@@ -29,6 +29,9 @@ class HomePageViewModel extends ChangeNotifier {
 
   FilterType _filter = FilterType.none;
 
+  bool _isGridView = false;
+  bool get isGridView => _isGridView;
+
   List<SavedItem> _items = [];
   List<SavedItem> get items => _items;
 
@@ -64,6 +67,8 @@ class HomePageViewModel extends ChangeNotifier {
       orElse: () => OrderType.creationDate,
     );
     _isDescending = _prefsService.getIsDescending() ?? true;
+
+    _isGridView = _prefsService.getIsGridView() ?? false;
 
     // don't notify listeners because that will call `processItems` again
     return await _provider.load(notify: false);
@@ -140,6 +145,15 @@ class HomePageViewModel extends ChangeNotifier {
     await _prefsService.setIsDescending(_isDescending);
   }
 
+  Future<void> setIsGridView(bool value) async {
+    if (value == _isGridView) return;
+
+    _isGridView = value;
+    notifyListeners();
+
+    await _prefsService.setIsGridView(value);
+  }
+
   void clearItems() {
     _items.clear();
   }
@@ -148,3 +162,5 @@ class HomePageViewModel extends ChangeNotifier {
 enum OrderType { creationDate, name }
 
 enum FilterType { none, unread, reading, read }
+
+enum ViewType { list, grid }

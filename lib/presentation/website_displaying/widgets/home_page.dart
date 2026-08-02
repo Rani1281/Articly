@@ -25,9 +25,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  late final HomePageViewModel _viewModel;
-
-  bool _isGridView = false;
+  late HomePageViewModel _viewModel;
 
   final sortingOptions = {
     OrderType.creationDate: 'Creation date',
@@ -65,6 +63,8 @@ class _HomePageState extends State<HomePage>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.viewModel != widget.viewModel) {
       _viewModel = widget.viewModel;
+      _viewModel.switchTab(_tabController.index);
+      _viewModel.processItems();
     }
   }
 
@@ -177,12 +177,9 @@ class _HomePageState extends State<HomePage>
                         // label: Text("Grid View"),
                       ),
                     ],
-                    selected: {_isGridView},
-                    onSelectionChanged: (Set<bool> newSelection) {
-                      setState(() {
-                        _isGridView = newSelection.first;
-                      });
-                    },
+                    selected: {_viewModel.isGridView},
+                    onSelectionChanged: (Set<bool> newSelection) =>
+                        _viewModel.setIsGridView(newSelection.first),
                   ),
                 ),
               ),
@@ -197,7 +194,9 @@ class _HomePageState extends State<HomePage>
         // const SizedBox(height: 10),
 
         // Main Content Area
-        Expanded(child: _isGridView ? _buildGridView() : _buildListView()),
+        Expanded(
+          child: _viewModel.isGridView ? _buildGridView() : _buildListView(),
+        ),
       ],
     );
   }
@@ -219,7 +218,7 @@ class _HomePageState extends State<HomePage>
       itemCount: _viewModel.items.length,
       itemBuilder: (context, index) {
         final item = _viewModel.items[index];
-        return SavedItemCard(isGridView: _isGridView, item: item);
+        return SavedItemCard(isGridView: _viewModel.isGridView, item: item);
       },
     );
   }
@@ -239,7 +238,7 @@ class _HomePageState extends State<HomePage>
         final item = _viewModel.items[index];
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SavedItemCard(isGridView: _isGridView, item: item),
+          child: SavedItemCard(isGridView: _viewModel.isGridView, item: item),
         );
       },
     );

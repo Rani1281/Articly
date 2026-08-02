@@ -9,6 +9,7 @@ class SharedPreferencesService extends ChangeNotifier {
   static const _themeKey = 'theme_mode';
   static const _orderByKey = 'orderBy';
   static const _isDescendingKey = 'descending';
+  static const _viewKey = 'isGridView';
 
   String? getTheme() {
     return prefs.getString(_themeKey);
@@ -32,5 +33,13 @@ class SharedPreferencesService extends ChangeNotifier {
 
   Future<bool?> setIsDescending(bool value) async {
     return await prefs.setBool(_isDescendingKey, value);
+  }
+
+  bool? getIsGridView() {
+    return prefs.getBool(_viewKey);
+  }
+
+  Future<bool?> setIsGridView(bool value) async {
+    return prefs.setBool(_viewKey, value);
   }
 }

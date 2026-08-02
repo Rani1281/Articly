@@ -37,13 +37,27 @@ void main() {
       expect(result, value);
     });
 
-    test('setIsDescending sets the value for getTheme to read', () async {
+    test(
+      'setIsDescending sets the value for getIsDescending to read',
+      () async {
+        await prefs.clear();
+        const value = true;
+
+        await service.setIsDescending(value);
+
+        final result = service.getIsDescending();
+
+        expect(result, value);
+      },
+    );
+
+    test('setIsGridView sets the value for getIsGridView to read', () async {
       await prefs.clear();
       const value = true;
 
-      await service.setIsDescending(value);
+      await service.setIsGridView(value);
 
-      final result = service.getIsDescending();
+      final result = service.getIsGridView();
 
       expect(result, value);
     });
