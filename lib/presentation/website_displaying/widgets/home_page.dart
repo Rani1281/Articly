@@ -9,15 +9,9 @@ import 'package:flutter/material.dart';
 import '../view_models/home_page_view_model.dart';
 
 class HomePage extends StatefulWidget {
-  HomePage(BuildContext context, {super.key, HomePageViewModel? viewModel})
-    : viewModel =
-          viewModel ??
-          HomePageViewModel(
-            provider: MyProviders(context).savedItemsProvider(),
-            prefsService: MyProviders(context).sharedPreferencesService(),
-          );
+  const HomePage({super.key, this.viewModel});
 
-  final HomePageViewModel viewModel;
+  final HomePageViewModel? viewModel;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -35,9 +29,16 @@ class _HomePageState extends State<HomePage>
   // final _dropdownItems = const ['Creation date', 'Name (A-Z)'];
   late final TabController _tabController;
 
+  bool _isRefreshing = false;
+
   @override
   void initState() {
-    _viewModel = widget.viewModel;
+    _viewModel =
+        widget.viewModel ??
+        HomePageViewModel(
+          provider: MyProviders(context).savedItemsProvider(),
+          prefsService: MyProviders(context).sharedPreferencesService(),
+        );
 
     // start processing the items
     WidgetsBinding.instance.addPostFrameCallback(
@@ -61,8 +62,8 @@ class _HomePageState extends State<HomePage>
   @override
   void didUpdateWidget(covariant HomePage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.viewModel != widget.viewModel) {
-      _viewModel = widget.viewModel;
+    if (oldWidget.viewModel != widget.viewModel && widget.viewModel != null) {
+      _viewModel = widget.viewModel!;
       _viewModel.switchTab(_tabController.index);
       _viewModel.processItems();
     }
@@ -75,6 +76,7 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _refresh() async {
+    _isRefreshing = true;
     await _viewModel.processItems(reload: true);
     if (mounted &&
         _viewModel.processItemsCommand.hasError &&
@@ -83,6 +85,7 @@ class _HomePageState extends State<HomePage>
         SnackBar(content: Text(_viewModel.processItemsCommand.error!)),
       );
     }
+    _isRefreshing = false;
   }
 
   @override
@@ -117,7 +120,8 @@ class _HomePageState extends State<HomePage>
                         .maxHeight, // Fixes height for the Expanded view below
                     child: Builder(
                       builder: (context) {
-                        if (_viewModel.processItemsCommand.running) {
+                        if (_viewModel.processItemsCommand.running &&
+                            !_isRefreshing) {
                           return _buildRunningView();
                         }
                         if (_viewModel.processItemsCommand.hasError &&
@@ -140,7 +144,7 @@ class _HomePageState extends State<HomePage>
           floatingActionButton: FloatingActionButton(
             onPressed: () async {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => SaveWebpageScreen(context)),
+                MaterialPageRoute(builder: (_) => const SaveWebpageScreen()),
               );
             },
             child: const Icon(Icons.add),
@@ -218,7 +222,11 @@ class _HomePageState extends State<HomePage>
       itemCount: _viewModel.items.length,
       itemBuilder: (context, index) {
         final item = _viewModel.items[index];
-        return SavedItemCard(isGridView: _viewModel.isGridView, item: item);
+        return SavedItemCard(
+          isGridView: _viewModel.isGridView,
+          item: item,
+          onDeleted: _refresh,
+        );
       },
     );
   }
@@ -238,7 +246,11 @@ class _HomePageState extends State<HomePage>
         final item = _viewModel.items[index];
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SavedItemCard(isGridView: _viewModel.isGridView, item: item),
+          child: SavedItemCard(
+            isGridView: _viewModel.isGridView,
+            item: item,
+            onDeleted: _refresh,
+          ),
         );
       },
     );
@@ -349,7 +361,7 @@ class _HomePageState extends State<HomePage>
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => SaveWebpageScreen(context)),
+                MaterialPageRoute(builder: (_) => const SaveWebpageScreen()),
               );
             },
             text: 'Add a webpage',

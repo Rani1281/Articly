@@ -2,6 +2,7 @@ import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:metadata_fetch/metadata_fetch.dart';
 
 import '../../../data/models/saved_item.dart';
 
@@ -77,26 +78,12 @@ class SaveWebpageViewModel extends ChangeNotifier {
     _notesError = null;
   }
 
-  Future<void> saveWebpage({
+  /// This method proposes that the fields inside the savedItem are valid
+  Future<String?> saveWebpage({
     required SavedItem savedItem,
     required bool isEdit,
   }) async {
-    // first check the validity without starting the command yet because this is not an async operation
-    final isValid = validateFields(
-      savedItem.uri,
-      savedItem.title,
-      savedItem.notes,
-    );
-
-    if (!isValid) {
-      log.info('Some info is invalid, so not saving the webpage');
-      notifyListeners();
-      return Future.value();
-    }
-
     String? error;
-    saveCommand.start();
-    notifyListeners();
 
     if (!isEdit) {
       error = await _provider.add(savedItem);
@@ -104,7 +91,44 @@ class SaveWebpageViewModel extends ChangeNotifier {
       error = await _provider.edit(savedItem);
     }
 
-    saveCommand.finish(error);
-    notifyListeners();
+    return error;
   }
+
+  /// fetches the webpage metadata
+  /// doesn't work fully for web
+  Future<WebpageMetadata> fetchWebpageMetadata(Uri uri) async {
+    String? title;
+    String? imageUrl;
+    final String faviconUrl =
+        "https://www.google.com/s2/favicons?domain=${uri.host}&sz=64";
+
+    // try to fetch the title and image
+    try {
+      final metadata = await MetadataFetch.extract(
+        uri.toString(),
+      ).timeout(const Duration(seconds: 5));
+      if (metadata != null) {
+        title = metadata.title;
+        imageUrl = metadata.image;
+      } else {
+        log.warning('Tried to fetch the webpage metadata, but it was null');
+      }
+    } catch (e) {
+      log.shout('Failed to fetch the website metadata.\n$e');
+    }
+
+    return WebpageMetadata(
+      title: title,
+      imageUrl: imageUrl,
+      faviconUrl: faviconUrl,
+    );
+  }
+}
+
+class WebpageMetadata {
+  final String? title;
+  final String? imageUrl;
+  final String? faviconUrl;
+
+  const WebpageMetadata({this.title, this.imageUrl, this.faviconUrl});
 }

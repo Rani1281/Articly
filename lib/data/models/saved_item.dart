@@ -11,6 +11,7 @@ class SavedItem {
   final String? notes;
   final bool? remindReading;
   final String? imageUrl;
+  final String? faviconUrl;
   final DateTime createdAt;
 
   final log = Logger('SavedItem');
@@ -24,6 +25,7 @@ class SavedItem {
     this.notes,
     this.remindReading,
     this.imageUrl,
+    this.faviconUrl,
     DateTime? createdAt, // only pass this during fromFirestore
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -37,6 +39,8 @@ class SavedItem {
       if (notes != null && notes!.isNotEmpty) 'notes': notes,
       if (remindReading != null) 'remindReading': remindReading,
       if (imageUrl != null && imageUrl!.isNotEmpty) 'imageUrl': imageUrl,
+      if (faviconUrl != null && faviconUrl!.isNotEmpty)
+        'faviconUrl': faviconUrl,
       // Only use this field on creation. If it's for updating, don't set this field:
       if (!isEdit) 'createdAt': Timestamp.fromDate(createdAt),
     };
@@ -73,6 +77,7 @@ class SavedItem {
       notes: data?['notes'] as String?,
       remindReading: data?['remindReading'] as bool?,
       imageUrl: data?['imageUrl'] as String?,
+      faviconUrl: data?['faviconUrl'] as String?,
       createdAt: (data?['createdAt'] as Timestamp?)?.toDate(),
     );
   }
@@ -86,6 +91,7 @@ class SavedItem {
     String? notes,
     bool? remindReading,
     String? imageUrl,
+    String? faviconUrl,
     DateTime? createdAt,
   }) {
     return SavedItem(
@@ -97,13 +103,16 @@ class SavedItem {
       notes: notes ?? this.notes,
       remindReading: remindReading ?? this.remindReading,
       imageUrl: imageUrl ?? this.imageUrl,
+      faviconUrl: faviconUrl ?? this.faviconUrl,
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
   @override
   String toString() {
-    return 'id: $id,\ntype: $type,\nreadingStatus: $readingStatus,\nurl: $uri,\ntitle: $title,\nnotes: $notes,\nremindReading: $remindReading, \nimageUrl: $imageUrl';
+    return 'id: $id,\ntype: $type,\nreadingStatus: $readingStatus,\nurl: $uri,'
+        '\ntitle: $title,\nnotes: $notes,\nremindReading: $remindReading, '
+        '\nimageUrl: $imageUrl, \nfaviconUrl: $faviconUrl';
   }
 }
 

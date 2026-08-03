@@ -10,19 +10,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
+import 'package:metadata_fetch/metadata_fetch.dart';
 
 class SaveWebpageScreen extends StatefulWidget {
-  SaveWebpageScreen(
-    BuildContext context, {
+  const SaveWebpageScreen({
     super.key,
-    SaveWebpageViewModel? viewModel,
+    this.viewModel,
     this.currentItem,
     this.isEdit = false,
-  }) : viewModel =
-           viewModel ??
-           SaveWebpageViewModel(MyProviders(context).savedItemsProvider());
+  });
 
-  final SaveWebpageViewModel viewModel;
+  final SaveWebpageViewModel? viewModel;
 
   final SavedItem? currentItem;
   final bool isEdit;
@@ -54,11 +52,15 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
 
   bool _remindMe = false;
 
+  bool _autoTitle = true;
+
   @override
   void initState() {
     super.initState();
 
-    _viewModel = widget.viewModel;
+    _viewModel =
+        widget.viewModel ??
+        SaveWebpageViewModel(MyProviders(context).savedItemsProvider());
 
     final values = {
       ReadingStatus.unread: 'Unread',
@@ -75,6 +77,8 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
 
       _initialValue = values[item.readingStatus] ?? 'Unread';
       _remindMe = item.remindReading ?? false;
+      // if the title is null or empty, set autoTitle to true
+      _autoTitle = (item.title == null || item.title!.isEmpty);
     }
 
     _selectedStatusNotifier = ValueNotifier(_initialValue);
@@ -86,22 +90,59 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
       (status) => status.name == _selectedStatusNotifier.value.toLowerCase(),
       orElse: () => ReadingStatus.unread,
     );
-    final url = _urlController.text.trim();
-    final title = _titleController.text;
+    final urlStr = _urlController.text.trim();
+    final uri = Uri.tryParse(urlStr);
+    String? title = _titleController.text;
     final notes = _notesController.text;
+    String? imageUrl;
+    String? faviconUrl;
+
+    // Validate fields
+    final isValid = _viewModel.validateFields(uri, title, notes);
+    if (!isValid) {
+      log.info('Some info is invalid, so not saving the webpage');
+      return;
+    }
+
+    setState(() {
+      _viewModel.saveCommand.start();
+    });
+
+    // fetch the metadata
+    if (urlStr != widget.currentItem?.uri.toString()) {
+      final metadata = await _viewModel.fetchWebpageMetadata(uri!);
+      if (_autoTitle && title.isEmpty) {
+        title = metadata.title;
+      }
+      imageUrl = metadata.imageUrl;
+      faviconUrl = metadata.faviconUrl;
+    }
+
+    if (title != null && title.isEmpty) {
+      title = null;
+    }
 
     final item = SavedItem(
       id: widget.currentItem?.id, // will be set if is edit
       type: ItemType.webpage,
       readingStatus: readingStatus,
-      uri: Uri.tryParse(url),
+      uri: uri,
       title: title,
       notes: notes,
       remindReading: _remindMe,
       createdAt: widget.currentItem?.createdAt ?? DateTime.now(),
+      imageUrl: imageUrl,
+      faviconUrl: faviconUrl,
     );
 
-    await _viewModel.saveWebpage(savedItem: item, isEdit: widget.isEdit);
+    final errorMsg = await _viewModel.saveWebpage(
+      savedItem: item,
+      isEdit: widget.isEdit,
+    );
+
+    setState(() {
+      _viewModel.saveCommand.finish(errorMsg);
+    });
 
     if (!mounted) return;
 
@@ -124,7 +165,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     return Consumer<SavedItemsProvider>(
       builder: (context, provider, child) {
         return ListenableBuilder(
-          listenable: widget.viewModel,
+          listenable: _viewModel,
           builder: (context, _) {
             return Scaffold(
               appBar: AppBar(
@@ -164,30 +205,96 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ! [-- TITLE FIELD --]
-                        TextField(
-                          key: const ValueKey('titleTextField'),
-                          controller: _titleController,
-                          keyboardType: TextInputType.multiline,
-                          minLines: 1,
-                          maxLines: null,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                          maxLength: SaveWebpageViewModel.titleMaxChars,
-                          decoration: InputDecoration(
-                            fillColor: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            hintText: 'Add title',
-                            errorText: widget.viewModel.titleError,
-                            counterText: '',
-                            hintStyle: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.65),
+                        StatefulBuilder(
+                          builder: (context, setSwitchState) {
+                            return Column(
+                              children: [
+                                TextField(
+                                  key: const ValueKey('titleTextField'),
+                                  controller: _titleController,
+                                  keyboardType: TextInputType.multiline,
+                                  minLines: 1,
+                                  maxLines: null,
+                                  style: Theme.of(context).textTheme.titleLarge
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                  maxLength: SaveWebpageViewModel.titleMaxChars,
+                                  decoration: InputDecoration(
+                                    fillColor: Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest,
+                                    hintText: 'Add title',
+                                    errorText: _viewModel.titleError,
+                                    counterText: '',
+                                    hintStyle: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.65),
+                                        ),
+                                  ),
+                                  onChanged: (value) {
+                                    setSwitchState(() {
+                                      if (_autoTitle && value.isNotEmpty) {
+                                        // if the switch is on, but the field is not empty anymore
+                                        _autoTitle = false;
+                                      } else if (!_autoTitle && value.isEmpty) {
+                                        // if the switch is off, but the value is now empty
+                                        _autoTitle = true;
+                                      }
+                                    });
+                                  },
                                 ),
-                          ),
+
+                                const SizedBox(height: 8),
+
+                                // auto title switch
+                                // will be disabled if the title field is not empty
+                                Row(
+                                  children: [
+                                    Transform.scale(
+                                      scale: 0.8,
+                                      child: Switch(
+                                        value: _autoTitle,
+                                        onChanged:
+                                            _titleController.text.isNotEmpty
+                                            ? null
+                                            : (bool value) {
+                                                setSwitchState(() {
+                                                  _autoTitle = value;
+                                                });
+                                              },
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 5),
+
+                                    const Text('Auto title'),
+
+                                    const SizedBox(width: 5),
+
+                                    Tooltip(
+                                      message:
+                                          'If enabled, will automatically set the title from the webpage by the url',
+                                      child: Icon(
+                                        Icons.help_outline,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.5),
+                                        size: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
                         ),
+
                         const SizedBox(height: 20),
 
                         // const SizedBox(height: 8),
@@ -199,7 +306,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
                           label: 'Url',
                           hintText: 'https://example.com/page',
                           isDark: isDark,
-                          errorText: widget.viewModel.urlError,
+                          errorText: _viewModel.urlError,
                           maxLength: SaveWebpageViewModel.urlMaxChars,
                           suffixIcon: Padding(
                             padding: const EdgeInsets.fromLTRB(6.0, 6.0, 9, 6),
@@ -248,7 +355,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
                           label: 'Notes (optional)',
                           hintText: 'Enter notes...',
                           isDark: isDark,
-                          errorText: widget.viewModel.notesError,
+                          errorText: _viewModel.notesError,
                           maxLength: SaveWebpageViewModel.notesMaxChars,
                           maxLines: 6,
                         ),
@@ -273,12 +380,16 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
                               padding: const EdgeInsets.fromLTRB(12, 0, 6, 0),
                               child: Text('Remind me'),
                             ),
-                            Icon(
-                              Icons.help_outline,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.5),
-                              size: 16,
+                            Tooltip(
+                              message:
+                                  'If enabled, will give you reading reminders for this source',
+                              child: Icon(
+                                Icons.help_outline,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.5),
+                                size: 16,
+                              ),
                             ),
                           ],
                         ),

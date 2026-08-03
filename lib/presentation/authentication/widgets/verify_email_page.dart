@@ -44,7 +44,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => HomePage(context)),
+              MaterialPageRoute(builder: (_) => const HomePage()),
               (route) => false,
             );
           }

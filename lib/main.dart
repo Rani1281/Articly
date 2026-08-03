@@ -118,7 +118,7 @@ class AuthGate extends StatelessWidget {
 
         log.info('Moving to home page...');
 
-        return HomePage(context);
+        return const HomePage();
       },
     );
   }

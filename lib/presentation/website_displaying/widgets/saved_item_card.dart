@@ -15,11 +15,13 @@ class SavedItemCard extends StatefulWidget {
     required this.isGridView,
     required this.item,
     this.isDark = false,
+    this.onDeleted,
   });
 
   final bool isGridView;
   final SavedItem item;
   final bool isDark;
+  final VoidCallback? onDeleted;
 
   @override
   State<SavedItemCard> createState() => _SavedItemCardState();
@@ -63,6 +65,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
     } else if (!showedSuccessMessage && cmd.completed) {
       MySnackBar(context, message: 'Deleted the item successfully!').show();
       showedSuccessMessage = true;
+      widget.onDeleted?.call();
     }
   }
 
@@ -91,7 +94,6 @@ class _SavedItemCardState extends State<SavedItemCard> {
       context,
       MaterialPageRoute(
         builder: (_) => SaveWebpageScreen(
-          context,
           isEdit: true,
           currentItem: _viewModel.currentItem,
         ),
@@ -325,10 +327,6 @@ class _SavedItemCardState extends State<SavedItemCard> {
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, _) {
-        if (!_viewModel.isVisible) {
-          return const SizedBox();
-        }
-
         return MouseRegion(
           cursor: _viewModel.currentItem.uri != null
               ? SystemMouseCursors
@@ -354,21 +352,18 @@ class _SavedItemCardState extends State<SavedItemCard> {
         children: [
           // Circular Link Icon
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 35,
+            height: 35,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(
                 color: Theme.of(
                   context,
                 ).colorScheme.onSurface.withValues(alpha: 0.3),
-                width: 1.5,
+                width: 1,
               ),
             ),
-            child: const Icon(
-              Icons.link_rounded,
-              size: 20,
-              color: Colors.blueGrey,
-            ),
+            child: _buildFaviconSection(item),
           ),
           const SizedBox(width: 16),
 
@@ -408,23 +403,25 @@ class _SavedItemCardState extends State<SavedItemCard> {
                     const SizedBox(width: 8),
 
                     // Status (Always full form)
+                    const Text(
+                      "• ",
+                      style: TextStyle(color: Colors.blue, fontSize: 16),
+                    ),
+                    Text(
+                      item.readingStatus.name,
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
 
-          const Text("• ", style: TextStyle(color: Colors.blue, fontSize: 16)),
-          Text(
-            item.readingStatus.name,
-            style: TextStyle(
-              color: Colors.blue,
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-
+          // const SizedBox(width: 16),
           const SizedBox(width: 12),
 
           // Options Icon
@@ -433,6 +430,24 @@ class _SavedItemCardState extends State<SavedItemCard> {
             child: _buildOptionsIcon(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFaviconSection(SavedItem item) {
+    const defaultIcon = Icon(
+      Icons.link_rounded,
+      size: 18,
+      color: Colors.blueGrey,
+    );
+
+    if (item.faviconUrl == null) return defaultIcon;
+
+    return ClipOval(
+      child: Image.network(
+        item.faviconUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => defaultIcon,
       ),
     );
   }
@@ -467,12 +482,11 @@ class _SavedItemCardState extends State<SavedItemCard> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(top: 2.0, right: 8.0),
-                      child: Icon(
-                        Icons.link_rounded,
-                        size: 20,
-                        color: Colors.blueGrey,
+                      child: SizedBox.square(
+                        dimension: 20,
+                        child: _buildFaviconSection(item),
                       ),
                     ),
 
