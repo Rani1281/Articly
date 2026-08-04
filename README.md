@@ -9,4 +9,5 @@ This is a Flutter project built for Android, IOS, and Web
 ## Who is this app for?
 - Anyone who likes to read for fun or for work.
 - Busy people that don't have reading continuously.
+- Anyone that wants to enrich their knowledge by reading.
 - Researchers who need to conduct an analysis on multiple sources and need proper organization and management.
