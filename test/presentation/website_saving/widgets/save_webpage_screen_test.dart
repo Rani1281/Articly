@@ -24,7 +24,7 @@ class SaveWebpageScreenWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SaveWebpageScreen(context);
+    return SaveWebpageScreen();
   }
 }
 

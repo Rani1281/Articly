@@ -55,7 +55,7 @@ class HomePageWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return HomePage(context);
+    return HomePage();
   }
 }
 

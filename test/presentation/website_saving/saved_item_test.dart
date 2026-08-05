@@ -20,6 +20,8 @@ void main() {
           title: 'My Title',
           notes: 'My Notes',
           remindReading: true,
+          faviconUrl: 'https://favicon.com',
+          imageUrl: 'https://image.com',
           createdAt: createdAt,
         );
 
@@ -30,6 +32,8 @@ void main() {
         check(item.title).equals('My Title');
         check(item.notes).equals('My Notes');
         check(item.remindReading).equals(true);
+        check(item.faviconUrl).equals('https://favicon.com');
+        check(item.imageUrl).equals('https://image.com');
         check(item.createdAt).equals(createdAt);
       });
 
@@ -46,6 +50,8 @@ void main() {
         check(item.title).isNull();
         check(item.notes).isNull();
         check(item.remindReading).isNull();
+        check(item.faviconUrl).isNull();
+        check(item.imageUrl).isNull();
         check(item.createdAt).isNotNull();
       });
 
@@ -72,6 +78,8 @@ void main() {
           readingStatus: ReadingStatus.reading,
           title: 'Title',
           notes: 'Notes',
+          faviconUrl: 'https://favicon.com',
+          imageUrl: 'https://image.com',
           remindReading: false,
         );
 
@@ -83,6 +91,8 @@ void main() {
         check(result.containsKey('title')).isTrue();
         check(result.containsKey('notes')).isTrue();
         check(result.containsKey('remindReading')).isTrue();
+        check(result.containsKey('faviconUrl')).isTrue();
+        check(result.containsKey('imageUrl')).isTrue();
         check(result.containsKey('createdAt')).isTrue();
 
         check(result['type']).equals('webpage');
@@ -91,6 +101,8 @@ void main() {
         check(result['title']).equals('Title');
         check(result['notes']).equals('Notes');
         check(result['remindReading']).equals(false);
+        check(result['faviconUrl']).equals('https://favicon.com');
+        check(result['imageUrl']).equals('https://image.com');
         check(result['createdAt']).isA<Timestamp>();
       });
 
