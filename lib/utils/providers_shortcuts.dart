@@ -9,8 +9,8 @@ class MyProviders {
 
   final BuildContext context;
 
-  SavedItemsProvider savedItemsProvider() =>
-      Provider.of<SavedItemsProvider>(context, listen: false);
+  UserProvider savedItemsProvider() =>
+      Provider.of<UserProvider>(context, listen: false);
 
   SharedPreferencesService sharedPreferencesService() =>
       Provider.of<SharedPreferencesService>(context, listen: false);

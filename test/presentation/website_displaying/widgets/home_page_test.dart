@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-class FakeSavedItemsProvider extends ChangeNotifier
-    implements SavedItemsProvider {
+class FakeSavedItemsProvider extends ChangeNotifier implements UserProvider {
   Command _loadCommand = Command();
   Map<String, SavedItem> _items = {};
 
@@ -68,7 +67,7 @@ void main() {
 
   Widget createWidgetUnderTest() {
     return MaterialApp(
-      home: ChangeNotifierProvider<SavedItemsProvider>.value(
+      home: ChangeNotifierProvider<UserProvider>.value(
         value: fakeProvider,
         child: HomePageWrapper(),
       ),

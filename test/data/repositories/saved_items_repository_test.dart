@@ -28,66 +28,37 @@ class MockQuery extends Mock implements Query<Map<String, dynamic>> {}
 
 void main() {
   late SavedItemsRepository repository;
-  late MockFirebaseAuth mockAuth;
-  late MockFirebaseFirestore mockDb;
-  late MockUser mockUser;
+  late MockCollectionReference mockItemsCollection;
 
   setUp(() {
-    mockAuth = MockFirebaseAuth();
-    mockDb = MockFirebaseFirestore();
-    mockUser = MockUser();
-    repository = SavedItemsRepository(db: mockDb, auth: mockAuth);
+    mockItemsCollection = MockCollectionReference();
+    repository = SavedItemsRepository(mockItemsCollection);
   });
 
   group('fetchItems', () {
-    test('throws an exception if the user is not authenticated', () async {
-      when(() => mockAuth.currentUser).thenReturn(null);
-
-      check(repository.fetchItems()).throws<Exception>((exception) {
-        exception
-            .has((e) => e.toString(), 'message')
-            .contains('not authenticated');
-      });
-    });
-
     test(
       'returns a Map<String, SavedItem> where keys are Firestore document ids',
       () async {
-        final usersCollection = MockCollectionReference();
-        final userDoc = MockDocumentReference();
-        final savedItemsCollection = MockCollectionReference();
-        final querySnapshot = MockQuerySnapshot();
-        final orderByQuery = MockQuery();
-        final doc1 = MockQueryDocumentSnapshot();
-        final doc2 = MockQueryDocumentSnapshot();
+        final mockQuerySnapshot = MockQuerySnapshot();
+        final queryDocSnap1 = MockQueryDocumentSnapshot();
+        final queryDocSnap2 = MockQueryDocumentSnapshot();
 
-        when(() => mockAuth.currentUser).thenReturn(mockUser);
-        when(() => mockUser.uid).thenReturn('test-uid');
-        when(() => mockDb.collection('users')).thenReturn(usersCollection);
-        when(() => usersCollection.doc('test-uid')).thenReturn(userDoc);
         when(
-          () => userDoc.collection('savedItems'),
-        ).thenReturn(savedItemsCollection);
+          () => mockItemsCollection.get(),
+        ).thenAnswer((_) async => mockQuerySnapshot);
         when(
-          () => savedItemsCollection.orderBy('createdAt', descending: false),
-        ).thenReturn(orderByQuery);
-        when(
-          () => savedItemsCollection.get(),
-        ).thenAnswer((_) async => querySnapshot);
-        when(() => orderByQuery.get()).thenAnswer((_) async => querySnapshot);
-        when(() => querySnapshot.docs).thenReturn([doc1, doc2]);
-        when(() => doc1.id).thenReturn('doc-id-1');
-        when(() => doc1.data()).thenReturn(<String, dynamic>{
-          'type': 'webpage',
+          () => mockQuerySnapshot.docs,
+        ).thenReturn([queryDocSnap1, queryDocSnap2]);
+        when(() => queryDocSnap1.id).thenReturn('doc-id-1');
+        when(() => queryDocSnap2.id).thenReturn('doc-id-2');
+
+        when(() => queryDocSnap1.data()).thenReturn({
           'url': 'https://example.com/1',
           'readingStatus': 'unread',
         });
-        when(() => doc2.id).thenReturn('doc-id-2');
-        when(() => doc2.data()).thenReturn(<String, dynamic>{
-          'type': 'webpage',
-          'url': 'https://example.com/2',
-          'readingStatus': 'read',
-        });
+        when(
+          () => queryDocSnap2.data(),
+        ).thenReturn({'url': 'https://example.com/2', 'readingStatus': 'read'});
 
         final result = await repository.fetchItems();
 
@@ -107,36 +78,12 @@ void main() {
   });
 
   group('saveItem', () {
-    test('throws an exception when no user is authenticated', () {
-      when(() => mockAuth.currentUser).thenReturn(null);
-
-      final item = SavedItem(
-        type: ItemType.webpage,
-        readingStatus: ReadingStatus.unread,
-      );
-
-      expect(
-        () async => await repository.addItem(item),
-        throwsA(isA<Exception>()),
-      );
-    });
-
     test('returns the document id on success', () async {
-      final usersCollection = MockCollectionReference();
-      final userDoc = MockDocumentReference();
-      final savedItemsCollection = MockCollectionReference();
       final addedDoc = MockDocumentReference();
       final expectedId = '123';
 
-      when(() => mockAuth.currentUser).thenReturn(mockUser);
-      when(() => mockUser.uid).thenReturn('test-uid');
-      when(() => mockDb.collection('users')).thenReturn(usersCollection);
-      when(() => usersCollection.doc('test-uid')).thenReturn(userDoc);
       when(
-        () => userDoc.collection('savedItems'),
-      ).thenReturn(savedItemsCollection);
-      when(
-        () => savedItemsCollection.add(any()),
+        () => mockItemsCollection.add(any()),
       ).thenAnswer((_) async => addedDoc);
       when(() => addedDoc.id).thenReturn(expectedId);
 
@@ -152,24 +99,7 @@ void main() {
   });
 
   group('updateItem', () {
-    test('throws an exception if the user is not authenticated', () async {
-      when(() => mockAuth.currentUser).thenReturn(null);
-
-      final item = SavedItem(
-        id: 'item-id-123',
-        type: ItemType.webpage,
-        readingStatus: ReadingStatus.unread,
-      );
-
-      expect(
-        () async => await repository.updateItem(item),
-        throwsA(isA<Exception>()),
-      );
-    });
-
     test('throws an exception if the item id is null', () async {
-      when(() => mockAuth.currentUser).thenReturn(mockUser);
-
       final item = SavedItem(
         type: ItemType.webpage,
         readingStatus: ReadingStatus.unread,
@@ -182,8 +112,6 @@ void main() {
     });
 
     test('throws an exception if the item id is empty', () async {
-      when(() => mockAuth.currentUser).thenReturn(mockUser);
-
       final item = SavedItem(
         id: '',
         type: ItemType.webpage,
@@ -197,19 +125,9 @@ void main() {
     });
 
     test('updates the item document in Firestore', () async {
-      final usersCollection = MockCollectionReference();
-      final userDoc = MockDocumentReference();
-      final savedItemsCollection = MockCollectionReference();
       final itemDoc = MockDocumentReference();
 
-      when(() => mockAuth.currentUser).thenReturn(mockUser);
-      when(() => mockUser.uid).thenReturn('test-uid');
-      when(() => mockDb.collection('users')).thenReturn(usersCollection);
-      when(() => usersCollection.doc('test-uid')).thenReturn(userDoc);
-      when(
-        () => userDoc.collection('savedItems'),
-      ).thenReturn(savedItemsCollection);
-      when(() => savedItemsCollection.doc('item-id-123')).thenReturn(itemDoc);
+      when(() => mockItemsCollection.doc('item-id-123')).thenReturn(itemDoc);
       when(() => itemDoc.update(any())).thenAnswer((_) async {});
 
       final item = SavedItem(
@@ -225,15 +143,6 @@ void main() {
   });
 
   group('deleteItem', () {
-    test('should throw an exception if user doesn\'t exist', () {
-      when(() => mockAuth.currentUser).thenReturn(null);
-
-      expect(
-        () async => await repository.deleteItem('item-id-123'),
-        throwsA(isA<Exception>()),
-      );
-    });
-
     test('should throw an exception if the id is empty', () {
       expect(
         () async => await repository.deleteItem(''),
@@ -242,19 +151,9 @@ void main() {
     });
 
     test('should call .delete on the document reference', () async {
-      final usersCollection = MockCollectionReference();
-      final userDoc = MockDocumentReference();
-      final savedItemsCollection = MockCollectionReference();
       final itemDoc = MockDocumentReference();
 
-      when(() => mockAuth.currentUser).thenReturn(mockUser);
-      when(() => mockUser.uid).thenReturn('test-uid');
-      when(() => mockDb.collection('users')).thenReturn(usersCollection);
-      when(() => usersCollection.doc('test-uid')).thenReturn(userDoc);
-      when(
-        () => userDoc.collection('savedItems'),
-      ).thenReturn(savedItemsCollection);
-      when(() => savedItemsCollection.doc('item-id-123')).thenReturn(itemDoc);
+      when(() => mockItemsCollection.doc('item-id-123')).thenReturn(itemDoc);
       when(() => itemDoc.delete()).thenAnswer((_) async {});
 
       await repository.deleteItem('item-id-123');

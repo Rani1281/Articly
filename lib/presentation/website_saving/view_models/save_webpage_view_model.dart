@@ -9,7 +9,7 @@ import '../../../data/models/saved_item.dart';
 class SaveWebpageViewModel extends ChangeNotifier {
   SaveWebpageViewModel(this._provider);
 
-  final SavedItemsProvider _provider;
+  final UserProvider _provider;
 
   String? _urlError;
   String? get urlError => _urlError;

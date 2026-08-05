@@ -46,7 +46,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider.value(value: prefsService),
         ChangeNotifierProvider.value(value: themeModel),
-        ChangeNotifierProvider(create: (_) => SavedItemsProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: MyApp(),
     ),

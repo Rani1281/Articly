@@ -1,27 +1,28 @@
 import 'package:articly/data/models/saved_item.dart';
-import 'package:articly/data/repositories/saved_items_repository.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
 import 'package:checks/checks.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
+// class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
+//
+// class MockFirebaseAuth extends Mock implements FirebaseAuth {}
+//
+// class MockCollectionReference extends Mock
+//     implements CollectionReference<Map<String, dynamic>> {}
 
-class MockFirebaseAuth extends Mock implements FirebaseAuth {}
+class MockUserProvider extends Mock implements UserProvider {}
 
 void main() {
   group('SavedItemViewModel', () {
-    final mockFirebaseAuth = MockFirebaseAuth();
-    final mockFirebaseFirestore = MockFirebaseFirestore();
+    // final mockFirebaseAuth = MockFirebaseAuth();
+    // final mockFirebaseFirestore = MockFirebaseFirestore();
 
-    final mockRepo = SavedItemsRepository(
-      db: mockFirebaseFirestore,
-      auth: mockFirebaseAuth,
-    );
-    final provider = SavedItemsProvider(repo: mockRepo);
+    // final mockItemsCollection = MockCollectionReference();
+
+    // final mockRepo = SavedItemsRepository(mockItemsCollection);
+    final provider = MockUserProvider();
 
     group('constructor', () {
       test('correctly builds the object from a SavedItem', () {
@@ -92,7 +93,7 @@ void main() {
 
     group('deleteItem()', () {
       test(
-        'returns if the id is null (doesn\'t call _provider.delete nor notify listeners)',
+        'returns if the id is null (not call _provider.delete nor notify listeners)',
         () async {
           int notifiedCount = 0;
 
@@ -135,13 +136,58 @@ void main() {
         },
       );
 
-      test('sets the visibility to false and notifies listeners', () {});
+      test(
+        'on success, sets the visibility to false and notifies listeners',
+        () async {
+          final id = '123';
+          when(() => provider.delete(id)).thenAnswer((_) async => null);
 
-      test('calls provider.delete()', () {});
+          int notifiedCount = 0;
+
+          final viewModel = SavedItemViewModel(
+            currentItem: SavedItem(
+              id: id,
+              type: ItemType.webpage,
+              readingStatus: ReadingStatus.unread,
+            ),
+            provider: provider,
+          );
+
+          viewModel.addListener(() => notifiedCount++);
+
+          await viewModel.deleteItem();
+
+          check(viewModel.isVisible).isFalse();
+          check(notifiedCount).equals(2);
+        },
+      );
 
       test(
-        'resets visibility to true and notified listeners if the operation wasn\'t successful (if not completed)',
-        () {},
+        'on fail (has error), resets the visibility to true, and sets the command fields',
+        () async {
+          final id = '123';
+          when(() => provider.delete(id)).thenAnswer((_) async => 'ERROR');
+
+          int notifiedCount = 0;
+
+          final viewModel = SavedItemViewModel(
+            currentItem: SavedItem(
+              id: id,
+              type: ItemType.webpage,
+              readingStatus: ReadingStatus.unread,
+            ),
+            provider: provider,
+          );
+
+          viewModel.addListener(() => notifiedCount++);
+
+          await viewModel.deleteItem();
+
+          check(viewModel.isVisible).isTrue();
+          check(notifiedCount).equals(2);
+          check(viewModel.deleteItemCommand.error).equals('ERROR');
+          check(viewModel.deleteItemCommand.completed).isFalse();
+        },
       );
     });
   });

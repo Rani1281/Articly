@@ -48,7 +48,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
 
   final log = Logger('SaveWebpageScreen');
 
-  late SavedItemsProvider provider;
+  late UserProvider provider;
 
   bool _remindMe = false;
 
@@ -162,7 +162,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
       listen: false,
     ).isDark(context);
 
-    return Consumer<SavedItemsProvider>(
+    return Consumer<UserProvider>(
       builder: (context, provider, child) {
         return ListenableBuilder(
           listenable: _viewModel,

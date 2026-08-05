@@ -7,7 +7,7 @@ import 'package:logging/logging.dart';
 
 class HomePageViewModel extends ChangeNotifier {
   HomePageViewModel({
-    required SavedItemsProvider provider,
+    required UserProvider provider,
     required SharedPreferencesService prefsService,
   }) : _provider = provider,
        _prefsService = prefsService {
@@ -15,8 +15,8 @@ class HomePageViewModel extends ChangeNotifier {
     _provider.addListener(() => processItems());
   }
 
-  final SavedItemsProvider _provider;
-  SavedItemsProvider get provider => _provider;
+  final UserProvider _provider;
+  UserProvider get provider => _provider;
   final SharedPreferencesService _prefsService;
 
   bool loadedData = false;

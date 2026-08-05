@@ -5,12 +5,12 @@ import 'package:checks/checks.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
-/// A mock implementation of [SavedItemsProvider] for testing.
-class MockSavedItemsProvider extends Mock implements SavedItemsProvider {}
+/// A mock implementation of [UserProvider] for testing.
+class MockSavedItemsProvider extends Mock implements UserProvider {}
 
 void main() {
   late SaveWebpageViewModel viewModel;
-  late SavedItemsProvider itemsProvider;
+  late UserProvider itemsProvider;
 
   setUpAll(() {
     registerFallbackValue(

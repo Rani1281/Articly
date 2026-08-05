@@ -9,7 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 class SavedItemViewModel extends ChangeNotifier {
   SavedItemViewModel({
     required SavedItem currentItem,
-    required SavedItemsProvider provider,
+    required UserProvider provider,
     // required this.saveWebpageViewModel,
   }) : _currentItem = currentItem,
        _provider = provider {
@@ -53,7 +53,7 @@ class SavedItemViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  final SavedItemsProvider _provider;
+  final UserProvider _provider;
 
   final Command deleteItemCommand = Command();
   final Command openUrlCommand = Command();
