@@ -1,10 +1,11 @@
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
-import 'package:articly/presentation/website_saving/widgets/labeled_dropdown.dart';
+import 'package:articly/presentation/website_displaying/widgets/show_bottom_sheets.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/utils/my_action_button.dart';
 import 'package:articly/utils/providers_shortcuts.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 import '../view_models/home_page_view_model.dart';
 
@@ -21,15 +22,17 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   late HomePageViewModel _viewModel;
 
-  final sortingOptions = {
-    OrderType.creationDate: 'Creation date',
-    OrderType.name: 'Name (A-Z)',
-  };
+  // final sortingOptions = {
+  //   OrderType.creationDate: 'Creation date',
+  //   OrderType.name: 'Name (A-Z)',
+  // };
 
   // final _dropdownItems = const ['Creation date', 'Name (A-Z)'];
   late final TabController _tabController;
 
   bool _isRefreshing = false;
+
+  final Logger log = Logger('HomePage');
 
   @override
   void initState() {
@@ -48,14 +51,6 @@ class _HomePageState extends State<HomePage>
     // Initialize TabController with 4 items
     _tabController = TabController(length: 4, vsync: this);
 
-    // Listen to tab changes to rebuild the tab selection and re-process the items based on the new filter
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        _viewModel.switchTab(_tabController.index);
-        _viewModel.processItems();
-      }
-    });
-
     super.initState();
   }
 
@@ -64,7 +59,7 @@ class _HomePageState extends State<HomePage>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.viewModel != widget.viewModel && widget.viewModel != null) {
       _viewModel = widget.viewModel!;
-      _viewModel.switchTab(_tabController.index);
+      // _viewModel.switchTab(_tabController.index);
       _viewModel.processItems();
     }
   }
@@ -78,6 +73,9 @@ class _HomePageState extends State<HomePage>
   Future<void> _refresh() async {
     _isRefreshing = true;
     await _viewModel.processItems(reload: true);
+    // reload should be false (as default) to avoid mismatches with SharedPreferences
+    // since operation aren't awaited so it could happen that data hasn't been
+    // set there yet.
     if (mounted &&
         _viewModel.processItemsCommand.hasError &&
         _viewModel.items.isNotEmpty) {
@@ -90,18 +88,11 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    final tabs = const [
-      Tab(text: 'All'),
-      Tab(text: 'Unread'),
-      Tab(text: 'Reading'),
-      Tab(text: 'Read'),
-    ];
-
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, child) {
         return Scaffold(
-          appBar: _buildAppBar(tabs: tabs),
+          appBar: _buildAppBar(),
           body: SelectionArea(
             child: RefreshIndicator(
               onRefresh: _refresh,
@@ -158,48 +149,124 @@ class _HomePageState extends State<HomePage>
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // View Switcher (Grid / List)
-              Tooltip(
-                message: 'View',
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: SegmentedButton<bool>(
-                    showSelectedIcon: false,
-                    segments: const [
-                      ButtonSegment(
-                        value: false,
-                        icon: Icon(Icons.view_list_rounded),
-                        // label: Text("List View"),
-                      ),
-                      ButtonSegment(
-                        value: true,
-                        icon: Icon(Icons.grid_view_rounded),
-                        // label: Text("Grid View"),
-                      ),
-                    ],
-                    selected: {_viewModel.isGridView},
-                    onSelectionChanged: (Set<bool> newSelection) =>
-                        _viewModel.setIsGridView(newSelection.first),
-                  ),
-                ),
-              ),
-              // const SizedBox(width: 8),
-              Spacer(),
-              _buildSortingTypeDropdown(),
-              const SizedBox(width: 5),
-              _buildDescendingSwitch(),
-            ],
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 16.0),
+          child: _buildListToolBar(),
         ),
         // const SizedBox(height: 10),
 
         // Main Content Area
         Expanded(
           child: _viewModel.isGridView ? _buildGridView() : _buildListView(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListToolBar() {
+    final isGridView = _viewModel.isGridView;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: [
+        // view switcher (list view / grid view)
+        _viewModel.isGridView
+            // list view icon button
+            ? IconButton(
+                tooltip: 'List view',
+                onPressed: () {
+                  _viewModel.setIsGridView(false);
+                  log.info('Is grid view: ${_viewModel.isGridView}');
+                },
+                icon: Icon(
+                  Icons.list,
+                  color: !isGridView
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              )
+            // grid view icon button
+            : IconButton(
+                tooltip: 'Grid view',
+                onPressed: () {
+                  _viewModel.setIsGridView(true);
+                  log.info('Is grid view: ${_viewModel.isGridView}');
+                },
+                icon: Icon(
+                  Icons.grid_view_outlined,
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+
+        const Spacer(),
+
+        // filter icon button
+        IconButton(
+          tooltip: _viewModel.filter != FilterType.none
+              ? 'Clear filter'
+              : 'Filter',
+          onPressed: () async {
+            if (_viewModel.filter != FilterType.none) {
+              // clear the filter on each second press
+              _viewModel.setFilter(FilterType.none);
+              log.info('Clearing filter');
+            } else {
+              await showFilterBottomSheet(
+                context: context,
+                currentValue: _viewModel.filter,
+                onChanged: (FilterType filter) {
+                  _viewModel.setFilter(filter);
+                },
+              );
+              log.info('Selected filter: ${_viewModel.filter}');
+            }
+          },
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(
+                Icons.filter_list,
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+              if (_viewModel.filter != FilterType.none)
+                Positioned(
+                  right: -3,
+                  bottom: -3,
+                  child: const Center(
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // clear filter
+        const SizedBox(width: 5),
+
+        // sorting icon button
+        IconButton(
+          tooltip: 'Sort',
+          onPressed: () async {
+            await showSortBottomSheet(
+              context: context,
+              currentSort: _viewModel.orderBy,
+              isBottomUp: !_viewModel.isDescending,
+              onApply: (OrderType order, bool isBottomUp) {
+                // bottom up = ascending
+                _viewModel.setSorting(order, !isBottomUp);
+              },
+            );
+            log.info(
+              'Order by ${_viewModel.orderBy}, Is descending: ${_viewModel.isDescending}',
+            );
+          },
+          icon: Icon(
+            Icons.swap_vert,
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
         ),
       ],
     );
@@ -256,16 +323,7 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  AppBar _buildAppBar({required List<Tab> tabs}) {
-    // Define the different underline colors for each tab
-    final List<Color> tabIndicatorColors = [
-      Colors.blueGrey, // All
-      Colors.red, // Unread
-      Colors.orange, // Reading
-      Colors.green, // Read
-    ];
-
-    final textColor = Theme.of(context).colorScheme.onSurface;
+  AppBar _buildAppBar() {
     return AppBar(
       actions: [
         IconButton(
@@ -277,56 +335,6 @@ class _HomePageState extends State<HomePage>
           },
         ),
       ],
-      // Added the TabBar at the bottom of the normal AppBar
-      bottom: TabBar(
-        controller: _tabController,
-        indicatorColor: tabIndicatorColors[_tabController.index],
-        labelColor: textColor,
-        unselectedLabelColor: textColor.withValues(alpha: 0.6),
-        tabs: tabs,
-      ),
-    );
-  }
-
-  Widget _buildDescendingSwitch() {
-    return IconButton(
-      onPressed: () {
-        _viewModel.switchIsDescending();
-        _viewModel.processItems();
-        // TODO: later, maybe just reverse the ListView instead of re-sorting the list
-      },
-      icon: Tooltip(
-        message: 'Flip direction',
-        child: Icon(
-          _viewModel.isDescending ? Icons.arrow_upward : Icons.arrow_downward,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSortingTypeDropdown() {
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: 170),
-      child: Tooltip(
-        message: 'Sorting',
-        child: LabeledDropdown(
-          items: sortingOptions.values.toList(),
-          value: sortingOptions[_viewModel.orderBy],
-          onChanged: (newValue) {
-            if (newValue == null) return;
-
-            OrderType orderBy = OrderType.creationDate;
-            if (newValue == 'Name (A-Z)') {
-              orderBy = OrderType.name;
-            }
-            debugPrint('Selected orderBy: $orderBy');
-
-            // don't wait for these operations (should be fast)
-            _viewModel.setOrderBy(orderBy);
-            _viewModel.processItems();
-          },
-        ),
-      ),
     );
   }
 

@@ -10,7 +10,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
-import 'package:metadata_fetch/metadata_fetch.dart';
 
 class SaveWebpageScreen extends StatefulWidget {
   const SaveWebpageScreen({
@@ -122,6 +121,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
       title = null;
     }
 
+    // TODO later: maybe just use widget.currentItem.copyWith(..)
     final item = SavedItem(
       id: widget.currentItem?.id, // will be set if is edit
       type: ItemType.webpage,
@@ -131,8 +131,8 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
       notes: notes,
       remindReading: _remindMe,
       createdAt: widget.currentItem?.createdAt ?? DateTime.now(),
-      imageUrl: imageUrl,
-      faviconUrl: faviconUrl,
+      imageUrl: imageUrl ?? widget.currentItem?.imageUrl,
+      faviconUrl: faviconUrl ?? widget.currentItem?.faviconUrl,
     );
 
     final errorMsg = await _viewModel.saveWebpage(

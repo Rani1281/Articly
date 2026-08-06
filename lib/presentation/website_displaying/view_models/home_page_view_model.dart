@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/data/services/shared_preferences_service.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
@@ -28,6 +30,7 @@ class HomePageViewModel extends ChangeNotifier {
   bool get isDescending => _isDescending;
 
   FilterType _filter = FilterType.none;
+  FilterType get filter => _filter;
 
   bool _isGridView = false;
   bool get isGridView => _isGridView;
@@ -41,7 +44,12 @@ class HomePageViewModel extends ChangeNotifier {
 
   final processItemsCommand = Command();
 
+  int processItemsCallCount = 0;
+
   Future<void> processItems({bool reload = false}) async {
+    processItemsCallCount++;
+    log.info("${processItemsCallCount}'th call to processItems");
+
     String? error;
     processItemsCommand.start();
     notifyListeners();
@@ -121,29 +129,53 @@ class HomePageViewModel extends ChangeNotifier {
         .toList();
   }
 
-  void switchTab(int tabIndex) {
-    final value = FilterType.values[tabIndex];
-    if (value == _filter) return;
-
-    _filter = value;
-    notifyListeners();
+  void setFilter(FilterType newFilter) {
+    if (newFilter == _filter) return;
+    _filter = newFilter;
+    processItems();
   }
 
-  Future<void> setOrderBy(OrderType value) async {
-    if (value == _orderBy) return;
+  // void switchTab(int tabIndex) {
+  //   final value = FilterType.values[tabIndex];
+  //   if (value == _filter) return;
+  //
+  //   _filter = value;
+  //   processItems();
+  // }
 
-    _orderBy = value;
-    notifyListeners();
+  // Future<void> setOrderBy(OrderType value) async {
+  //   if (value == _orderBy) return;
+  //
+  //   _orderBy = value;
+  //   processItems();
+  //
+  //   await _prefsService.setOrderBy(value.name);
+  // }
 
-    await _prefsService.setOrderBy(value.name);
+  void setSorting(OrderType orderBy, bool isDescending) {
+    bool changedOne = false;
+    if (orderBy != _orderBy) {
+      _orderBy = orderBy;
+      unawaited(_prefsService.setOrderBy(orderBy.name));
+      changedOne = true;
+    }
+    if (isDescending != _isDescending) {
+      _isDescending = isDescending;
+      unawaited(_prefsService.setIsDescending(isDescending));
+      changedOne = true;
+    }
+
+    if (changedOne) {
+      processItems();
+    }
   }
 
-  Future<void> switchIsDescending() async {
-    _isDescending = !_isDescending;
-    notifyListeners();
-
-    await _prefsService.setIsDescending(_isDescending);
-  }
+  // Future<void> switchIsDescending() async {
+  //   _isDescending = !_isDescending;
+  //   notifyListeners();
+  //
+  //   await _prefsService.setIsDescending(_isDescending);
+  // }
 
   Future<void> setIsGridView(bool value) async {
     if (value == _isGridView) return;

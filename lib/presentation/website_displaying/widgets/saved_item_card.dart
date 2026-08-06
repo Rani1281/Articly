@@ -16,12 +16,14 @@ class SavedItemCard extends StatefulWidget {
     required this.item,
     this.isDark = false,
     this.onDeleted,
+    // this.onEdit,
   });
 
   final bool isGridView;
   final SavedItem item;
   final bool isDark;
   final VoidCallback? onDeleted;
+  // final VoidCallback? onEdit;
 
   @override
   State<SavedItemCard> createState() => _SavedItemCardState();
@@ -44,7 +46,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
     );
     _isGridView = widget.isGridView;
 
-    _viewModel.addListener(_checkDeletion);
+    // _viewModel.addListener(_checkDeletion);
   }
 
   @override
@@ -55,19 +57,20 @@ class _SavedItemCardState extends State<SavedItemCard> {
 
     if (oldWidget.item != widget.item) {
       _viewModel.currentItem = widget.item;
+      // add setState({}) ?
     }
   }
 
-  void _checkDeletion() {
-    final cmd = _viewModel.deleteItemCommand;
-    if (!cmd.completed && cmd.hasError) {
-      MySnackBar(context, message: _viewModel.deleteItemCommand.error!).show();
-    } else if (!showedSuccessMessage && cmd.completed) {
-      MySnackBar(context, message: 'Deleted the item successfully!').show();
-      showedSuccessMessage = true;
-      widget.onDeleted?.call();
-    }
-  }
+  // void _checkDeletion() {
+  //   final cmd = _viewModel.deleteItemCommand;
+  //   if (!cmd.completed && cmd.hasError) {
+  //     MySnackBar(context, message: _viewModel.deleteItemCommand.error!).show();
+  //   } else if (!showedSuccessMessage && cmd.completed) {
+  //     MySnackBar(context, message: 'Deleted the item successfully!').show();
+  //     showedSuccessMessage = true;
+  //     widget.onDeleted?.call();
+  //   }
+  // }
 
   _openUrl() async {
     final currentItem = _viewModel.currentItem;
@@ -85,7 +88,16 @@ class _SavedItemCardState extends State<SavedItemCard> {
   _deleteItem() async {
     final confirm = await _showDeleteDialog();
     if (confirm == true) {
-      _viewModel.deleteItem();
+      await _viewModel.deleteItem();
+    }
+    if (!mounted) return;
+    if (_viewModel.deleteItemCommand.completed &&
+        !_viewModel.deleteItemCommand.hasError & mounted) {
+      MySnackBar(context, message: 'Item deleted successfully!').show();
+      showedSuccessMessage = true;
+      widget.onDeleted?.call();
+    } else {
+      MySnackBar(context, message: _viewModel.deleteItemCommand.error!).show();
     }
   }
 
@@ -102,6 +114,8 @@ class _SavedItemCardState extends State<SavedItemCard> {
     if (newItem != null) {
       // change the item and rebuild the page
       _viewModel.currentItem = newItem;
+      // widget.onEdit?.call(); // refresh after edit.
+
       log.info('New item: $newItem');
     }
   }
@@ -317,7 +331,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
 
   @override
   void dispose() {
-    _viewModel.removeListener(_checkDeletion);
+    // _viewModel.removeListener(_checkDeletion);
     _viewModel.dispose();
     super.dispose();
   }

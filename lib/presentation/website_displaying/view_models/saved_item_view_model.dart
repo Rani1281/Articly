@@ -39,7 +39,6 @@ class SavedItemViewModel extends ChangeNotifier {
     title = _currentItem.title;
     uri = _currentItem.uri;
     notes = _currentItem.notes;
-    notifyListeners();
   }
 
   late String? title;
