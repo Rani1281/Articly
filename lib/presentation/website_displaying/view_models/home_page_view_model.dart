@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:articly/data/models/reading_status_count.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/data/services/shared_preferences_service.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
@@ -37,6 +38,8 @@ class HomePageViewModel extends ChangeNotifier {
 
   List<SavedItem> _items = [];
   List<SavedItem> get items => _items;
+
+  ReadingStatusCount get readingStatusCount => _provider.readingStatusCount;
 
   final log = Logger('HomePageViewModel');
 
@@ -135,22 +138,23 @@ class HomePageViewModel extends ChangeNotifier {
     processItems();
   }
 
-  // void switchTab(int tabIndex) {
-  //   final value = FilterType.values[tabIndex];
-  //   if (value == _filter) return;
-  //
-  //   _filter = value;
-  //   processItems();
-  // }
+  // ! DELETE
+  void switchTab(int tabIndex) {
+    final value = FilterType.values[tabIndex];
+    if (value == _filter) return;
 
-  // Future<void> setOrderBy(OrderType value) async {
-  //   if (value == _orderBy) return;
-  //
-  //   _orderBy = value;
-  //   processItems();
-  //
-  //   await _prefsService.setOrderBy(value.name);
-  // }
+    _filter = value;
+    processItems();
+  }
+
+  Future<void> setOrderBy(OrderType value) async {
+    if (value == _orderBy) return;
+
+    _orderBy = value;
+    processItems();
+
+    await _prefsService.setOrderBy(value.name);
+  }
 
   void setSorting(OrderType orderBy, bool isDescending) {
     bool changedOne = false;
@@ -170,12 +174,13 @@ class HomePageViewModel extends ChangeNotifier {
     }
   }
 
-  // Future<void> switchIsDescending() async {
-  //   _isDescending = !_isDescending;
-  //   notifyListeners();
-  //
-  //   await _prefsService.setIsDescending(_isDescending);
-  // }
+  // ! DELETE
+  Future<void> switchIsDescending() async {
+    _isDescending = !_isDescending;
+    notifyListeners();
+
+    await _prefsService.setIsDescending(_isDescending);
+  }
 
   Future<void> setIsGridView(bool value) async {
     if (value == _isGridView) return;

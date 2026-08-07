@@ -94,6 +94,7 @@ class UserProvider extends ChangeNotifier {
 
       if (_items.length != _readingStatusCount.total()) {
         // means the count isn't synced
+        log.info('Syncing reading status counts...');
         syncReadingStatusCount();
       }
       log.finest('Successfully loaded user data from Firestore!');
