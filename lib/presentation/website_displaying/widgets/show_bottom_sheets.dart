@@ -1,4 +1,3 @@
-import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/presentation/website_displaying/view_models/home_page_view_model.dart';
 import 'package:flutter/material.dart';
 
@@ -257,16 +256,12 @@ Future<void> showSortBottomSheet({
                       ),
                       child: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: colorScheme.secondaryContainer,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
                             child: Icon(
-                              Icons.arrow_upward_rounded,
+                              Icons.arrow_downward_rounded,
                               size: 20,
-                              color: colorScheme.onSecondaryContainer,
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -358,22 +353,9 @@ Widget _buildSortOption({
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              // Using surfaceContainerHighest instead of deprecated surfaceVariant
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: isSelected
-                  ? colorScheme.onPrimary
-                  : colorScheme.onSurfaceVariant,
-            ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Icon(icon, size: 20, color: colorScheme.onSurfaceVariant),
           ),
           const SizedBox(width: 16),
           Expanded(

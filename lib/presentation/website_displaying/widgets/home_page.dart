@@ -7,7 +7,6 @@ import 'package:articly/presentation/website_displaying/widgets/show_bottom_shee
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/utils/my_action_button.dart';
 import 'package:articly/utils/providers_shortcuts.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
@@ -26,15 +25,13 @@ class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   late HomePageViewModel _viewModel;
 
-  // final sortingOptions = {
-  //   OrderType.creationDate: 'Creation date',
-  //   OrderType.name: 'Name (A-Z)',
-  // };
-
-  // final _dropdownItems = const ['Creation date', 'Name (A-Z)'];
   late final TabController _tabController;
 
   bool _isRefreshing = false;
+
+  final unreadColor = Colors.blue.shade100;
+  final readingColor = Colors.blue.shade300;
+  final readColor = Colors.blue.shade600;
 
   final Logger log = Logger('HomePage');
 
@@ -63,7 +60,6 @@ class _HomePageState extends State<HomePage>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.viewModel != widget.viewModel && widget.viewModel != null) {
       _viewModel = widget.viewModel!;
-      // _viewModel.switchTab(_tabController.index);
       _viewModel.processItems();
     }
   }
@@ -77,9 +73,6 @@ class _HomePageState extends State<HomePage>
   Future<void> _refresh() async {
     _isRefreshing = true;
     await _viewModel.processItems(reload: true);
-    // reload should be false (as default) to avoid mismatches with SharedPreferences
-    // since operation aren't awaited so it could happen that data hasn't been
-    // set there yet.
     if (mounted &&
         _viewModel.processItemsCommand.hasError &&
         _viewModel.items.isNotEmpty) {
@@ -95,97 +88,197 @@ class _HomePageState extends State<HomePage>
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, child) {
-        return Scaffold(
-          appBar: _buildAppBar(),
-          body: SelectionArea(
-            child: RefreshIndicator(
-              onRefresh: _refresh,
-              // LayoutBuilder and SingleChildScrollView combination enforces a minimum
-              // width for the screen, preventing the zero-width squishing bug on web.
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  const double minAppWidth = 200.0;
-                  final double currentWidth = constraints.maxWidth > minAppWidth
-                      ? constraints.maxWidth
-                      : minAppWidth;
+        return LayoutBuilder(
+          builder: (context, outerConstraints) {
+            // Determine if we have a wide screen (e.g. web/desktop)
+            final bool isWideScreen = outerConstraints.maxWidth > 800;
 
-                  return SizedBox(
-                    width: currentWidth,
-                    height: constraints
-                        .maxHeight, // Fixes height for the Expanded view below
-                    child: Builder(
-                      builder: (context) {
-                        if (_viewModel.processItemsCommand.running &&
-                            !_isRefreshing) {
-                          return _buildRunningView();
-                        }
-                        if (_viewModel.processItemsCommand.hasError &&
-                            !_viewModel.processItemsCommand.completed) {
-                          return _buildErrorView();
-                        }
+            return Scaffold(
+              // Hide default AppBar on wide screens, handle it in the layout instead
+              appBar: isWideScreen ? null : _buildAppBar(),
+              body: SelectionArea(
+                child: RefreshIndicator(
+                  onRefresh: _refresh,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      const double minAppWidth = 200.0;
+                      final double currentWidth =
+                          constraints.maxWidth > minAppWidth
+                          ? constraints.maxWidth
+                          : minAppWidth;
 
-                        if (_viewModel.items.isEmpty) {
-                          return _buildNoItemsView();
-                        }
-
-                        return _buildView();
-                      },
+                      return SizedBox(
+                        width: currentWidth,
+                        height: constraints.maxHeight,
+                        child: isWideScreen
+                            ? _buildWideLayout()
+                            : _buildMobileLayout(),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              floatingActionButton: FloatingActionButton(
+                onPressed: () async {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const SaveWebpageScreen(),
                     ),
                   );
                 },
+                child: const Icon(Icons.add),
               ),
-            ),
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () async {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SaveWebpageScreen()),
-              );
-            },
-            child: const Icon(Icons.add),
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  Column _buildView() {
+  // =========================================================================
+  // RESPONSIVE LAYOUTS
+  // =========================================================================
+
+  Widget _buildWideLayout() {
     final colorScheme = Theme.of(context).colorScheme;
     final counts = _viewModel.readingStatusCount;
-    return Column(
-      children: [
-        // Progress donut chart
-        _buildProgressDonutContainer(colorScheme, counts),
 
-        // Title counts
-        if (!kIsWeb) ...[_buildTitleCounts(horizontal: false)],
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'SAVED SOURCES',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.7),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Left Pane Window
+        Container(
+          color: colorScheme.surfaceContainerLow,
+          width: 340, // Fixed width for left pane, adjust as needed
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Safe area spacing + Profile Icon Button in top right corner
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: 8.0,
+                  right: 8.0,
+                  bottom: 8.0,
+                ),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    icon: const Icon(Icons.account_circle, size: 28),
+                    onPressed: () {
+                      Navigator.of(
+                        context,
+                      ).push(MaterialPageRoute(builder: (_) => ProfilePage()));
+                    },
+                  ),
+                ),
               ),
-            ),
+              // Progress Card
+              Expanded(
+                child: SingleChildScrollView(
+                  child: _buildProgressDonutContainer(colorScheme, counts),
+                ),
+              ),
+            ],
           ),
         ),
 
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 16.0),
-          child: _buildListToolBar(),
+        // Divider separating panes
+        VerticalDivider(
+          width: 1,
+          thickness: 1,
+          color: colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
-        // const SizedBox(height: 10),
 
-        // Main Content Area
+        // Right Pane Window
         Expanded(
-          child: _viewModel.isGridView ? _buildGridView() : _buildListView(),
+          child: Builder(
+            builder: (context) {
+              if (_viewModel.processItemsCommand.running && !_isRefreshing) {
+                return _buildRunningView();
+              }
+              if (_viewModel.processItemsCommand.hasError &&
+                  !_viewModel.processItemsCommand.completed) {
+                return _buildErrorView();
+              }
+              if (_viewModel.items.isEmpty) {
+                return _buildNoItemsView();
+              }
+
+              return CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  _buildSavedSourcesTitle(),
+                  _buildToolbarSliver(),
+                  _viewModel.isGridView
+                      ? _buildSliverGridView()
+                      : _buildSliverListView(),
+                ],
+              );
+            },
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildMobileLayout() {
+    if (_viewModel.processItemsCommand.running && !_isRefreshing) {
+      return _buildRunningView();
+    }
+    if (_viewModel.processItemsCommand.hasError &&
+        !_viewModel.processItemsCommand.completed) {
+      return _buildErrorView();
+    }
+    if (_viewModel.items.isEmpty) {
+      return _buildNoItemsView();
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    final counts = _viewModel.readingStatusCount;
+
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        // Progress donut chart
+        SliverToBoxAdapter(
+          child: _buildProgressDonutContainer(colorScheme, counts),
+        ),
+        _buildSavedSourcesTitle(),
+        _buildToolbarSliver(),
+        // Main Content Area
+        _viewModel.isGridView ? _buildSliverGridView() : _buildSliverListView(),
+      ],
+    );
+  }
+
+  // =========================================================================
+  // SHARED WIDGETS
+  // =========================================================================
+
+  Widget _buildSavedSourcesTitle() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'SAVED SOURCES',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildToolbarSliver() {
+    return SliverPersistentHeader(
+      pinned: true,
+      delegate: _SliverToolbarDelegate(child: _buildListToolBar()),
     );
   }
 
@@ -201,36 +294,43 @@ class _HomePageState extends State<HomePage>
             color: colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(30),
           ),
-          padding: EdgeInsets.all(24),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+          padding: EdgeInsets.all(30),
+          child: Column(
             children: [
-              DonutChartWidget(
-                sections: [
-                  DonutChartSection(
-                    value: counts.unread.toDouble(),
-                    color: Colors.blue.shade100,
-                    label: ReadingStatus.unread.name,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DonutChartWidget(
+                    sections: [
+                      DonutChartSection(
+                        value: counts.unread.toDouble(),
+                        color: unreadColor,
+                        label: ReadingStatus.unread.name,
+                      ),
+                      DonutChartSection(
+                        value: counts.reading.toDouble(),
+                        color: readingColor,
+                        label: ReadingStatus.reading.name,
+                      ),
+                      DonutChartSection(
+                        value: counts.read.toDouble(),
+                        color: readColor,
+                        label: ReadingStatus.read.name,
+                      ),
+                    ],
+                    // Center number = to finish reading
+                    centerNumber: counts.unread + counts.reading,
+                    centerText: 'TO FINISH',
                   ),
-                  DonutChartSection(
-                    value: counts.reading.toDouble(),
-                    color: Colors.blue.shade300,
-                    label: ReadingStatus.reading.name,
-                  ),
-                  DonutChartSection(
-                    value: counts.read.toDouble(),
-                    color: Colors.blue.shade500,
-                    label: ReadingStatus.read.name,
-                  ),
+
+                  // Title counts
+                  // if (kIsWeb) ...[_buildTitleCounts(horizontal: true)],
                 ],
-                // Center number = to finish reading
-                centerNumber: counts.unread + counts.reading,
-                centerText: 'TO FINISH',
               ),
 
               // Title counts
-              if (kIsWeb) ...[_buildTitleCounts(horizontal: false)],
+              _buildTitleCounts(horizontal: true),
             ],
           ),
         ),
@@ -244,28 +344,28 @@ class _HomePageState extends State<HomePage>
       _buildTitle(
         text: 'UNREAD',
         count: counts.unread,
-        lineColor: Colors.blue.shade100,
+        lineColor: unreadColor,
         horizontal: horizontal,
       ),
       _buildTitle(
         text: 'READING',
         count: counts.reading,
-        lineColor: Colors.blue.shade300,
+        lineColor: readingColor,
         horizontal: horizontal,
       ),
       _buildTitle(
         text: 'READ',
         count: counts.read,
-        lineColor: Colors.blue.shade500,
+        lineColor: readColor,
         horizontal: horizontal,
       ),
     ];
 
     return horizontal
         ? Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
+            padding: EdgeInsets.only(top: 30),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: allTitles,
             ),
           )
@@ -296,20 +396,15 @@ class _HomePageState extends State<HomePage>
       fontSize: 12,
       fontWeight: FontWeight.w900,
       color: colorScheme.onSurface.withValues(alpha: 0.7),
-      // decoration: TextDecoration.underline,
-      // decorationColor: underlineColor,
     );
 
-    // if horizontal = true, the count needs to be above the title
-    // TODO later maybe: make it so when clicking this, the list will automatically get filtered
     return horizontal
         ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              // Divider(color: lineColor, thickness: 2),
               Container(
-                width: 20,
+                width: 50,
                 height: 8,
                 decoration: BoxDecoration(
                   color: lineColor,
@@ -326,7 +421,6 @@ class _HomePageState extends State<HomePage>
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // VerticalDivider(color: lineColor, thickness: 2),
               Container(
                 width: 8,
                 height: 20,
@@ -351,7 +445,6 @@ class _HomePageState extends State<HomePage>
       children: [
         // view switcher (list view / grid view)
         _viewModel.isGridView
-            // list view icon button
             ? IconButton(
                 tooltip: 'List view',
                 onPressed: () {
@@ -365,7 +458,6 @@ class _HomePageState extends State<HomePage>
                       : colorScheme.onSurface.withValues(alpha: 0.9),
                 ),
               )
-            // grid view icon button
             : IconButton(
                 tooltip: 'Grid view',
                 onPressed: () {
@@ -380,51 +472,50 @@ class _HomePageState extends State<HomePage>
 
         const Spacer(),
 
+        // filter text (visible is a filter is applied)
+        if (_viewModel.filter != FilterType.none)
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              _viewModel.setFilter(FilterType.none);
+              log.info('Clearing filter');
+            },
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              spacing: 3,
+              children: [
+                Icon(Icons.clear, size: 18, color: Colors.blueGrey),
+                SelectionContainer.disabled(
+                  child: Text(
+                    _viewModel.filter.name,
+                    style: TextStyle(color: Colors.blueGrey),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
         // filter icon button
         IconButton(
           tooltip: _viewModel.filter != FilterType.none
               ? 'Clear filter'
               : 'Filter',
           onPressed: () async {
-            if (_viewModel.filter != FilterType.none) {
-              // clear the filter on each second press
-              _viewModel.setFilter(FilterType.none);
-              log.info('Clearing filter');
-            } else {
-              await showFilterBottomSheet(
-                context: context,
-                currentValue: _viewModel.filter,
-                onChanged: (FilterType filter) {
-                  _viewModel.setFilter(filter);
-                },
-              );
-              log.info('Selected filter: ${_viewModel.filter}');
-            }
+            await showFilterBottomSheet(
+              context: context,
+              currentValue: _viewModel.filter,
+              onChanged: (FilterType filter) {
+                _viewModel.setFilter(filter);
+              },
+            );
+            log.info('Selected filter: ${_viewModel.filter}');
           },
-          icon: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Icon(
-                Icons.filter_list,
-                color: colorScheme.onSurface.withValues(alpha: 0.9),
-              ),
-              if (_viewModel.filter != FilterType.none)
-                Positioned(
-                  right: -3,
-                  bottom: -3,
-                  child: const Center(
-                    child: Icon(
-                      Icons.close_rounded,
-                      size: 16,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-            ],
+          icon: Icon(
+            Icons.filter_list,
+            color: colorScheme.onSurface.withValues(alpha: 0.9),
           ),
         ),
 
-        // clear filter
         const SizedBox(width: 5),
 
         // sorting icon button
@@ -436,7 +527,6 @@ class _HomePageState extends State<HomePage>
               currentSort: _viewModel.orderBy,
               isBottomUp: !_viewModel.isDescending,
               onApply: (OrderType order, bool isBottomUp) {
-                // bottom up = ascending
                 _viewModel.setSorting(order, !isBottomUp);
               },
             );
@@ -446,7 +536,7 @@ class _HomePageState extends State<HomePage>
           },
           icon: Icon(
             Icons.swap_vert,
-            color: colorScheme.onSurface.withValues(alpha: 0.7),
+            color: colorScheme.onSurface.withValues(alpha: 0.9),
           ),
         ),
       ],
@@ -454,58 +544,64 @@ class _HomePageState extends State<HomePage>
   }
 
   // =========================================================================
-  // GRID VIEW IMPLEMENTATION
+  // SLIVER GRID VIEW IMPLEMENTATION
   // =========================================================================
-  Widget _buildGridView() {
-    // final isDarkMode = MyProviders(context).themeModel().isDark(context);
-    // final colorScheme = Theme.of(context).colorScheme;
-    return GridView.builder(
+  Widget _buildSliverGridView() {
+    return SliverPadding(
       padding: const EdgeInsets.only(bottom: 80, left: 8.0, right: 8.0),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 280,
-        childAspectRatio: 1.15,
-        crossAxisSpacing: 3,
-        mainAxisSpacing: 3,
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 280,
+          childAspectRatio: 1.15,
+          crossAxisSpacing: 3,
+          mainAxisSpacing: 3,
+        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final item = _viewModel.items[index];
+          return SavedItemCard(
+            isGridView: _viewModel.isGridView,
+            item: item,
+            onDeleted: _refresh,
+          );
+        }, childCount: _viewModel.items.length),
       ),
-      itemCount: _viewModel.items.length,
-      itemBuilder: (context, index) {
-        final item = _viewModel.items[index];
-        return SavedItemCard(
-          isGridView: _viewModel.isGridView,
-          item: item,
-          onDeleted: _refresh,
-        );
-      },
     );
   }
 
   // =========================================================================
-  // LIST VIEW IMPLEMENTATION
+  // SLIVER LIST VIEW IMPLEMENTATION
   // =========================================================================
-  Widget _buildListView() {
-    return ListView.separated(
+  Widget _buildSliverListView() {
+    return SliverPadding(
       padding: const EdgeInsets.only(top: 8.0, bottom: 70),
-      itemCount: _viewModel.items.length,
-      separatorBuilder: (context, index) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Divider(height: 1),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final item = _viewModel.items[index];
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SavedItemCard(
+                  isGridView: _viewModel.isGridView,
+                  item: item,
+                  onDeleted: _refresh,
+                ),
+              ),
+              if (index < _viewModel.items.length - 1)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Divider(height: 1),
+                ),
+            ],
+          );
+        }, childCount: _viewModel.items.length),
       ),
-      itemBuilder: (context, index) {
-        final item = _viewModel.items[index];
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SavedItemCard(
-            isGridView: _viewModel.isGridView,
-            item: item,
-            onDeleted: _refresh,
-          ),
-        );
-      },
     );
   }
 
   AppBar _buildAppBar() {
     return AppBar(
+      scrolledUnderElevation: 0,
       actions: [
         IconButton(
           icon: const Icon(Icons.account_circle),
@@ -520,44 +616,99 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget _buildRunningView() {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height - 200,
-      child: Center(child: CircularProgressIndicator()),
+    return const CustomScrollView(
+      physics: AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
+      ],
     );
   }
 
   Widget _buildErrorView() {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height - 200,
-      child: Center(child: Text(_viewModel.processItemsCommand.error!)),
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverFillRemaining(
+          child: Center(child: Text(_viewModel.processItemsCommand.error!)),
+        ),
+      ],
     );
   }
 
   Widget _buildNoItemsView() {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height - 200,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            _tabController.index == 0
-                ? 'No saved sources yet'
-                : 'No saved sources for the current status',
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverFillRemaining(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _tabController.index == 0
+                    ? 'No saved sources yet'
+                    : 'No saved sources for the current status',
+              ),
+              const SizedBox(height: 20),
+              MyActionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SaveWebpageScreen(),
+                    ),
+                  );
+                },
+                text: 'Add a webpage',
+                icon: Icon(Icons.add),
+              ),
+            ],
           ),
-          const SizedBox(height: 20),
-          MyActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SaveWebpageScreen()),
-              );
-            },
-            text: 'Add a webpage',
-            icon: Icon(Icons.add),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
+  }
+}
+
+class _SliverToolbarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  final double height = 58.0;
+
+  _SliverToolbarDelegate({required this.child});
+
+  @override
+  double get minExtent => height;
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final theme = Theme.of(context);
+    final isPinned = shrinkOffset > 0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: isPinned
+                ? theme.dividerColor.withValues(alpha: 0.2)
+                : Colors.transparent,
+            width: 1,
+          ),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 16.0),
+      child: SizedBox.expand(child: child),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverToolbarDelegate oldDelegate) {
+    return child != oldDelegate.child || height != oldDelegate.height;
   }
 }
