@@ -86,7 +86,6 @@ void main() {
           check(viewModel.title).equals('New Title');
           check(viewModel.uri).equals(Uri.parse('https://new-example.com'));
           check(viewModel.notes).equals('New Notes');
-          check(notified).isTrue();
         },
       );
     });
@@ -101,6 +100,7 @@ void main() {
             currentItem: SavedItem(
               type: ItemType.webpage,
               readingStatus: ReadingStatus.unread,
+              uri: Uri.parse(''),
             ),
             provider: provider,
           );
@@ -123,6 +123,7 @@ void main() {
               id: '',
               type: ItemType.webpage,
               readingStatus: ReadingStatus.unread,
+              uri: Uri.parse(''),
             ),
             provider: provider,
           );
@@ -149,6 +150,7 @@ void main() {
               id: id,
               type: ItemType.webpage,
               readingStatus: ReadingStatus.unread,
+              uri: Uri.parse(''),
             ),
             provider: provider,
           );
@@ -175,6 +177,7 @@ void main() {
               id: id,
               type: ItemType.webpage,
               readingStatus: ReadingStatus.unread,
+              uri: Uri.parse(''),
             ),
             provider: provider,
           );

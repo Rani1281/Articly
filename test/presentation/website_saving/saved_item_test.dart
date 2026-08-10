@@ -1,3 +1,4 @@
+import 'package:articly/config/config.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:checks/checks.dart';
@@ -37,19 +38,19 @@ void main() {
         check(item.createdAt).equals(createdAt);
       });
 
-      test('defaults ungiven optional fields to null (except createdAt)', () {
+      test('defaults ungiven optional fields to null', () {
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
+          uri: Uri.parse(''),
         );
 
         check(item.id).isNull();
         check(item.type).equals(ItemType.webpage);
-        check(item.uri).isNull();
         check(item.readingStatus).equals(ReadingStatus.unread);
-        check(item.title).isNull();
-        check(item.notes).isNull();
-        check(item.remindReading).isNull();
+        check(item.title).equals(defaultTitleName);
+        check(item.notes).isEmpty();
+        check(item.remindReading).isFalse();
         check(item.faviconUrl).isNull();
         check(item.imageUrl).isNull();
         check(item.createdAt).isNotNull();
@@ -61,6 +62,7 @@ void main() {
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.read,
+          uri: Uri.parse(''),
         );
 
         expect(item.createdAt.day, createdAt.day);
@@ -110,6 +112,7 @@ void main() {
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
+          uri: Uri.parse(''),
         );
 
         final result = item.toFirestore();
@@ -121,6 +124,7 @@ void main() {
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
+          uri: Uri.parse(''),
         );
 
         final result = item.toFirestore(isEdit: false);
@@ -133,6 +137,7 @@ void main() {
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
+          uri: Uri.parse(''),
         );
 
         final result = item.toFirestore(isEdit: true);
@@ -150,6 +155,7 @@ void main() {
         );
 
         final result = item.toFirestore();
+        print(result);
 
         check(result['type']).equals('webpage');
         check(result['readingStatus']).equals('unread');
@@ -158,25 +164,28 @@ void main() {
         check(result.containsKey('url')).isFalse();
         check(result.containsKey('title')).isFalse();
         check(result.containsKey('notes')).isFalse();
-        check(result.containsKey('remindReading')).isFalse();
+        check(result.containsKey('remindReading')).isTrue();
       });
 
       test('does not include fields that are null', () {
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
+          uri: Uri.parse(''),
         );
 
         final result = item.toFirestore();
+
+        print(result);
 
         check(result['type']).equals('webpage');
         check(result['readingStatus']).equals('unread');
         check(result.containsKey('createdAt')).isTrue();
         check(result['createdAt']).isA<Timestamp>();
         check(result.containsKey('url')).isFalse();
-        check(result.containsKey('title')).isFalse();
+        check(result.containsKey('title')).isTrue();
         check(result.containsKey('notes')).isFalse();
-        check(result.containsKey('remindReading')).isFalse();
+        check(result.containsKey('remindReading')).isTrue();
       });
     });
 
@@ -218,7 +227,7 @@ void main() {
         check(item.id).equals('snapshot-id-789');
       });
 
-      test('If the url is not valid, the url will set to null', () {
+      test('If the url is not valid, the url will set to an empty url', () {
         final snapshot = _MockDocumentSnapshot();
         final data = <String, dynamic>{'url': '::Not valid URI::'};
         when(() => snapshot.id).thenReturn('doc-id');
@@ -226,7 +235,7 @@ void main() {
 
         final item = SavedItem.fromFirestore(snapshot, null);
 
-        check(item.uri).isNull();
+        check(item.uri.toString()).isEmpty();
       });
 
       test('falls back on default values when data is missing', () {
@@ -239,10 +248,10 @@ void main() {
         check(item.id).equals('doc-id');
         check(item.type).equals(ItemType.webpage);
         check(item.readingStatus).equals(ReadingStatus.unread);
-        check(item.uri).isNull();
-        check(item.title).isNull();
-        check(item.notes).isNull();
-        check(item.remindReading).isNull();
+        check(item.uri.toString()).isEmpty();
+        check(item.title).equals(defaultTitleName);
+        check(item.notes).isEmpty();
+        check(item.remindReading).isFalse();
         check(item.createdAt).isNotNull();
       });
 

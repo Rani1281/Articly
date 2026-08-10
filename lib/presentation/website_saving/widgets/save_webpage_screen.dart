@@ -1,3 +1,4 @@
+import 'package:articly/config/config.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
@@ -70,17 +71,22 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     // prepopulate fields
     final item = widget.currentItem;
     if (widget.isEdit && item != null) {
-      _urlController.text = item.uri?.toString() ?? '';
-      _titleController.text = item.title ?? '';
+      _urlController.text = item.uri.toString();
+      _titleController.text = item.title;
       _notesController.text = item.notes ?? '';
 
       _initialValue = values[item.readingStatus] ?? 'Unread';
       _remindMe = item.remindReading ?? false;
-      // if the title is null or empty, set autoTitle to true
-      _autoTitle = (item.title == null || item.title!.isEmpty);
+      // Since the title is required, it cannot be empty or null, so initialize autoTitle with false
+      _autoTitle = false;
     }
 
     _selectedStatusNotifier = ValueNotifier(_initialValue);
+  }
+
+  String? nullIfEmpty(String? value) {
+    if (value != null && value.isEmpty) return null;
+    return value;
   }
 
   _save() async {
@@ -89,14 +95,16 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
       (status) => status.name == _selectedStatusNotifier.value.toLowerCase(),
       orElse: () => ReadingStatus.unread,
     );
-    final urlStr = _urlController.text.trim();
-    final uri = Uri.tryParse(urlStr);
-    String? title = _titleController.text;
-    final notes = _notesController.text;
+    final String url = _urlController.text.trim();
+    final Uri? uri = Uri.tryParse(url);
+    final String title = _titleController.text;
+    final String notes = _notesController.text;
+    String? fetchedTitle;
     String? imageUrl;
     String? faviconUrl;
 
     // Validate fields
+    // Returns if uri is null
     final isValid = _viewModel.validateFields(uri, title, notes);
     if (!isValid) {
       log.info('Some info is invalid, so not saving the webpage');
@@ -108,31 +116,27 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     });
 
     // fetch the metadata
-    if (urlStr != widget.currentItem?.uri.toString()) {
+    final prevUrl = widget.currentItem?.uri.toString();
+    if (url != prevUrl) {
       final metadata = await _viewModel.fetchWebpageMetadata(uri!);
       if (_autoTitle && title.isEmpty) {
-        title = metadata.title;
+        fetchedTitle = metadata.title;
       }
       imageUrl = metadata.imageUrl;
       faviconUrl = metadata.faviconUrl;
     }
 
-    if (title != null && title.isEmpty) {
-      title = null;
-    }
-
-    // TODO later: maybe just use widget.currentItem.copyWith(..)
     final item = SavedItem(
       id: widget.currentItem?.id, // will be set if is edit
       type: ItemType.webpage,
       readingStatus: readingStatus,
-      uri: uri,
-      title: title,
+      uri: uri!,
+      title: title.isEmpty ? defaultTitleName : title,
       notes: notes,
       remindReading: _remindMe,
-      createdAt: widget.currentItem?.createdAt ?? DateTime.now(),
       imageUrl: imageUrl ?? widget.currentItem?.imageUrl,
       faviconUrl: faviconUrl ?? widget.currentItem?.faviconUrl,
+      createdAt: widget.currentItem?.createdAt ?? DateTime.now(),
     );
 
     final errorMsg = await _viewModel.saveWebpage(

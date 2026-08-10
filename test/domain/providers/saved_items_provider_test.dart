@@ -30,6 +30,13 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(ReadingStatusCount.zeros());
+    registerFallbackValue(
+      SavedItem(
+        type: ItemType.webpage,
+        uri: Uri.parse(''),
+        readingStatus: ReadingStatus.unread,
+      ),
+    );
   });
 
   setUp(() {
@@ -60,10 +67,12 @@ void main() {
             '1': SavedItem(
               type: ItemType.webpage,
               readingStatus: ReadingStatus.unread,
+              uri: Uri.parse(''),
             ),
             '2': SavedItem(
               type: ItemType.webpage,
               readingStatus: ReadingStatus.read,
+              uri: Uri.parse(''),
             ),
           };
 
@@ -94,14 +103,18 @@ void main() {
             '1': SavedItem(
               type: ItemType.webpage,
               readingStatus: ReadingStatus.unread,
+
+              uri: Uri.parse(''),
             ),
             '2': SavedItem(
               type: ItemType.webpage,
               readingStatus: ReadingStatus.reading,
+              uri: Uri.parse(''),
             ),
             '3': SavedItem(
               type: ItemType.webpage,
               readingStatus: ReadingStatus.read,
+              uri: Uri.parse(''),
             ),
           };
 
@@ -192,6 +205,7 @@ void main() {
         final item = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
+          uri: Uri.parse(''),
         );
 
         final result = await provider.add(item);
@@ -207,6 +221,7 @@ void main() {
           SavedItem(
             type: ItemType.webpage,
             readingStatus: ReadingStatus.unread,
+            uri: Uri.parse(''),
           ),
         );
 
@@ -269,6 +284,7 @@ void main() {
           id: 'item-id-def',
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
+          uri: Uri.parse(''),
         );
 
         check(provider.items.length).equals(1);
@@ -287,16 +303,19 @@ void main() {
           SavedItem(
             type: ItemType.webpage,
             readingStatus: ReadingStatus.unread,
+            uri: Uri.parse(''),
           ),
         );
 
         final item1 = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.unread,
+          uri: Uri.parse(''),
         );
         final item2 = SavedItem(
           type: ItemType.webpage,
           readingStatus: ReadingStatus.read,
+          uri: Uri.parse(''),
         );
 
         when(

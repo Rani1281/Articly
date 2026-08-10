@@ -1,3 +1,4 @@
+import 'package:articly/config/config.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
@@ -74,7 +75,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
 
   _openUrl() async {
     final currentItem = _viewModel.currentItem;
-    if (currentItem.uri == null) {
+    if (currentItem.uri.toString().isEmpty) {
       return null;
     }
     await _viewModel.openUrl();
@@ -159,17 +160,12 @@ class _SavedItemCardState extends State<SavedItemCard> {
             children: [
               // Title
               SelectableText(
-                item.title ?? 'Untitled',
+                (item.title.isEmpty) ? defaultTitleName : item.title,
                 style: TextStyle(
                   color: colorScheme.onSurface.withValues(alpha: 0.85),
                   fontWeight: FontWeight.w600,
                   fontSize: 18,
                 ),
-                // style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                //   fontWeight: FontWeight.w600,
-                //   color: colorScheme.onSurface.withValues(alpha: 0.85),
-                // ),
-                // softWrap: true,
               ),
 
               // const SizedBox(height: 20),
@@ -199,7 +195,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
 
                     const SizedBox(height: 8),
 
-                    if (item.uri != null && item.uri!.toString().isNotEmpty)
+                    if (item.uri.toString().isEmpty)
                       Container(
                         padding: const EdgeInsets.symmetric(
                           vertical: 12,
@@ -256,9 +252,6 @@ class _SavedItemCardState extends State<SavedItemCard> {
                                 constraints: const BoxConstraints(),
                                 tooltip: 'Open link',
                                 onPressed: () {
-                                  // WidgetsBinding.instance.addPostFrameCallback(
-                                  //   (_) => _openUrl(),
-                                  // );
                                   _openUrl();
                                 },
                                 icon: Icon(Icons.open_in_new, size: 20),
@@ -270,7 +263,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
 
                     const SizedBox(height: 20),
 
-                    if (item.notes != null && item.notes!.isNotEmpty)
+                    if (item.notes.isNotEmpty)
                       Container(
                         decoration: BoxDecoration(
                           color: colorScheme.onSurface.withValues(alpha: 0.08),
@@ -278,7 +271,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
                         ),
                         padding: const EdgeInsets.all(8),
                         child: SelectableText(
-                          item.notes!,
+                          item.notes,
                           style: TextStyle(
                             fontSize: 14,
                             color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -338,16 +331,16 @@ class _SavedItemCardState extends State<SavedItemCard> {
 
   @override
   Widget build(BuildContext context) {
+    final url = _viewModel.currentItem.uri.toString();
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, _) {
         return MouseRegion(
-          cursor: _viewModel.currentItem.uri != null
+          cursor: url.isNotEmpty
               ? SystemMouseCursors
                     .click // Changes cursor to pointing finger
               : SystemMouseCursors.basic,
           child: GestureDetector(
-            // behavior: HitTestBehavior.opaque,
             onTap: _openUrl,
             child: _isGridView ? _buildGridItemCard() : _buildListItemCard(),
           ),
@@ -387,7 +380,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.title ?? 'Untitled',
+                  (item.title.isEmpty) ? defaultTitleName : item.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -400,10 +393,10 @@ class _SavedItemCardState extends State<SavedItemCard> {
                 Row(
                   children: [
                     // Domain (Truncates if too long)
-                    if (item.uri != null && item.uri!.host.isNotEmpty)
+                    if (item.uri.host.isNotEmpty)
                       Expanded(
                         child: Text(
-                          item.uri!.host,
+                          item.uri.host,
                           textAlign: TextAlign.left,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -508,7 +501,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
                       child: Padding(
                         padding: const EdgeInsets.only(top: 3.5),
                         child: Text(
-                          item.title ?? 'Untitled',
+                          (item.title.isEmpty) ? defaultTitleName : item.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
@@ -530,10 +523,10 @@ class _SavedItemCardState extends State<SavedItemCard> {
                 Row(
                   children: [
                     // Domain (Truncates if too long)
-                    if (item.uri != null && item.uri!.host.isNotEmpty)
+                    if (item.uri.host.isNotEmpty)
                       Expanded(
                         child: Text(
-                          item.uri!.host,
+                          item.uri.host,
                           textAlign: TextAlign.left,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -662,188 +655,4 @@ class _SavedItemCardState extends State<SavedItemCard> {
       ),
     );
   }
-
-  // // Helper method to create the small action icons uniformly
-  // Widget _buildActionIcon(
-  //   IconData icon,
-  //   String tooltip, {
-  //   void Function()? onPressed,
-  // }) {
-  //   return IconButton(
-  //     icon: Icon(icon, size: 20, color: Colors.grey.shade600),
-  //     onPressed: onPressed,
-  //     tooltip: tooltip,
-  //     splashRadius: 20,
-  //   );
-  // }
 }
-
-//     : Container(
-// decoration: BoxDecoration(
-// color: Theme.of(context).colorScheme.surfaceContainerLowest,
-// borderRadius: BorderRadius.circular(12),
-// border: Border.all(
-// color: Theme.of(
-// context,
-// ).colorScheme.surfaceContainerHighest,
-// ),
-// boxShadow: [
-// BoxShadow(
-// color: Colors.black.withValues(alpha: 0.04),
-// blurRadius: 10,
-// offset: const Offset(0, 4),
-// ),
-// ],
-// ),
-// child: Column(
-// mainAxisSize: MainAxisSize.min,
-// crossAxisAlignment: CrossAxisAlignment.start,
-// children: [
-// // Top Header Section
-// // Wrap the header in a Link widget to generate the native HTML <a> tag on Web
-// currentItem.uri == null
-// ? buildHeader()
-//     : Link(
-// uri: currentItem.uri,
-// target: LinkTarget.blank,
-// builder: (context, followLink) => buildHeader(),
-// ),
-//
-// // Divider
-// Divider(
-// height: 1,
-// thickness: 1,
-// color: Theme.of(context).colorScheme.surfaceContainerHigh,
-// ),
-//
-// // Bottom Accordion Section
-// // Action Bar (Always visible)
-// Padding(
-// padding: const EdgeInsets.symmetric(
-// horizontal: 8.0,
-// vertical: 4.0,
-// ),
-// child: GestureDetector(
-// behavior: HitTestBehavior.opaque,
-// onTap: widget.viewModel.toggleExpand,
-// child: Row(
-// children: [
-// _buildActionIcon(
-// Icons.edit_outlined,
-// "Edit",
-// onPressed: () async {
-// SavedItem? newItem =
-// await Navigator.push<SavedItem>(
-// context,
-// MaterialPageRoute(
-// builder: (_) => SaveWebpageScreen(
-// currentItem: _viewModel.currentItem,
-// isEdit: true,
-// viewModel: SaveWebpageViewModel(
-// MyProviders(
-// context,
-// ).savedItemsProvider(),
-// ),
-// ),
-// ),
-// );
-// if (newItem != null) {
-// setState(() {
-// _viewModel.currentItem = newItem;
-// _currentItem = newItem;
-// });
-// }
-// },
-// ),
-// _buildActionIcon(
-// Icons.delete_outline,
-// "Delete",
-// onPressed: () async {
-// final confirmed = await _showDeleteDialog();
-// if (confirmed == true) {
-// // ! Don't await this to show immediate results in the app. Deletion will happen in the background.
-// _viewModel.deleteItem();
-// }
-// },
-// ),
-// _buildActionIcon(
-// Icons.content_copy_outlined,
-// "Copy",
-// onPressed: () async {
-// await widget.viewModel.copyContents();
-// if (mounted) {
-// MySnackBar(
-// context,
-// message: 'Copied to clipboard',
-// ).show();
-// }
-// },
-// ),
-// const Spacer(),
-// // Expand/Collapse Toggle Button
-// _currentItem.notes == null ||
-// _currentItem.notes!.isEmpty
-// ? const SizedBox()
-//     : IconButton(
-// icon: Icon(
-// widget.viewModel.isExpanded
-// ? Icons.keyboard_arrow_up
-//     : Icons.keyboard_arrow_down,
-// color: Colors.grey.shade700,
-// ),
-// onPressed: widget.viewModel.toggleExpand,
-// tooltip: widget.viewModel.isExpanded
-// ? "Show less"
-//     : "Show notes",
-// ),
-// ],
-// ),
-// ),
-// ),
-//
-// // Expandable Notes Area
-// if (_currentItem.notes != null &&
-// _currentItem.notes!.isNotEmpty) ...[
-// AnimatedSize(
-// duration: const Duration(milliseconds: 300),
-// curve: Curves.easeInOut,
-// child: widget.viewModel.isExpanded
-// ? Padding(
-// padding: const EdgeInsets.only(
-// left: 16.0,
-// right: 16.0,
-// bottom: 16.0,
-// ),
-// child: Container(
-// width: double.infinity,
-// padding: const EdgeInsets.all(12),
-// decoration: BoxDecoration(
-// color: Theme.of(context).colorScheme.surface
-//     .withValues(alpha: 0.9),
-// borderRadius: BorderRadius.circular(8),
-// border: Border.all(
-// color: Theme.of(
-// context,
-// ).colorScheme.surfaceContainerHigh,
-// ),
-// ),
-// child: SelectableText(
-// _currentItem.notes!,
-// style: TextStyle(
-// fontSize: 15,
-// height: 1.5,
-// color: Theme.of(context)
-//     .colorScheme
-//     .onSurface
-//     .withValues(alpha: 0.8),
-// fontStyle: FontStyle.italic,
-// ),
-// ),
-// ),
-// )
-//     : const SizedBox.shrink(), // Takes zero space when collapsed
-// ),
-// ],
-// ],
-// ),
-// );

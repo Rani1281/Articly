@@ -1,15 +1,15 @@
+import 'package:articly/config/config.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logging/logging.dart';
 
 class SavedItem {
   final String? id;
   final ItemType type;
-  // final String? url; // for webpage
   final ReadingStatus readingStatus;
-  final Uri? uri;
-  final String? title;
-  final String? notes;
-  final bool? remindReading;
+  final Uri uri;
+  final String title;
+  final String notes;
+  final bool remindReading;
   final String? imageUrl;
   final String? faviconUrl;
   final DateTime createdAt;
@@ -19,11 +19,11 @@ class SavedItem {
   SavedItem({
     this.id,
     required this.type,
+    required this.uri,
+    this.title = defaultTitleName,
     required this.readingStatus,
-    this.uri,
-    this.title,
-    this.notes,
-    this.remindReading,
+    this.notes = '',
+    this.remindReading = false,
     this.imageUrl,
     this.faviconUrl,
     DateTime? createdAt, // only pass this during fromFirestore
@@ -33,11 +33,11 @@ class SavedItem {
     return {
       // if (id != null) 'id': id,
       'type': type.name,
-      if (uri != null && uri!.toString().isNotEmpty) 'url': uri.toString(),
+      if (uri.toString().isNotEmpty) 'url': uri.toString(),
       'readingStatus': readingStatus.name,
-      if (title != null && title!.isNotEmpty) 'title': title,
-      if (notes != null && notes!.isNotEmpty) 'notes': notes,
-      if (remindReading != null) 'remindReading': remindReading,
+      if (title.isNotEmpty) 'title': title,
+      if (notes.isNotEmpty) 'notes': notes,
+      'remindReading': remindReading,
       if (imageUrl != null && imageUrl!.isNotEmpty) 'imageUrl': imageUrl,
       if (faviconUrl != null && faviconUrl!.isNotEmpty)
         'faviconUrl': faviconUrl,
@@ -72,10 +72,10 @@ class SavedItem {
         (status) => status.name == data?['readingStatus'] as String?,
         orElse: () => ReadingStatus.unread,
       ),
-      uri: uri,
-      title: data?['title'] as String?,
-      notes: data?['notes'] as String?,
-      remindReading: data?['remindReading'] as bool?,
+      uri: uri ?? Uri.parse(''),
+      title: data?['title'] as String? ?? defaultTitleName,
+      notes: data?['notes'] as String? ?? '',
+      remindReading: data?['remindReading'] as bool? ?? false,
       imageUrl: data?['imageUrl'] as String?,
       faviconUrl: data?['faviconUrl'] as String?,
       createdAt: (data?['createdAt'] as Timestamp?)?.toDate(),

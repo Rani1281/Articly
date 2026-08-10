@@ -59,7 +59,6 @@ class HomePageViewModel extends ChangeNotifier {
 
     if (!loadedData || reload) {
       error = await loadData();
-      loadedData = true;
     }
 
     _items = _provider.items.values.toList();
@@ -72,7 +71,6 @@ class HomePageViewModel extends ChangeNotifier {
   }
 
   Future<String?> loadData() async {
-    // TODO: Also load isGridView from SharedPreferences
     _orderBy = OrderType.values.firstWhere(
       (type) => type.name == _prefsService.getOrderBy(),
       orElse: () => OrderType.creationDate,
@@ -80,6 +78,8 @@ class HomePageViewModel extends ChangeNotifier {
     _isDescending = _prefsService.getIsDescending() ?? true;
 
     _isGridView = _prefsService.getIsGridView() ?? false;
+
+    loadedData = true;
 
     // don't notify listeners because that will call `processItems` again
     return await _provider.load(notify: false);
@@ -110,14 +110,14 @@ class HomePageViewModel extends ChangeNotifier {
   void sortByName() {
     if (_isDescending) {
       _items.sort((a, b) {
-        final nameA = a.title?.toLowerCase() ?? '';
-        final nameB = b.title?.toLowerCase() ?? '';
+        final nameA = a.title.toLowerCase();
+        final nameB = b.title.toLowerCase();
         return nameB.compareTo(nameA);
       });
     } else {
       _items.sort((a, b) {
-        final nameA = a.title?.toLowerCase() ?? '';
-        final nameB = b.title?.toLowerCase() ?? '';
+        final nameA = a.title.toLowerCase();
+        final nameB = b.title.toLowerCase();
         return nameA.compareTo(nameB);
       });
     }

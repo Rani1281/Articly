@@ -90,12 +90,14 @@ void main() {
         type: ItemType.webpage,
         readingStatus: ReadingStatus.read,
         title: 'B',
+        uri: Uri.parse(''),
       );
       final item2 = SavedItem(
         id: '2',
         type: ItemType.webpage,
         readingStatus: ReadingStatus.unread,
         title: 'A',
+        uri: Uri.parse(''),
       );
 
       when(() => mockPrefsService.getOrderBy()).thenReturn(OrderType.name.name);
@@ -215,12 +217,14 @@ void main() {
       type: ItemType.webpage,
       readingStatus: ReadingStatus.unread,
       createdAt: older,
+      uri: Uri.parse(''),
     );
     final item2 = SavedItem(
       id: '2',
       type: ItemType.webpage,
       readingStatus: ReadingStatus.unread,
       createdAt: now,
+      uri: Uri.parse(''),
     );
 
     test(
@@ -260,12 +264,14 @@ void main() {
       type: ItemType.webpage,
       readingStatus: ReadingStatus.unread,
       title: 'Apple',
+      uri: Uri.parse(''),
     );
     final itemB = SavedItem(
       id: '2',
       type: ItemType.webpage,
       readingStatus: ReadingStatus.unread,
       title: 'Banana',
+      uri: Uri.parse(''),
     );
 
     test(
@@ -299,15 +305,23 @@ void main() {
   });
 
   group('filterItems', () {
+    setUp(() {
+      when(
+        () => mockProvider.load(notify: false),
+      ).thenAnswer((_) async => null);
+    });
+
     final itemUnread = SavedItem(
       id: '1',
       type: ItemType.webpage,
       readingStatus: ReadingStatus.unread,
+      uri: Uri.parse(''),
     );
     final itemRead = SavedItem(
       id: '2',
       type: ItemType.webpage,
       readingStatus: ReadingStatus.read,
+      uri: Uri.parse(''),
     );
 
     test('if the filter is none, returns (because nothing to filter)', () {
@@ -333,6 +347,12 @@ void main() {
   });
 
   group('switchTab', () {
+    setUp(() {
+      when(
+        () => mockProvider.load(notify: false),
+      ).thenAnswer((_) async => null);
+    });
+
     test(
       'receives the tabIndex, sets the filter to the filter at the given index, and notifies listeners',
       () {
@@ -361,6 +381,13 @@ void main() {
   });
 
   group('setOrderBy', () {
+    setUp(() async {
+      when(
+        () => mockProvider.load(notify: false),
+      ).thenAnswer((_) async => null);
+      await viewModel.loadData();
+    });
+
     test(
       'if the given orderBy is the same as the previous, returns and does not notify listeners',
       () {

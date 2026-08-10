@@ -90,6 +90,7 @@ void main() {
       final item = SavedItem(
         type: ItemType.webpage,
         readingStatus: ReadingStatus.unread,
+        uri: Uri.parse(''),
       );
 
       final result = await repository.addItem(item);
@@ -103,6 +104,7 @@ void main() {
       final item = SavedItem(
         type: ItemType.webpage,
         readingStatus: ReadingStatus.unread,
+        uri: Uri.parse(''),
       );
 
       expect(
@@ -116,6 +118,7 @@ void main() {
         id: '',
         type: ItemType.webpage,
         readingStatus: ReadingStatus.unread,
+        uri: Uri.parse(''),
       );
 
       expect(
@@ -134,6 +137,7 @@ void main() {
         id: 'item-id-123',
         type: ItemType.webpage,
         readingStatus: ReadingStatus.unread,
+        uri: Uri.parse(''),
       );
 
       await repository.updateItem(item);
