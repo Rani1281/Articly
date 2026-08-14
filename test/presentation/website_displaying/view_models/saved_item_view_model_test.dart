@@ -1,5 +1,5 @@
 import 'package:articly/data/models/saved_item.dart';
-import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
 import 'package:checks/checks.dart';
 import 'package:mocktail/mocktail.dart';
@@ -66,11 +66,6 @@ void main() {
             provider: provider,
           );
 
-          var notified = false;
-          viewModel.addListener(() {
-            notified = true;
-          });
-
           final newItem = SavedItem(
             id: 'item-2',
             type: ItemType.webpage,
@@ -133,7 +128,7 @@ void main() {
           await viewModel.deleteItem();
 
           check(notifiedCount).equals(0);
-          verifyNever(() => provider.delete(''));
+          verifyNever(() => provider.deleteItem(''));
         },
       );
 
@@ -141,7 +136,7 @@ void main() {
         'on success, sets the visibility to false and notifies listeners',
         () async {
           final id = '123';
-          when(() => provider.delete(id)).thenAnswer((_) async => null);
+          when(() => provider.deleteItem(id)).thenAnswer((_) async => null);
 
           int notifiedCount = 0;
 
@@ -168,7 +163,7 @@ void main() {
         'on fail (has error), resets the visibility to true, and sets the command fields',
         () async {
           final id = '123';
-          when(() => provider.delete(id)).thenAnswer((_) async => 'ERROR');
+          when(() => provider.deleteItem(id)).thenAnswer((_) async => 'ERROR');
 
           int notifiedCount = 0;
 

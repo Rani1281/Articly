@@ -1,46 +1,55 @@
+import 'package:articly/data/models/saved_item.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ReadingStatusCount {
-  const ReadingStatusCount({
-    required this.unread,
-    required this.reading,
-    required this.read,
-  });
+  ReadingStatusCount({Map<String, int>? counts, this.isSynced = true})
+    : counts = counts ?? {'unread': 0, 'reading': 0, 'read': 0};
 
-  const ReadingStatusCount.zeros({
-    this.unread = 0,
-    this.reading = 0,
-    this.read = 0,
-  });
+  final Map<String, int> counts;
 
-  final int unread;
-  final int reading;
-  final int read;
+  final bool isSynced;
+
+  int get unread => counts['unread'] ?? 0;
+  int get reading => counts['reading'] ?? 0;
+  int get read => counts['read'] ?? 0;
 
   /// returns the total amount of items counted so far
   int total() => unread + reading + read;
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'readingStatusCount': {
-        'unread': unread,
-        'reading': reading,
-        'read': read,
-      },
-    };
-  }
 
   factory ReadingStatusCount.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> snapshot,
     SnapshotOptions? options,
   ) {
     final data = snapshot.data();
-    final counts = data?['readingStatusCount'];
+    final statusData = data?['readingStatusCount'] as Map<String, dynamic>?;
+
+    Map<String, int>? converted;
+    if (statusData != null && statusData.isNotEmpty) {
+      converted = statusData.map((key, value) => MapEntry(key, value.toInt()));
+    }
     return ReadingStatusCount(
-      unread: counts?['unread'] as int? ?? 0,
-      reading: counts?['reading'] as int? ?? 0,
-      read: counts?['read'] as int? ?? 0,
+      counts: converted,
+      isSynced: data?['areCountsSynced'] as bool? ?? true,
     );
+  }
+
+  ReadingStatusCount copyWith({Map<String, int>? counts, bool? isSynced}) {
+    return ReadingStatusCount(
+      counts: counts ?? this.counts,
+      isSynced: isSynced ?? this.isSynced,
+    );
+  }
+
+  void increment(ReadingStatus status) {
+    if (counts.containsKey(status.name)) {
+      counts[status.name] = counts[status.name]! + 1;
+    }
+  }
+
+  void decrement(ReadingStatus status) {
+    if (counts.containsKey(status.name) && counts[status.name]! > 0) {
+      counts[status.name] = counts[status.name]! - 1;
+    }
   }
 
   @override

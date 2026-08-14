@@ -1,6 +1,6 @@
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/data/services/shared_preferences_service.dart';
-import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/presentation/website_displaying/view_models/home_page_view_model.dart';
 import 'package:articly/utils/command.dart';
 import 'package:checks/checks.dart';

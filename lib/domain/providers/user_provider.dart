@@ -27,7 +27,7 @@ class UserProvider extends ChangeNotifier {
   Map<String, SavedItem> _items = {};
   Map<String, SavedItem> get items => _items;
 
-  ReadingStatusCount _readingStatusCount = ReadingStatusCount.zeros();
+  ReadingStatusCount _readingStatusCount = ReadingStatusCount();
   ReadingStatusCount get readingStatusCount => _readingStatusCount;
 
   late final UserRepository _userRepo;
@@ -65,6 +65,7 @@ class UserProvider extends ChangeNotifier {
         'Initialization failed because the user isn\'t logged in...',
       );
     }
+    log.info('User is ${user.uid}');
 
     if (userRepo != null) {
       _userRepo = userRepo;
@@ -87,12 +88,12 @@ class UserProvider extends ChangeNotifier {
   // Loads the user's saved items and reading status counts, and return error or null
   Future<String?> load({bool notify = true}) async {
     String? error;
-
     try {
       _items = await _savedItemsRepo.fetchItems();
       _readingStatusCount = await _userRepo.fetchReadingStatusCount();
 
-      if (_items.length != _readingStatusCount.total()) {
+      if (_items.length != _readingStatusCount.total() ||
+          !_readingStatusCount.isSynced) {
         // means the count isn't synced
         log.info('Syncing reading status counts...');
         syncReadingStatusCount();
@@ -133,17 +134,20 @@ class UserProvider extends ChangeNotifier {
     }
 
     _readingStatusCount = ReadingStatusCount(
-      unread: unreadCount,
-      reading: readingCount,
-      read: readCount,
+      counts: {
+        'unread': unreadCount,
+        'reading': readingCount,
+        'read': readCount,
+      },
+      isSynced: true,
     );
 
     // Update Firestore in the background
-    unawaited(_userRepo.setReadingStatusCounts(_readingStatusCount));
+    _userRepo.setReadingStatusCounts(_readingStatusCount, forceSync: true);
   }
 
   /// Create a new item, return error or null
-  Future<String?> add(SavedItem item) async {
+  Future<String?> addItem(SavedItem item) async {
     String? error;
 
     try {
@@ -151,6 +155,8 @@ class UserProvider extends ChangeNotifier {
       // create a new item that has the new id
       final newItem = item.copyWith(id: id);
       _items[id] = newItem;
+      // update reading count state
+      changeReadingStatusCounts(null, newItem.readingStatus);
       log.finest('Successfully saved item in Firestore and in memory!');
     } catch (e) {
       log.shout('An error occurred: $e');
@@ -163,13 +169,16 @@ class UserProvider extends ChangeNotifier {
   }
 
   /// Edit an existing item
-  Future<String?> edit(SavedItem item) async {
+  Future<String?> editItem(SavedItem item) async {
     String? error;
 
     try {
       await _savedItemsRepo.updateItem(item);
       // if update item succeeds, the id must be non null
+      final prevItem = _items[item.id];
       _items[item.id!] = item;
+      // update reading count state
+      changeReadingStatusCounts(prevItem?.readingStatus, item.readingStatus);
       log.finest('Successfully edited the item in Firestore and in memory!');
     } catch (e) {
       log.shout('An error occurred: $e');
@@ -182,13 +191,16 @@ class UserProvider extends ChangeNotifier {
 
   /// Delete an item by its id, returns an error message.
   /// Notifies listeners only when finished
-  Future<String?> delete(String id) async {
+  Future<String?> deleteItem(String id) async {
     String? error;
 
     try {
       await _savedItemsRepo.deleteItem(id);
       // delete in memory after in Firestore in case of failure
+      final prevItem = _items[id];
       _items.remove(id);
+      // update reading count state
+      changeReadingStatusCounts(prevItem?.readingStatus, null);
       log.finest(
         'Successfully removed the item "$id" in Firestore and in memory!',
       );
@@ -199,5 +211,22 @@ class UserProvider extends ChangeNotifier {
 
     notifyListeners();
     return error;
+  }
+
+  // --- Reading Status Related Functionality ---
+  void changeReadingStatusCounts(
+    ReadingStatus? previousStatus,
+    ReadingStatus? newStatus,
+  ) {
+    // Update app state; decrement previous status and increment new one
+    if (previousStatus != null) {
+      _readingStatusCount.decrement(previousStatus);
+    }
+    if (newStatus != null) {
+      _readingStatusCount.increment(newStatus);
+    }
+
+    // run Firestore write in the background
+    unawaited(_userRepo.setReadingStatusCounts(_readingStatusCount));
   }
 }

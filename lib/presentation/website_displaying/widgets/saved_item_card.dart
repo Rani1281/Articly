@@ -113,10 +113,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
       ),
     );
     if (newItem != null) {
-      // change the item and rebuild the page
       _viewModel.currentItem = newItem;
-      // widget.onEdit?.call(); // refresh after edit.
-
       log.info('New item: $newItem');
     }
   }

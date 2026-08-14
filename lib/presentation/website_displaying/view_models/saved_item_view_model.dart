@@ -1,5 +1,5 @@
 import 'package:articly/data/models/saved_item.dart';
-import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -142,7 +142,7 @@ class SavedItemViewModel extends ChangeNotifier {
 
     // Make the item no longer visible in the UI
     _isVisible = false;
-    final error = await _provider.delete(_currentItem.id!);
+    final error = await _provider.deleteItem(_currentItem.id!);
 
     if (error != null) {
       // make the item visible again if the operation failed

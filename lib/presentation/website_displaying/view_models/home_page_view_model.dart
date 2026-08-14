@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:articly/data/models/reading_status_count.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/data/services/shared_preferences_service.dart';
-import 'package:articly/domain/providers/saved_items_provider.dart';
 import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+
+import '../../../domain/providers/user_provider.dart';
 
 class HomePageViewModel extends ChangeNotifier {
   HomePageViewModel({

@@ -1,5 +1,5 @@
 import 'package:articly/data/models/saved_item.dart';
-import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
 import 'package:checks/checks.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -232,17 +232,17 @@ void main() {
         );
 
         when(
-          () => itemsProvider.add(savedItem),
+          () => itemsProvider.addItem(savedItem),
         ).thenAnswer((_) => Future.value(null));
 
         when(
-          () => itemsProvider.edit(savedItem),
+          () => itemsProvider.editItem(savedItem),
         ).thenAnswer((_) => Future.value(null));
 
         await viewModel.saveWebpage(savedItem: savedItem, isEdit: false); // add
 
-        verify(() => itemsProvider.add(savedItem)).called(1);
-        verifyNever(() => itemsProvider.edit(savedItem));
+        verify(() => itemsProvider.addItem(savedItem)).called(1);
+        verifyNever(() => itemsProvider.editItem(savedItem));
       },
     );
 
@@ -261,17 +261,17 @@ void main() {
         );
 
         when(
-          () => itemsProvider.add(savedItem),
+          () => itemsProvider.addItem(savedItem),
         ).thenAnswer((_) => Future.value(null));
 
         when(
-          () => itemsProvider.edit(savedItem),
+          () => itemsProvider.editItem(savedItem),
         ).thenAnswer((_) => Future.value(null));
 
         await viewModel.saveWebpage(savedItem: savedItem, isEdit: true); // edit
 
-        verify(() => itemsProvider.edit(savedItem)).called(1);
-        verifyNever(() => itemsProvider.add(savedItem));
+        verify(() => itemsProvider.editItem(savedItem)).called(1);
+        verifyNever(() => itemsProvider.addItem(savedItem));
       },
     );
   });

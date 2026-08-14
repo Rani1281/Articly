@@ -1,6 +1,6 @@
 import 'package:articly/config/config.dart';
 import 'package:articly/data/models/saved_item.dart';
-import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
 import 'package:articly/presentation/website_saving/widgets/labeled_dropdown.dart';
 import 'package:articly/presentation/website_saving/widgets/labeled_text_field.dart';
@@ -73,10 +73,10 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     if (widget.isEdit && item != null) {
       _urlController.text = item.uri.toString();
       _titleController.text = item.title;
-      _notesController.text = item.notes ?? '';
+      _notesController.text = item.notes;
 
       _initialValue = values[item.readingStatus] ?? 'Unread';
-      _remindMe = item.remindReading ?? false;
+      _remindMe = item.remindReading;
       // Since the title is required, it cannot be empty or null, so initialize autoTitle with false
       _autoTitle = false;
     }
@@ -97,9 +97,8 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     );
     final String url = _urlController.text.trim();
     final Uri? uri = Uri.tryParse(url);
-    final String title = _titleController.text;
+    String title = _titleController.text;
     final String notes = _notesController.text;
-    String? fetchedTitle;
     String? imageUrl;
     String? faviconUrl;
 
@@ -120,7 +119,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     if (url != prevUrl) {
       final metadata = await _viewModel.fetchWebpageMetadata(uri!);
       if (_autoTitle && title.isEmpty) {
-        fetchedTitle = metadata.title;
+        title = metadata.title ?? '';
       }
       imageUrl = metadata.imageUrl;
       faviconUrl = metadata.faviconUrl;

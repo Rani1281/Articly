@@ -1,4 +1,4 @@
-import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
@@ -86,9 +86,9 @@ class SaveWebpageViewModel extends ChangeNotifier {
     String? error;
 
     if (!isEdit) {
-      error = await _provider.add(savedItem);
+      error = await _provider.addItem(savedItem);
     } else {
-      error = await _provider.edit(savedItem);
+      error = await _provider.editItem(savedItem);
     }
 
     return error;

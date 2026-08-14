@@ -1,5 +1,5 @@
 import 'package:articly/data/services/shared_preferences_service.dart';
-import 'package:articly/domain/providers/saved_items_provider.dart';
+import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
