@@ -51,15 +51,17 @@ class HomePageViewModel extends ChangeNotifier {
   int processItemsCallCount = 0;
 
   Future<void> processItems({bool reload = false}) async {
+    if (processItemsCommand.running && !reload) return;
+
     processItemsCallCount++;
-    log.info("${processItemsCallCount}'th call to processItems");
+    log.info("$processItemsCallCount'th call to processItems");
 
     String? error;
     processItemsCommand.start();
     notifyListeners();
 
     if (!loadedData || reload) {
-      error = await loadData();
+      error = await loadData(reload: reload);
     }
 
     _items = _provider.items.values.toList();
@@ -71,7 +73,7 @@ class HomePageViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<String?> loadData() async {
+  Future<String?> loadData({bool reload = false}) async {
     _orderBy = OrderType.values.firstWhere(
       (type) => type.name == _prefsService.getOrderBy(),
       orElse: () => OrderType.creationDate,
@@ -83,7 +85,7 @@ class HomePageViewModel extends ChangeNotifier {
     loadedData = true;
 
     // don't notify listeners because that will call `processItems` again
-    return await _provider.load(notify: false);
+    return await _provider.load(reload: reload, notify: false);
   }
 
   void sortItems() {

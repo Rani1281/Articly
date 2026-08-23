@@ -39,10 +39,10 @@ Please write a __ test to test the functionality in this file.
 
 
 --------------- For An Agent ------------------
-
 Write a unit/widget/integration test file in dart to test the functionality of " path_to_test ". Follow the appropriate testing rules as described in the directory @.cursor\rules\testing/.
 For the given files, test the following things:
 - ...
-Avoid testing:
+  Avoid testing:
 - ...
-After creating the test, run it, and it fails because of a problem regarding the test, fix the test, but if it fails because of a problem withing the codebase itself so that it doesn't satisfy the conditions of the test, tell be about the problem, what causes it, and suggest a fix. Write the test under [path_of_test].
+  After creating the test, run it, and it fails because of a problem regarding the test, fix the test, but if it fails because of a problem withing the codebase itself so that it doesn't satisfy the conditions of the test, tell be about the problem, what causes it, and suggest a fix. Write the test under [path_of_test].
+

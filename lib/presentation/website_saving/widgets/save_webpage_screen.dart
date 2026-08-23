@@ -58,9 +58,8 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
   void initState() {
     super.initState();
 
-    _viewModel =
-        widget.viewModel ??
-        SaveWebpageViewModel(MyProviders(context).savedItemsProvider());
+    final provider = MyProviders(context).userProvider();
+    _viewModel = SaveWebpageViewModel(provider);
 
     final values = {
       ReadingStatus.unread: 'Unread',

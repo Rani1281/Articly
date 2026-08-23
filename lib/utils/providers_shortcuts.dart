@@ -9,7 +9,7 @@ class MyProviders {
 
   final BuildContext context;
 
-  UserProvider savedItemsProvider() =>
+  UserProvider userProvider() =>
       Provider.of<UserProvider>(context, listen: false);
 
   SharedPreferencesService sharedPreferencesService() =>

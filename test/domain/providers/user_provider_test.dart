@@ -2,6 +2,7 @@ import 'package:articly/data/models/reading_status_count.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/data/repositories/saved_items_repository.dart';
 import 'package:articly/data/repositories/user_repository.dart';
+import 'package:articly/data/services/auth_service.dart';
 import 'package:articly/domain/providers/user_provider.dart';
 import 'package:checks/checks.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -14,7 +15,7 @@ class MockUserRepository extends Mock implements UserRepository {}
 
 class MockSavedItemsRepository extends Mock implements SavedItemsRepository {}
 
-class MockFirebaseAuth extends Mock implements FirebaseAuth {}
+class MockAuthService extends Mock implements AuthService {}
 
 class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
 
@@ -23,7 +24,7 @@ class MockUser extends Mock implements User {}
 void main() {
   late MockUserRepository mockUserRepo;
   late MockSavedItemsRepository mockSavedItemsRepo;
-  late MockFirebaseAuth mockFirebaseAuth;
+  late MockAuthService mockAuthService;
   late MockFirebaseFirestore mockFirebaseFirestore;
   late UserProvider provider;
   late User mockUser;
@@ -42,18 +43,17 @@ void main() {
   setUp(() {
     mockUserRepo = MockUserRepository();
     mockSavedItemsRepo = MockSavedItemsRepository();
-    mockUserRepo = MockUserRepository();
-    mockFirebaseAuth = MockFirebaseAuth();
+    mockAuthService = MockAuthService();
     mockFirebaseFirestore = MockFirebaseFirestore();
     mockUser = MockUser();
 
-    when(() => mockFirebaseAuth.currentUser).thenReturn(mockUser);
+    when(() => mockAuthService.user).thenReturn(mockUser);
     when(() => mockUser.uid).thenReturn('user123');
 
     provider = UserProvider(
       userRepo: mockUserRepo,
       savedItemsRepo: mockSavedItemsRepo,
-      auth: mockFirebaseAuth,
+      authService: mockAuthService,
       db: mockFirebaseFirestore,
     );
   });

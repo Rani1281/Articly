@@ -5,30 +5,37 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ProfilePage extends StatefulWidget {
-  ProfilePage({super.key, ProfileViewModel? viewModel})
-    : _viewModel = viewModel ?? ProfileViewModel();
+  const ProfilePage({super.key, this.viewModel});
 
-  final ProfileViewModel _viewModel;
+  final ProfileViewModel? viewModel;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  late final ProfileViewModel _viewModel;
+
   @override
   void initState() {
     super.initState();
-    widget._viewModel.loadData(); // sets email and username fields
-    widget._viewModel.addListener(_checkError); // listen to errors
+    _viewModel = widget.viewModel ?? ProfileViewModel();
+
+    _viewModel.addListener(_checkCommandStatus); // listen to errors
   }
 
-  void _checkError() {
-    final error = widget._viewModel.errorMessage;
-    if (error != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), behavior: SnackBarBehavior.floating),
-      );
-    }
+  void _checkCommandStatus() {
+    _viewModel.logoutCommand.showSuccessOrErrorSnackBar(
+      context,
+      successMsg: 'Successfully logged out!',
+    );
+    _viewModel.logoutCommand.clear();
+
+    _viewModel.editUsernameCommand.showSuccessOrErrorSnackBar(
+      context,
+      successMsg: 'Successfully edited the username!',
+    );
+    _viewModel.editUsernameCommand.clear();
   }
 
   Future<void> _editUsername() async {
@@ -36,11 +43,13 @@ class _ProfilePageState extends State<ProfilePage> {
     final newName = await showDialog<String>(
       context: context,
       builder: (context) =>
-          EditUsernameDialog(initialUsername: widget._viewModel.username ?? ''),
+          EditUsernameDialog(initialUsername: _viewModel.username ?? 'User'),
     );
 
     // update the username
-    await widget._viewModel.editName(newName);
+    if (newName != null) {
+      await _viewModel.editName(newName);
+    }
   }
 
   Future<bool?> _showLogoutDialog() {
@@ -67,17 +76,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   void dispose() {
-    widget._viewModel.removeListener(_checkError);
+    _viewModel.removeListener(_checkCommandStatus);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final themeModel = context.watch<ThemeModel>();
-    widget._viewModel.loadData();
 
     return ListenableBuilder(
-      listenable: widget._viewModel,
+      listenable: _viewModel,
       builder: (context, child) {
         return Scaffold(
           appBar: AppBar(
@@ -99,7 +107,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            widget._viewModel.username ?? 'User',
+                            _viewModel.username ?? 'User',
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           const SizedBox(width: 8),
@@ -125,13 +133,7 @@ class _ProfilePageState extends State<ProfilePage> {
                               style: Theme.of(context).textTheme.labelSmall,
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              widget._viewModel.email ?? 'Empty',
-                              // style: TextStyle(
-                              //   fontSize: 15,
-                              //   color: Colors.black87,
-                              // ),
-                            ),
+                            Text(_viewModel.email ?? 'Empty'),
                           ],
                         ),
                       ),
@@ -173,25 +175,47 @@ class _ProfilePageState extends State<ProfilePage> {
 
                       // Log Out Button
                       // TODO: Switch this with a custom button
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          final confirmed = await _showLogoutDialog();
-                          if (confirmed == true && mounted) {
-                            widget._viewModel.logOut();
-                            Navigator.of(context).pop();
-                            // ! Note: this only pops the current route, matching the current homepage -> profile page structure, so if nesting more pages, deleting all navigation stack beforehand is necessary.
-                          }
-                        },
-                        label: const Text('Log out'),
-                        icon: Icon(Icons.logout),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red[700],
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.all(20),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.0),
+                      Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: _viewModel.logoutCommand.running
+                                ? null
+                                : () async {
+                                    final confirmed = await _showLogoutDialog();
+                                    if (confirmed == true) {
+                                      // ! Note: this only pops the current route, matching the current homepage -> profile page structure, so if nesting more pages, deleting all navigation stack beforehand is necessary.
+                                      await _viewModel.logout();
+                                    }
+                                    if (mounted) {
+                                      Navigator.of(context).pop();
+                                    }
+                                  },
+                            label: const Text('Log out'),
+                            icon: Icon(Icons.logout),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red[700],
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.all(20),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16.0),
+                              ),
+                            ),
                           ),
-                        ),
+
+                          if (_viewModel.logoutCommand.running)
+                            Padding(
+                              padding: EdgeInsetsGeometry.all(8),
+                              child: SizedBox(
+                                height: 10,
+                                width: 10,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),

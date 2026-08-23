@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
-enum MenuAction { seeDetails, edit, copy, delete }
+enum MenuAction { openLink, seeDetails, edit, copy, delete }
 
 class SavedItemCard extends StatefulWidget {
   const SavedItemCard({
@@ -43,7 +43,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
     super.initState();
     _viewModel = SavedItemViewModel(
       currentItem: widget.item,
-      provider: MyProviders(context).savedItemsProvider(),
+      provider: MyProviders(context).userProvider(),
     );
     _isGridView = widget.isGridView;
 
@@ -61,17 +61,6 @@ class _SavedItemCardState extends State<SavedItemCard> {
       // add setState({}) ?
     }
   }
-
-  // void _checkDeletion() {
-  //   final cmd = _viewModel.deleteItemCommand;
-  //   if (!cmd.completed && cmd.hasError) {
-  //     MySnackBar(context, message: _viewModel.deleteItemCommand.error!).show();
-  //   } else if (!showedSuccessMessage && cmd.completed) {
-  //     MySnackBar(context, message: 'Deleted the item successfully!').show();
-  //     showedSuccessMessage = true;
-  //     widget.onDeleted?.call();
-  //   }
-  // }
 
   _openUrl() async {
     final currentItem = _viewModel.currentItem;
@@ -144,18 +133,17 @@ class _SavedItemCardState extends State<SavedItemCard> {
 
     return showDialog(
       context: context,
+      // 1. Return AlertDialog directly (removed Center & outer SingleChildScrollView)
       builder: (context) => AlertDialog(
-        // contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
         insetPadding: const EdgeInsets.symmetric(horizontal: 20),
         contentPadding: const EdgeInsets.all(20),
         content: ConstrainedBox(
-          // min wid: 500
           constraints: const BoxConstraints(minWidth: 400, maxWidth: 600),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title
+              // Title (Pinned at the top)
               SelectableText(
                 (item.title.isEmpty) ? defaultTitleName : item.title,
                 style: TextStyle(
@@ -165,118 +153,129 @@ class _SavedItemCardState extends State<SavedItemCard> {
                 ),
               ),
 
-              // const SizedBox(height: 20),
               const Divider(height: 30),
 
-              SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Reading status
-                    Row(
-                      children: [
-                        const Text(
-                          "• ",
-                          style: TextStyle(color: Colors.blue, fontSize: 16),
-                        ),
-                        Text(
-                          item.readingStatus.name,
-                          style: const TextStyle(
-                            color: Colors.blue,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+              // 2. Wrap the inner scroll view with Flexible so it shrinks to
+              // the available screen height and allows scrolling without overflowing.
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Reading status
+                      Row(
+                        children: [
+                          const Text(
+                            "• ",
+                            style: TextStyle(color: Colors.blue, fontSize: 16),
                           ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    if (item.uri.toString().isEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 12,
-                          horizontal: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerLowest,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Theme(
-                          data: Theme.of(context).copyWith(
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                            splashColor: Colors.transparent,
-                            highlightColor: Colors.transparent,
-                            hoverColor: Colors.transparent,
+                          Text(
+                            item.readingStatus.name,
+                            style: const TextStyle(
+                              color: Colors.blue,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 5),
-                                child: Icon(
-                                  Icons.link_rounded,
-                                  size: 20,
-                                  color: Colors.blueGrey,
-                                ),
-                              ),
+                        ],
+                      ),
 
-                              const SizedBox(width: 5),
+                      const SizedBox(height: 8),
 
-                              // Scrollable URL
-                              Expanded(
-                                child: SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: MouseRegion(
-                                    cursor: SystemMouseCursors.click,
-                                    child: SelectableText(item.uri.toString()),
+                      // Url
+                      if (item.uri.toString().isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerLowest,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Theme(
+                            data: Theme.of(context).copyWith(
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              splashColor: Colors.transparent,
+                              highlightColor: Colors.transparent,
+                              hoverColor: Colors.transparent,
+                            ),
+                            child: Row(
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 5),
+                                  child: Icon(
+                                    Icons.link_rounded,
+                                    size: 20,
+                                    color: Colors.blueGrey,
                                   ),
                                 ),
-                              ),
 
-                              const SizedBox(width: 5),
+                                const SizedBox(width: 5),
 
-                              // copy icon button
-                              _buildCopyIconButton(item),
+                                // Scrollable URL
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: MouseRegion(
+                                      cursor: SystemMouseCursors.click,
+                                      child: SelectableText(
+                                        item.uri.toString(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
 
-                              const SizedBox(width: 5),
+                                const SizedBox(width: 5),
 
-                              // open link icon
-                              IconButton(
-                                padding: EdgeInsets.all(5),
-                                constraints: const BoxConstraints(),
-                                tooltip: 'Open link',
-                                onPressed: () {
-                                  _openUrl();
-                                },
-                                icon: Icon(Icons.open_in_new, size: 20),
-                              ),
-                            ],
+                                // copy icon button
+                                _buildCopyIconButton(item),
+
+                                const SizedBox(width: 5),
+
+                                // open link icon
+                                IconButton(
+                                  padding: const EdgeInsets.all(5),
+                                  constraints: const BoxConstraints(),
+                                  tooltip: 'Open link',
+                                  onPressed: () {
+                                    _openUrl();
+                                  },
+                                  icon: const Icon(Icons.open_in_new, size: 20),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
 
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                    if (item.notes.isNotEmpty)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: colorScheme.onSurface.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        padding: const EdgeInsets.all(8),
-                        child: SelectableText(
-                          item.notes,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: colorScheme.onSurface.withValues(alpha: 0.7),
-                            fontStyle: FontStyle.italic,
+                      if (item.notes.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: colorScheme.onSurface.withValues(
+                              alpha: 0.08,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.all(8),
+                          child: SelectableText(
+                            item.notes,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.7,
+                              ),
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -328,17 +327,14 @@ class _SavedItemCardState extends State<SavedItemCard> {
 
   @override
   Widget build(BuildContext context) {
-    final url = _viewModel.currentItem.uri.toString();
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, _) {
         return MouseRegion(
-          cursor: url.isNotEmpty
-              ? SystemMouseCursors
-                    .click // Changes cursor to pointing finger
-              : SystemMouseCursors.basic,
+          cursor: SystemMouseCursors.click,
           child: GestureDetector(
-            onTap: _openUrl,
+            behavior: HitTestBehavior.opaque,
+            onTap: _showDetailsDialog,
             child: _isGridView ? _buildGridItemCard() : _buildListItemCard(),
           ),
         );
@@ -346,94 +342,106 @@ class _SavedItemCardState extends State<SavedItemCard> {
     );
   }
 
-  Padding _buildListItemCard() {
+  Widget _buildListItemCard() {
+    final isDarkMode = MyProviders(context).themeModel().isDark(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final item = _viewModel.currentItem;
-    return Padding(
+    return Card(
       key: ValueKey(item.id),
-      padding: const EdgeInsets.symmetric(vertical: 16.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Circular Link Icon
-          Container(
-            width: 35,
-            height: 35,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: _buildFaviconSection(item),
-          ),
-          const SizedBox(width: 16),
-
-          // Title Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  (item.title.isEmpty) ? defaultTitleName : item.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+      elevation: 0,
+      color: !isDarkMode
+          ? colorScheme.surfaceContainerLowest
+          : colorScheme.surfaceContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: colorScheme.onSurface.withValues(alpha: 0.1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Circular Link Icon
+            Container(
+              width: 35,
+              height: 35,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.3),
+                  width: 1,
                 ),
-                const SizedBox(height: 2),
-                // Status & Domain Row
-                Row(
-                  children: [
-                    // Domain (Truncates if too long)
-                    if (item.uri.host.isNotEmpty)
-                      Expanded(
-                        child: Text(
-                          item.uri.host,
-                          textAlign: TextAlign.left,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.blueGrey.shade300,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+              ),
+              child: _buildFaviconSection(item),
+            ),
+            const SizedBox(width: 16),
+
+            // Title Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (item.title.isEmpty) ? defaultTitleName : item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  // Status & Domain Row
+                  Row(
+                    children: [
+                      // Domain (Truncates if too long)
+                      if (item.uri.host.isNotEmpty)
+                        Expanded(
+                          child: Text(
+                            item.uri.host,
+                            textAlign: TextAlign.left,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.blueGrey.shade300,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
-                    const SizedBox(width: 8),
+                      const SizedBox(width: 8),
 
-                    // Status (Always full form)
-                    const Text(
-                      "• ",
-                      style: TextStyle(color: Colors.blue, fontSize: 16),
-                    ),
-                    Text(
-                      item.readingStatus.name,
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                      // Status (Always full form)
+                      const Text(
+                        "• ",
+                        style: TextStyle(color: Colors.blue, fontSize: 16),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      Text(
+                        item.readingStatus.name,
+                        style: TextStyle(
+                          color: Colors.blue,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          // const SizedBox(width: 16),
-          const SizedBox(width: 12),
+            // const SizedBox(width: 16),
+            const SizedBox(width: 12),
 
-          // Options Icon
-          Padding(
-            padding: EdgeInsets.only(right: 10.0),
-            child: _buildOptionsIcon(),
-          ),
-        ],
+            // Options Icon
+            Padding(
+              padding: EdgeInsets.only(right: 10.0),
+              child: _buildOptionsIcon(),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -461,7 +469,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
     final colorScheme = Theme.of(context).colorScheme;
     final item = _viewModel.currentItem;
     return Card(
-      elevation: 1,
+      elevation: 0,
       color: !isDarkMode
           ? colorScheme.surfaceContainerLowest
           : colorScheme.surfaceContainer,
@@ -589,6 +597,9 @@ class _SavedItemCardState extends State<SavedItemCard> {
         child: Icon(Icons.more_vert, size: size),
         onSelected: (action) {
           switch (action) {
+            case MenuAction.openLink:
+              _openUrl();
+              break;
             case MenuAction.seeDetails:
               _showDetailsDialog();
               break;
@@ -604,6 +615,11 @@ class _SavedItemCardState extends State<SavedItemCard> {
           }
         },
         itemBuilder: (context) => [
+          _buildMenuItem(
+            value: MenuAction.openLink,
+            text: 'Open link',
+            icon: Icons.open_in_new,
+          ),
           _buildMenuItem(
             value: MenuAction.seeDetails,
             text: 'See details',

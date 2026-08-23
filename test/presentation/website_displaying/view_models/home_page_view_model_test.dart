@@ -71,16 +71,19 @@ void main() {
         when(() => mockPrefsService.getOrderBy()).thenReturn(null);
         when(() => mockPrefsService.getIsDescending()).thenReturn(null);
         when(
-          () => mockProvider.load(notify: false),
+          () => mockProvider.load(
+            reload: any(named: 'reload'),
+            notify: any(named: 'notify'),
+          ),
         ).thenAnswer((_) => Future.value(null));
 
         // Test case 1: provider.loadCommand.activated is false
         await viewModel.processItems();
-        verify(() => mockProvider.load(notify: false)).called(1);
+        verify(() => mockProvider.load(reload: false, notify: false)).called(1);
 
         // Test case 2: reload is true
         await viewModel.processItems(reload: true);
-        verify(() => mockProvider.load(notify: false)).called(1);
+        verify(() => mockProvider.load(reload: true, notify: false)).called(1);
       },
     );
 
@@ -105,7 +108,10 @@ void main() {
         () => mockPrefsService.getIsDescending(),
       ).thenReturn(false); // Ascending
       when(
-        () => mockProvider.load(notify: false),
+        () => mockProvider.load(
+          reload: any(named: 'reload'),
+          notify: any(named: 'notify'),
+        ),
       ).thenAnswer((_) => Future.value(null));
       when(() => mockProvider.items).thenReturn({'1': item1, '2': item2});
 
@@ -125,7 +131,10 @@ void main() {
         when(() => mockPrefsService.getOrderBy()).thenReturn(null);
         when(() => mockPrefsService.getIsDescending()).thenReturn(null);
         when(
-          () => mockProvider.load(notify: false),
+          () => mockProvider.load(
+            reload: any(named: 'reload'),
+            notify: any(named: 'notify'),
+          ),
         ).thenAnswer((_) => Future.value(null));
 
         var notifyCount = 0;
@@ -147,7 +156,10 @@ void main() {
       () async {
         const errorMessage = 'Load error';
         when(
-          () => mockProvider.load(notify: false),
+          () => mockProvider.load(
+            reload: any(named: 'reload'),
+            notify: any(named: 'notify'),
+          ),
         ).thenAnswer((_) => Future.value(errorMessage));
         when(() => mockPrefsService.getOrderBy()).thenReturn(null);
         when(() => mockPrefsService.getIsDescending()).thenReturn(null);

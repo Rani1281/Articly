@@ -30,7 +30,6 @@ class DonutChartWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Calculate dynamic sizes based on the radius
-    // These ratios ensure the text always fits nicely inside the hollow space
     final double numberFontSize = radius * 0.45;
     final double textFontSize = radius * 0.14;
     final double verticalSpacing = radius * 0.05;
@@ -49,6 +48,9 @@ class DonutChartWidget extends StatelessWidget {
               painter: _DonutChartPainter(
                 sections: sections,
                 strokeWidth: strokeWidth,
+                zeroColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
               ),
             ),
           ),
@@ -72,11 +74,9 @@ class DonutChartWidget extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: textFontSize,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
-                  height: 1.1, // Tighter line height for multi-line text
+                  height: 1.1,
                 ),
               ),
             ],
@@ -91,22 +91,41 @@ class DonutChartWidget extends StatelessWidget {
 class _DonutChartPainter extends CustomPainter {
   final List<DonutChartSection> sections;
   final double strokeWidth;
+  final Color zeroColor;
 
-  _DonutChartPainter({required this.sections, required this.strokeWidth});
+  _DonutChartPainter({
+    required this.sections,
+    required this.strokeWidth,
+    required this.zeroColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     double total = sections.fold(0, (sum, section) => sum + section.value);
-    if (total == 0) return;
 
+    // Calculate the drawing radius (inset by half the stroke width)
+    final double drawRadius = (size.width - strokeWidth) / 2;
+    final Offset centerOffset = Offset(size.width / 2, size.height / 2);
+
+    // If total is 0 or list is empty, draw an empty grey circle placeholder
+    if (total == 0 || sections.isEmpty) {
+      final emptyPaint = Paint()
+        ..color = zeroColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth;
+
+      canvas.drawCircle(centerOffset, drawRadius, emptyPaint);
+      return;
+    }
+
+    // Normal drawing logic for when there is data
     double startAngle = -pi / 2;
-
-    Rect rect = Rect.fromCircle(
-      center: Offset(size.width / 2, size.height / 2),
-      radius: (size.width - strokeWidth) / 2,
-    );
+    Rect rect = Rect.fromCircle(center: centerOffset, radius: drawRadius);
 
     for (var section in sections) {
+      // Skip drawing logic for 0-value sections so they don't paint lines
+      if (section.value == 0) continue;
+
       final sweepAngle = (section.value / total) * 2 * pi;
 
       final paint = Paint()
@@ -117,7 +136,7 @@ class _DonutChartPainter extends CustomPainter {
 
       canvas.drawArc(rect, startAngle, sweepAngle, false, paint);
 
-      // Separator lines
+      // Separator lines (optional, removes if you want a seamless donut)
       final separatorPaint = Paint()
         ..color = Colors.black87
         ..style = PaintingStyle.stroke

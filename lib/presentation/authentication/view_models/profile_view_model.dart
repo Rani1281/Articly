@@ -1,4 +1,5 @@
 import 'package:articly/data/services/auth_service.dart';
+import 'package:articly/utils/command.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
@@ -10,32 +11,16 @@ class ProfileViewModel extends ChangeNotifier {
   final AuthService _authService;
   final log = Logger('ProfileViewModel');
 
-  String? _email;
-  String? _username; // can be modified
+  final Command logoutCommand = Command();
+  final Command editUsernameCommand = Command();
 
-  bool _isRunningLogout = false;
+  String? get email => _authService.user?.email;
+  String? get username => _authService.user?.displayName;
 
-  String? _errorMessage;
-  bool _isRunningName = false;
-
-  String? get email => _email;
-  String? get username => _username;
-
-  bool get isRunningLogout => _isRunningLogout;
-
-  String? get errorMessage => _errorMessage;
-  bool get isRunningName => _isRunningName;
-
-  // Use in initState to initialize data
-  void loadData() {
-    _email = _authService.user?.email;
-    _username = _authService.user?.displayName;
-  }
-
-  Future<void> logOut() async {
+  Future<void> logout() async {
     log.info('Logout started...');
-    _errorMessage = null;
-    _isRunningLogout = true;
+    String? error;
+    logoutCommand.start();
     notifyListeners();
 
     try {
@@ -46,12 +31,12 @@ class ProfileViewModel extends ChangeNotifier {
         'A Firebase Auth exception occurred: ${e.errorMessage}.\n'
         'Code: ${e.code}',
       );
-      _errorMessage = e.displayMessage;
+      error = e.displayMessage;
     } catch (e) {
       log.shout('An error has occurred: ${e.toString()}');
-      _errorMessage = 'Something went wrong. Please try again later';
+      error = 'Something went wrong. Please try again later';
     } finally {
-      _isRunningLogout = false;
+      logoutCommand.finish(error);
       notifyListeners();
     }
   }
@@ -63,25 +48,24 @@ class ProfileViewModel extends ChangeNotifier {
     }
 
     log.info('Edit name started...');
-    _errorMessage = null;
-    _isRunningName = true;
+    String? error;
+    editUsernameCommand.start();
     notifyListeners();
 
     try {
       await _authService.updateUsername(newName);
-      _username = newName;
       log.fine('username was successfully updated!');
     } on CustomAuthException catch (e) {
       log.shout(
         'A Firebase Auth exception occurred: ${e.errorMessage}.\n'
         'Code: ${e.code}',
       );
-      _errorMessage = e.displayMessage;
+      error = e.displayMessage;
     } catch (e) {
       log.shout('An error has occurred: ${e.toString()}');
-      _errorMessage = 'Something went wrong. Please try again later';
+      error = 'Something went wrong. Please try again later';
     } finally {
-      _isRunningName = false;
+      editUsernameCommand.finish(error);
       notifyListeners();
     }
   }

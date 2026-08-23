@@ -1,14 +1,17 @@
 import 'package:articly/data/models/reading_status_count.dart';
 import 'package:articly/data/models/saved_item.dart';
+import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
 import 'package:articly/presentation/website_displaying/widgets/donut_chart.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
 import 'package:articly/presentation/website_displaying/widgets/show_bottom_sheets.dart';
+import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/utils/my_action_button.dart';
 import 'package:articly/utils/providers_shortcuts.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:provider/provider.dart';
 
 import '../view_models/home_page_view_model.dart';
 
@@ -40,7 +43,7 @@ class _HomePageState extends State<HomePage>
     _viewModel =
         widget.viewModel ??
         HomePageViewModel(
-          provider: MyProviders(context).savedItemsProvider(),
+          provider: MyProviders(context).userProvider(),
           prefsService: MyProviders(context).sharedPreferencesService(),
         );
 
@@ -85,6 +88,7 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<UserProvider>(context, listen: false);
     return ListenableBuilder(
       listenable: _viewModel,
       builder: (context, child) {
@@ -122,7 +126,9 @@ class _HomePageState extends State<HomePage>
                 onPressed: () async {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => const SaveWebpageScreen(),
+                      builder: (_) => SaveWebpageScreen(
+                        viewModel: SaveWebpageViewModel(provider),
+                      ),
                     ),
                   );
                 },
@@ -302,6 +308,8 @@ class _HomePageState extends State<HomePage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DonutChartWidget(
+                    radius: 90,
+                    strokeWidth: 18,
                     sections: [
                       DonutChartSection(
                         value: counts.unread.toDouble(),
@@ -573,7 +581,7 @@ class _HomePageState extends State<HomePage>
   // =========================================================================
   Widget _buildSliverListView() {
     return SliverPadding(
-      padding: const EdgeInsets.only(top: 8.0, bottom: 70),
+      padding: const EdgeInsets.only(top: 8.0, bottom: 80),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate((context, index) {
           final item = _viewModel.items[index];
@@ -590,7 +598,7 @@ class _HomePageState extends State<HomePage>
               if (index < _viewModel.items.length - 1)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Divider(height: 1),
+                  // child: Divider(height: 1),
                 ),
             ],
           );

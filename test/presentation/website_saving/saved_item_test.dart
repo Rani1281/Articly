@@ -5,6 +5,7 @@ import 'package:checks/checks.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
+// ignore: subtype_of_sealed_class
 class _MockDocumentSnapshot extends Mock
     implements DocumentSnapshot<Map<String, dynamic>> {}
 
@@ -155,7 +156,6 @@ void main() {
         );
 
         final result = item.toFirestore();
-        print(result);
 
         check(result['type']).equals('webpage');
         check(result['readingStatus']).equals('unread');
@@ -175,8 +175,6 @@ void main() {
         );
 
         final result = item.toFirestore();
-
-        print(result);
 
         check(result['type']).equals('webpage');
         check(result['readingStatus']).equals('unread');

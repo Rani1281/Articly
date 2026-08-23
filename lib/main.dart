@@ -40,13 +40,14 @@ void main() async {
   final prefsService = SharedPreferencesService(prefs: prefs);
 
   final themeModel = ThemeModel(prefs: prefs);
+  final authService = AuthService();
 
   runApp(
     MultiProvider(
       providers: [
+        Provider.value(value: authService),
         ChangeNotifierProvider.value(value: prefsService),
         ChangeNotifierProvider.value(value: themeModel),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: MyApp(),
     ),
@@ -59,30 +60,47 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeModel = context.watch<ThemeModel>();
+    final authService = context.read<AuthService>();
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: themeModel.themeMode,
-      home: AuthGate(),
+    return StreamBuilder<User?>(
+      stream: authService.authChanges,
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+
+        return ChangeNotifierProvider(
+          key: ValueKey(user?.uid),
+          create: (_) {
+            final up = UserProvider(authService: authService);
+            if (user != null && user.emailVerified) {
+              up.load();
+            }
+            return up;
+          },
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.light,
+            darkTheme: AppTheme.dark,
+            themeMode: themeModel.themeMode,
+            home: AuthGate(),
+          ),
+        );
+      },
     );
   }
 }
 
 /// Decided what page to redirect the user to
 class AuthGate extends StatelessWidget {
-  AuthGate({super.key, AuthService? authService})
-    : _authService = authService ?? AuthService();
-
-  final AuthService _authService;
-
   final log = Logger("AuthGate");
+
+  AuthGate({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authService = context.read<AuthService>();
+
     return StreamBuilder(
-      stream: _authService.authChanges,
+      stream: authService.authChanges,
       builder: (context, snapshot) {
         final user = snapshot.data;
 
@@ -102,7 +120,7 @@ class AuthGate extends StatelessWidget {
 
         if (!snapshot.hasData || user == null) {
           log.info('No user data. Moving to authentication page...');
-          return AuthPage(viewModel: AuthPageModel(service: _authService));
+          return AuthPage(viewModel: AuthPageModel(service: authService));
         }
 
         // has data
@@ -112,7 +130,7 @@ class AuthGate extends StatelessWidget {
             'The user\'s email is not verified, so moving him to the email verification page',
           );
           return VerifyEmailScreen(
-            viewModel: VerifyEmailViewModel(authService: _authService),
+            viewModel: VerifyEmailViewModel(authService: authService),
           );
         }
 

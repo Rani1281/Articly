@@ -1,3 +1,6 @@
+import 'package:articly/utils/my_snack_bar.dart';
+import 'package:flutter/cupertino.dart';
+
 class Command {
   Command({
     this.activated = false,
@@ -49,5 +52,28 @@ class Command {
     running = false;
     error = null;
     completed = false;
+  }
+
+  /// Shows success or error snack bar based of the command's fields
+  /// If receives a successMsg, displays it in case of success. Otherwise, displays nothing
+  /// If receives errorMsg, shows it instead of the known error attribute
+  void showSuccessOrErrorSnackBar(
+    BuildContext context, {
+    String? successMsg,
+    String? errorMsg,
+  }) {
+    final String? finalError = errorMsg ?? error;
+
+    if (successMsg != null && completed && finalError == null) {
+      MySnackBar(context, message: successMsg).show();
+      return;
+    }
+
+    if (finalError != null && !completed) {
+      MySnackBar(context, message: finalError).show();
+      return;
+    }
+
+    return;
   }
 }

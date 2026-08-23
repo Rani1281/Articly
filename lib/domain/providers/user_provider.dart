@@ -4,8 +4,8 @@ import 'package:articly/data/models/reading_status_count.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/data/repositories/saved_items_repository.dart';
 import 'package:articly/data/repositories/user_repository.dart';
+import 'package:articly/data/services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
@@ -13,16 +13,21 @@ class UserProvider extends ChangeNotifier {
   UserProvider({
     UserRepository? userRepo,
     SavedItemsRepository? savedItemsRepo,
-    FirebaseAuth? auth,
+    AuthService? authService,
     FirebaseFirestore? db,
   }) {
     _init(
       userRepo: userRepo,
       savedItemsRepo: savedItemsRepo,
-      auth: auth,
+      authService: authService,
       db: db,
     );
   }
+
+  String? _email;
+  String? _username;
+  String? get email => _email;
+  String? get username => _username;
 
   Map<String, SavedItem> _items = {};
   Map<String, SavedItem> get items => _items;
@@ -30,74 +35,91 @@ class UserProvider extends ChangeNotifier {
   ReadingStatusCount _readingStatusCount = ReadingStatusCount();
   ReadingStatusCount get readingStatusCount => _readingStatusCount;
 
-  late final UserRepository _userRepo;
-  late final SavedItemsRepository _savedItemsRepo;
-  late final FirebaseAuth _auth;
-  // TODO: maybe later switch to AuthService, and do all the authentication via here
+  UserRepository? _userRepo;
+  SavedItemsRepository? _savedItemsRepo;
+  late final AuthService _authService;
   late final FirebaseFirestore _db;
 
   static const usersCollection = 'users';
   static const savedItemsCollection = 'savedItems';
 
-  final log = Logger('SavedItemsProvider');
+  final log = Logger('UserProvider');
 
   void _init({
     UserRepository? userRepo,
     SavedItemsRepository? savedItemsRepo,
-    FirebaseAuth? auth,
+    AuthService? authService,
     FirebaseFirestore? db,
   }) {
-    if (auth != null) {
-      _auth = auth;
-    } else {
-      _auth = FirebaseAuth.instance;
-    }
+    _authService = authService ?? AuthService();
+    _db = db ?? FirebaseFirestore.instance;
 
-    if (db != null) {
-      _db = db;
-    } else {
-      _db = FirebaseFirestore.instance;
-    }
-
-    final user = _auth.currentUser;
+    final user = _authService.user;
     if (user == null) {
-      throw Exception(
-        'Initialization failed because the user isn\'t logged in...',
-      );
+      log.info('UserProvider initialized without a logged-in user.');
+      _userRepo = userRepo; // probably null
+      _savedItemsRepo = savedItemsRepo; // probably null
+      return;
     }
     log.info('User is ${user.uid}');
 
-    if (userRepo != null) {
-      _userRepo = userRepo;
-    } else {
-      final userDoc = _db.collection(usersCollection).doc(user.uid);
-      _userRepo = UserRepository(userDoc);
+    _userRepo =
+        userRepo ??
+        UserRepository(_db.collection(usersCollection).doc(user.uid));
+    _savedItemsRepo =
+        savedItemsRepo ??
+        SavedItemsRepository(
+          _db
+              .collection(usersCollection)
+              .doc(user.uid)
+              .collection(savedItemsCollection),
+        );
+  }
+
+  bool _isLoaded = false;
+  bool get isLoaded => _isLoaded;
+
+  Future<String?>? _activeLoadFuture;
+
+  // Load all user data: username, email, saved items, reading status counts
+  Future<String?> load({bool reload = false, bool notify = true}) async {
+    if (!reload) {
+      if (_activeLoadFuture != null) {
+        return _activeLoadFuture;
+      }
+      if (_isLoaded) {
+        if (notify) {
+          notifyListeners();
+        }
+        return null;
+      }
     }
 
-    if (savedItemsRepo != null) {
-      _savedItemsRepo = savedItemsRepo;
-    } else {
-      final savedItemsCol = _db
-          .collection(usersCollection)
-          .doc(user.uid)
-          .collection(savedItemsCollection);
-      _savedItemsRepo = SavedItemsRepository(savedItemsCol);
+    _activeLoadFuture = _performLoad(notify: notify);
+    try {
+      return await _activeLoadFuture;
+    } finally {
+      _activeLoadFuture = null;
     }
   }
 
-  // Loads the user's saved items and reading status counts, and return error or null
-  Future<String?> load({bool notify = true}) async {
+  Future<String?> _performLoad({required bool notify}) async {
     String? error;
     try {
-      _items = await _savedItemsRepo.fetchItems();
-      _readingStatusCount = await _userRepo.fetchReadingStatusCount();
+      // auth details
+      _email = _authService.user?.email;
+      _username = _authService.user?.displayName;
 
+      // Firestore data
+      _items = await _savedItemsRepo!.fetchItems();
+      _readingStatusCount = await _userRepo!.fetchReadingStatusCount();
       if (_items.length != _readingStatusCount.total() ||
           !_readingStatusCount.isSynced) {
         // means the count isn't synced
         log.info('Syncing reading status counts...');
         syncReadingStatusCount();
       }
+      _isLoaded = true;
       log.finest('Successfully loaded user data from Firestore!');
     } catch (e) {
       log.shout('An error occurred: $e');
@@ -143,7 +165,7 @@ class UserProvider extends ChangeNotifier {
     );
 
     // Update Firestore in the background
-    _userRepo.setReadingStatusCounts(_readingStatusCount, forceSync: true);
+    _userRepo!.setReadingStatusCounts(_readingStatusCount, forceSync: true);
   }
 
   /// Create a new item, return error or null
@@ -151,7 +173,7 @@ class UserProvider extends ChangeNotifier {
     String? error;
 
     try {
-      final id = await _savedItemsRepo.addItem(item);
+      final id = await _savedItemsRepo!.addItem(item);
       // create a new item that has the new id
       final newItem = item.copyWith(id: id);
       _items[id] = newItem;
@@ -173,7 +195,7 @@ class UserProvider extends ChangeNotifier {
     String? error;
 
     try {
-      await _savedItemsRepo.updateItem(item);
+      await _savedItemsRepo!.updateItem(item);
       // if update item succeeds, the id must be non null
       final prevItem = _items[item.id];
       _items[item.id!] = item;
@@ -195,7 +217,7 @@ class UserProvider extends ChangeNotifier {
     String? error;
 
     try {
-      await _savedItemsRepo.deleteItem(id);
+      await _savedItemsRepo!.deleteItem(id);
       // delete in memory after in Firestore in case of failure
       final prevItem = _items[id];
       _items.remove(id);
@@ -218,6 +240,8 @@ class UserProvider extends ChangeNotifier {
     ReadingStatus? previousStatus,
     ReadingStatus? newStatus,
   ) {
+    if (previousStatus == newStatus) return;
+
     // Update app state; decrement previous status and increment new one
     if (previousStatus != null) {
       _readingStatusCount.decrement(previousStatus);
@@ -227,6 +251,6 @@ class UserProvider extends ChangeNotifier {
     }
 
     // run Firestore write in the background
-    unawaited(_userRepo.setReadingStatusCounts(_readingStatusCount));
+    unawaited(_userRepo!.setReadingStatusCounts(_readingStatusCount));
   }
 }
