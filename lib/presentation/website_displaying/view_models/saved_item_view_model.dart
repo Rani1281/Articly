@@ -56,6 +56,7 @@ class SavedItemViewModel extends ChangeNotifier {
 
   final Command deleteItemCommand = Command();
   final Command openUrlCommand = Command();
+  final Command updateStatusCommand = Command();
 
   // SavedItemsProvider getDeleteCommand(BuildContext context) {
   //   return Provider.of<SavedItemsProvider>(context);
@@ -126,6 +127,29 @@ class SavedItemViewModel extends ChangeNotifier {
     }
 
     return true;
+  }
+
+  /// Update item reading status
+  Future<void> updateStatus(ReadingStatus newStatus) async {
+    if (_currentItem.id == null || _currentItem.id!.isEmpty) {
+      log.severe(
+        'The current item\'s id is null or empty, so can\'t update it...',
+      );
+      return Future.value();
+    }
+
+    updateStatusCommand.start();
+    notifyListeners();
+
+    final newItem = _currentItem.copyWith(readingStatus: newStatus);
+    final error = await _provider.editItem(newItem);
+
+    if (error == null) {
+      currentItem = newItem;
+    }
+
+    updateStatusCommand.finish(error);
+    notifyListeners();
   }
 
   /// Delete the item in all places (UI, memory, Firestore)

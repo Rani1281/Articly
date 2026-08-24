@@ -8,8 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
-enum MenuAction { openLink, seeDetails, edit, copy, delete }
-
 class SavedItemCard extends StatefulWidget {
   const SavedItemCard({
     super.key,
@@ -104,6 +102,21 @@ class _SavedItemCardState extends State<SavedItemCard> {
     if (newItem != null) {
       _viewModel.currentItem = newItem;
       log.info('New item: $newItem');
+    }
+  }
+
+  _updateStatus(ReadingStatus newStatus) async {
+    await _viewModel.updateStatus(newStatus);
+    if (!mounted) return;
+    if (_viewModel.updateStatusCommand.completed &&
+        !_viewModel.updateStatusCommand.hasError) {
+      // MySnackBar(context, message: 'Status updated successfully!').show();
+      log.info('Status updated successfully!');
+    } else {
+      MySnackBar(
+        context,
+        message: _viewModel.updateStatusCommand.error!,
+      ).show();
     }
   }
 
@@ -453,7 +466,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
       color: Colors.blueGrey,
     );
 
-    if (item.faviconUrl == null) return defaultIcon;
+    if (item.faviconUrl == null || item.faviconUrl!.isEmpty) return defaultIcon;
 
     return ClipOval(
       child: Image.network(
@@ -569,12 +582,30 @@ class _SavedItemCardState extends State<SavedItemCard> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 color: Colors.grey.shade200,
-                image: DecorationImage(
-                  image: item.imageUrl != null
-                      ? NetworkImage(item.imageUrl!)
-                      : AssetImage('assets/image_placeholder.png'),
-                  fit: BoxFit.cover,
-                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                    ? Image.network(
+                        item.imageUrl!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/image_placeholder.png',
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                          );
+                        },
+                      )
+                    : Image.asset(
+                        'assets/image_placeholder.png',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
               ),
             ),
           ),
@@ -591,79 +622,65 @@ class _SavedItemCardState extends State<SavedItemCard> {
         highlightColor: Colors.transparent,
         hoverColor: Colors.transparent,
       ),
-      child: PopupMenuButton<MenuAction>(
-        padding: EdgeInsets.zero,
-        tooltip: '',
-        child: Icon(Icons.more_vert, size: size),
-        onSelected: (action) {
-          switch (action) {
-            case MenuAction.openLink:
-              _openUrl();
-              break;
-            case MenuAction.seeDetails:
-              _showDetailsDialog();
-              break;
-            case MenuAction.edit:
-              _editItem();
-              break;
-            case MenuAction.copy:
-              _viewModel.copyContents();
-              break;
-            case MenuAction.delete:
-              _deleteItem();
-              break;
-          }
-        },
-        itemBuilder: (context) => [
-          _buildMenuItem(
-            value: MenuAction.openLink,
-            text: 'Open link',
-            icon: Icons.open_in_new,
+      child: MenuAnchor(
+        builder:
+            (BuildContext context, MenuController controller, Widget? child) {
+              return IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                tooltip: '',
+                icon: Icon(Icons.more_vert, size: size),
+                onPressed: () {
+                  if (controller.isOpen) {
+                    controller.close();
+                  } else {
+                    controller.open();
+                  }
+                },
+              );
+            },
+        menuChildren: [
+          MenuItemButton(
+            leadingIcon: const Icon(Icons.open_in_new, size: 20),
+            onPressed: _openUrl,
+            child: const Text('Open link'),
           ),
-          _buildMenuItem(
-            value: MenuAction.seeDetails,
-            text: 'See details',
-            icon: Icons.visibility_outlined,
+          MenuItemButton(
+            leadingIcon: const Icon(Icons.visibility_outlined, size: 20),
+            onPressed: _showDetailsDialog,
+            child: const Text('See details'),
           ),
-          _buildMenuItem(
-            value: MenuAction.copy,
-            text: 'Copy source',
-            icon: Icons.copy,
+          SubmenuButton(
+            leadingIcon: const Icon(Icons.drive_file_move_outline, size: 20),
+            menuChildren: [
+              if (_viewModel.currentItem.readingStatus != ReadingStatus.unread)
+                MenuItemButton(
+                  onPressed: () => _updateStatus(ReadingStatus.unread),
+                  child: const Text('Unread'),
+                ),
+              if (_viewModel.currentItem.readingStatus != ReadingStatus.reading)
+                MenuItemButton(
+                  onPressed: () => _updateStatus(ReadingStatus.reading),
+                  child: const Text('Reading'),
+                ),
+              if (_viewModel.currentItem.readingStatus != ReadingStatus.read)
+                MenuItemButton(
+                  onPressed: () => _updateStatus(ReadingStatus.read),
+                  child: const Text('Read'),
+                ),
+            ],
+            child: const Text('Move to'),
           ),
-          _buildMenuItem(
-            value: MenuAction.edit,
-            text: 'Edit',
-            icon: Icons.edit,
+          MenuItemButton(
+            leadingIcon: const Icon(Icons.edit, size: 20),
+            onPressed: _editItem,
+            child: const Text('Edit'),
           ),
-          _buildMenuItem(
-            value: MenuAction.delete,
-            text: 'Delete',
-            icon: Icons.delete,
+          MenuItemButton(
+            leadingIcon: const Icon(Icons.delete, size: 20),
+            onPressed: _deleteItem,
+            child: const Text('Delete'),
           ),
-        ],
-      ),
-    );
-  }
-
-  PopupMenuItem<MenuAction> _buildMenuItem({
-    required MenuAction value,
-    IconData? icon,
-    required String text,
-  }) {
-    return PopupMenuItem(
-      value: value,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (icon != null)
-            Icon(
-              icon,
-              color: Theme.of(context).colorScheme.onSurface,
-              size: 20,
-            ),
-          const SizedBox(width: 10),
-          Text(text),
         ],
       ),
     );

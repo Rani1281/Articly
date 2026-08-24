@@ -293,11 +293,11 @@ class _HomePageState extends State<HomePage>
     ReadingStatusCount counts,
   ) {
     return Padding(
-      padding: EdgeInsetsGeometry.all(16.0),
+      padding: EdgeInsetsGeometry.fromLTRB(16, 0, 16, 16),
       child: Center(
         child: Container(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
+            // color: colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(30),
           ),
           padding: EdgeInsets.all(30),
@@ -588,7 +588,7 @@ class _HomePageState extends State<HomePage>
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: SavedItemCard(
                   isGridView: _viewModel.isGridView,
                   item: item,
