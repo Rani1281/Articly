@@ -1,5 +1,6 @@
 import 'package:articly/config/config.dart';
 import 'package:articly/data/models/saved_item.dart';
+import 'package:articly/presentation/tags_management/widgets/confirm_delete_dialog.dart';
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/utils/my_snack_bar.dart';
@@ -123,19 +124,10 @@ class _SavedItemCardState extends State<SavedItemCard> {
   Future<bool?> _showDeleteDialog() {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ConfirmDeleteDialog(
         title: const Text('Delete item'),
         content: const Text('Are you sure you want delete this item?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
-          ),
-        ],
+        action: () async {},
       ),
     );
   }

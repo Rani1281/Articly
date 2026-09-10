@@ -1,5 +1,6 @@
 import 'package:articly/presentation/authentication/view_models/profile_view_model.dart';
 import 'package:articly/presentation/authentication/widgets/input_dialog.dart';
+import 'package:articly/presentation/tags_management/widgets/manage_tags_page.dart';
 import 'package:articly/theme/theme_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -141,6 +142,21 @@ class _ProfilePageState extends State<ProfilePage> {
                       const Divider(),
 
                       ListTile(
+                        leading: const Icon(Icons.label_outline),
+                        title: const Text('Manage Tags'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ManageTagsPage(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const Divider(),
+
+                      ListTile(
                         title: const Text('Theme'),
                         trailing: DropdownButton<ThemeMode>(
                           underline: const SizedBox(),
@@ -188,9 +204,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                       // ! Note: this only pops the current route, matching the current homepage -> profile page structure, so if nesting more pages, deleting all navigation stack beforehand is necessary.
                                       await _viewModel.logout();
                                     }
-                                    if (mounted) {
-                                      Navigator.of(context).pop();
-                                    }
+                                    if (!context.mounted) return;
+                                    Navigator.of(context).pop();
                                   },
                             label: const Text('Log out'),
                             icon: Icon(Icons.logout),

@@ -24,6 +24,7 @@ class MySnackBar {
   }
 
   void show() {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(buildSnackBar());
   }
 }

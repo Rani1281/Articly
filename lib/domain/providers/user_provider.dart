@@ -3,22 +3,27 @@ import 'dart:async';
 import 'package:articly/data/models/reading_status_count.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/data/repositories/saved_items_repository.dart';
+import 'package:articly/data/repositories/tags_repository.dart';
 import 'package:articly/data/repositories/user_repository.dart';
 import 'package:articly/data/services/auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
+import '../../data/models/tag.dart';
+
 class UserProvider extends ChangeNotifier {
   UserProvider({
     UserRepository? userRepo,
     SavedItemsRepository? savedItemsRepo,
+    TagsRepository? tagsRepo,
     AuthService? authService,
     FirebaseFirestore? db,
   }) {
     _init(
       userRepo: userRepo,
       savedItemsRepo: savedItemsRepo,
+      tagsRepo: tagsRepo,
       authService: authService,
       db: db,
     );
@@ -32,22 +37,28 @@ class UserProvider extends ChangeNotifier {
   Map<String, SavedItem> _items = {};
   Map<String, SavedItem> get items => _items;
 
+  Map<String, Tag> _tags = {};
+  Map<String, Tag> get tags => _tags;
+
   ReadingStatusCount _readingStatusCount = ReadingStatusCount();
   ReadingStatusCount get readingStatusCount => _readingStatusCount;
 
   UserRepository? _userRepo;
   SavedItemsRepository? _savedItemsRepo;
+  TagsRepository? _tagsRepo;
   late final AuthService _authService;
   late final FirebaseFirestore _db;
 
   static const usersCollection = 'users';
   static const savedItemsCollection = 'savedItems';
+  static const tagsCollection = 'tags';
 
   final log = Logger('UserProvider');
 
   void _init({
     UserRepository? userRepo,
     SavedItemsRepository? savedItemsRepo,
+    TagsRepository? tagsRepo,
     AuthService? authService,
     FirebaseFirestore? db,
   }) {
@@ -59,6 +70,7 @@ class UserProvider extends ChangeNotifier {
       log.info('UserProvider initialized without a logged-in user.');
       _userRepo = userRepo; // probably null
       _savedItemsRepo = savedItemsRepo; // probably null
+      _tagsRepo = tagsRepo; // probably null
       return;
     }
     log.info('User is ${user.uid}');
@@ -74,6 +86,20 @@ class UserProvider extends ChangeNotifier {
               .doc(user.uid)
               .collection(savedItemsCollection),
         );
+    if (tagsRepo != null) {
+      _tagsRepo = tagsRepo;
+    } else {
+      try {
+        _tagsRepo = TagsRepository(
+          _db
+              .collection(usersCollection)
+              .doc(user.uid)
+              .collection(tagsCollection),
+        );
+      } catch (e) {
+        log.warning('Could not initialize TagsRepository: $e');
+      }
+    }
   }
 
   bool _isLoaded = false;
@@ -111,8 +137,24 @@ class UserProvider extends ChangeNotifier {
       _username = _authService.user?.displayName;
 
       // Firestore data
-      _items = await _savedItemsRepo!.fetchItems();
-      _readingStatusCount = await _userRepo!.fetchReadingStatusCount();
+      if (_savedItemsRepo != null) {
+        _items = await _savedItemsRepo!.fetchItems();
+      } else {
+        log.severe('The SavedItemRepository isn\'t initialized!');
+      }
+
+      if (_userRepo != null) {
+        _readingStatusCount = await _userRepo!.fetchReadingStatusCount();
+      } else {
+        log.severe('The UserRepository isn\'t initialized!');
+      }
+
+      if (_tagsRepo != null) {
+        _tags = await _tagsRepo!.load();
+      } else {
+        log.severe('The TagsRepository isn\'t initialized!');
+      }
+
       if (_items.length != _readingStatusCount.total() ||
           !_readingStatusCount.isSynced) {
         // means the count isn't synced
@@ -228,6 +270,96 @@ class UserProvider extends ChangeNotifier {
       );
     } catch (e) {
       log.shout('An error occurred: $e');
+      error = 'Something went wrong. Please try again later';
+    }
+
+    notifyListeners();
+    return error;
+  }
+
+  // --- Tags Functionality ---
+
+  /// Creates a tag with the given name.
+  /// Validates that repository is available, ensures no tag with the same name exists,
+  /// creates document in Firestore with a random id,
+  /// adds tag to in-memory map, and notifies listeners.
+  Future<String?> createTag(String name) async {
+    String? error;
+
+    try {
+      if (_tagsRepo == null) {
+        throw Exception('Tags repository is not initialized.');
+      }
+      final normalized = Tag.normalize(name);
+      final alreadyExists = _tags.values.any(
+        (t) => t.normalizeName() == normalized,
+      );
+      if (alreadyExists) {
+        return 'A tag with this name already exists';
+      }
+      final newTag = Tag(name: name);
+      final id = await _tagsRepo!.create(newTag);
+      _tags[id] = newTag.copyWith(id: id);
+      log.finest(
+        'Successfully created tag "$name" (id: $id) in Firestore and in memory!',
+      );
+    } catch (e) {
+      log.shout('An error occurred while creating tag: $e');
+      error = e.toString().replaceFirst('Exception: ', '');
+    }
+
+    notifyListeners();
+    return error;
+  }
+
+  /// Edits an existing tag's name.
+  /// Validates that no other tag has the same name, updates document in Firestore,
+  /// updates in-memory map, and notifies listeners.
+  Future<String?> editTag(String id, String newName) async {
+    String? error;
+
+    try {
+      if (_tagsRepo == null) {
+        throw Exception('Tags repository is not initialized.');
+      }
+      final existingTag = _tags[id];
+      if (existingTag == null) {
+        return 'Tag not found';
+      }
+      final normalized = Tag.normalize(newName);
+      final duplicate = _tags.values.any(
+        (t) => t.id != id && t.normalizeName() == normalized,
+      );
+      if (duplicate) {
+        return 'A tag with this name already exists';
+      }
+      final updatedTag = existingTag.copyWith(name: newName);
+      await _tagsRepo!.update(updatedTag);
+      _tags[id] = updatedTag;
+      log.finest('Successfully updated tag "$id" in Firestore and in memory!');
+    } catch (e) {
+      log.shout('An error occurred while editing tag: $e');
+      error = 'Something went wrong. Please try again later';
+    }
+
+    notifyListeners();
+    return error;
+  }
+
+  /// Deletes a tag by its id.
+  /// Deletes document in Firestore, removes from in-memory map, and notifies listeners.
+  Future<String?> deleteTag(String id) async {
+    String? error;
+
+    try {
+      if (_tagsRepo == null) {
+        throw Exception('Tags repository is not initialized.');
+      }
+      await _tagsRepo!.delete(id);
+      _tags.remove(id);
+      log.finest('Successfully removed tag "$id" in Firestore and in memory!');
+    } catch (e) {
+      log.shout('An error occurred while deleting tag: $e');
       error = 'Something went wrong. Please try again later';
     }
 
