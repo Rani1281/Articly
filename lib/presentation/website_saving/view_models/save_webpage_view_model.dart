@@ -7,9 +7,39 @@ import 'package:metadata_fetch/metadata_fetch.dart';
 import '../../../data/models/saved_item.dart';
 
 class SaveWebpageViewModel extends ChangeNotifier {
-  SaveWebpageViewModel(this._provider);
+  SaveWebpageViewModel(this._provider, {List<String>? initialTags}) {
+    if (initialTags != null) {
+      _selectedTagIds = List.from(initialTags);
+    }
+  }
 
   final UserProvider _provider;
+
+  List<String> _selectedTagIds = [];
+  List<String> get selectedTagIds => List.unmodifiable(_selectedTagIds);
+
+  void setSelectedTagIds(List<String> tags) {
+    _selectedTagIds = List.from(tags);
+    notifyListeners();
+  }
+
+  void addTag(String tagId) {
+    if (!_selectedTagIds.contains(tagId)) {
+      _selectedTagIds.add(tagId);
+      notifyListeners();
+    }
+  }
+
+  void removeTag(String tagId) {
+    if (_selectedTagIds.remove(tagId)) {
+      notifyListeners();
+    }
+  }
+
+  void clearTags() {
+    _selectedTagIds.clear();
+    notifyListeners();
+  }
 
   String? _urlError;
   String? get urlError => _urlError;

@@ -2,6 +2,7 @@ import 'package:articly/config/config.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
+import 'package:articly/presentation/website_saving/widgets/add_tags_dialog.dart';
 import 'package:articly/presentation/website_saving/widgets/labeled_dropdown.dart';
 import 'package:articly/presentation/website_saving/widgets/labeled_text_field.dart';
 import 'package:articly/theme/theme_model.dart';
@@ -59,7 +60,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
     super.initState();
 
     final provider = MyProviders(context).userProvider();
-    _viewModel = SaveWebpageViewModel(provider);
+    _viewModel = widget.viewModel ?? SaveWebpageViewModel(provider);
 
     final values = {
       ReadingStatus.unread: 'Unread',
@@ -78,9 +79,21 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
       _remindMe = item.remindReading;
       // Since the title is required, it cannot be empty or null, so initialize autoTitle with false
       _autoTitle = false;
+      _viewModel.setSelectedTagIds(item.tags);
     }
 
     _selectedStatusNotifier = ValueNotifier(_initialValue);
+  }
+
+  Future<void> _openAddTagsDialog() async {
+    final result = await showDialog<List<String>>(
+      context: context,
+      builder: (context) =>
+          AddTagsDialog(initialSelectedTagIds: _viewModel.selectedTagIds),
+    );
+    if (result != null) {
+      _viewModel.setSelectedTagIds(result);
+    }
   }
 
   String? nullIfEmpty(String? value) {
@@ -135,6 +148,7 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
       imageUrl: imageUrl ?? widget.currentItem?.imageUrl,
       faviconUrl: faviconUrl ?? widget.currentItem?.faviconUrl,
       createdAt: widget.currentItem?.createdAt ?? DateTime.now(),
+      tags: _viewModel.selectedTagIds,
     );
 
     final errorMsg = await _viewModel.saveWebpage(
@@ -350,6 +364,10 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
                         ),
                         const SizedBox(height: 20),
 
+                        // ! [-- TAGS SECTION --]
+                        _buildTagsSection(context, provider, isDark),
+                        const SizedBox(height: 20),
+
                         // ! [-- NOTES FIELD --]
                         LabeledTextField(
                           key: ValueKey('notesTextField'),
@@ -404,6 +422,107 @@ class _SaveWebpageScreenState extends State<SaveWebpageScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildTagsSection(
+    BuildContext context,
+    UserProvider provider,
+    bool isDark,
+  ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final selectedTagIds = _viewModel.selectedTagIds;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Tags', style: theme.textTheme.labelLarge),
+            if (selectedTagIds.isNotEmpty)
+              TextButton.icon(
+                key: const ValueKey('editTagsButton'),
+                onPressed: _openAddTagsDialog,
+                icon: const Icon(Icons.edit_outlined, size: 16),
+                label: const Text('Edit'),
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 5),
+        if (selectedTagIds.isEmpty)
+          InkWell(
+            key: const ValueKey('addTagsTrigger'),
+            onTap: _openAddTagsDialog,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? colorScheme.surfaceContainer : Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colorScheme.surfaceContainerHighest),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.label_outline,
+                    size: 20,
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Attach tags...',
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
+                      fontSize: 15,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 14,
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              for (final tagId in selectedTagIds)
+                InputChip(
+                  key: ValueKey('tag_chip_$tagId'),
+                  avatar: const Icon(Icons.tag, size: 15),
+                  label: Text(provider.tags[tagId]?.name ?? tagId),
+                  onDeleted: () => _viewModel.removeTag(tagId),
+                  onPressed: _openAddTagsDialog,
+                  deleteIconColor: colorScheme.onSurfaceVariant,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ActionChip(
+                key: const ValueKey('addMoreTagsChip'),
+                avatar: const Icon(Icons.add, size: 15),
+                label: const Text('Add tag'),
+                onPressed: _openAddTagsDialog,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ],
+          ),
+      ],
     );
   }
 }

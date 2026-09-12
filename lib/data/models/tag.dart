@@ -13,7 +13,8 @@ class Tag {
         .trim()
         .toLowerCase()
         .replaceAll('/', '_')
-        .replaceAll(RegExp(r'\s+'), '_');
+        .replaceAll(RegExp(r'\s+'), '_')
+        .replaceAll(RegExp(r'_+'), '_');
   }
 
   // ignore: non_constant_identifier_names

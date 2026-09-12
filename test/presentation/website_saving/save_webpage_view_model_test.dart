@@ -275,4 +275,68 @@ void main() {
       },
     );
   });
+
+  group('tags state', () {
+    test('initializes empty by default', () {
+      check(viewModel.selectedTagIds).isEmpty();
+    });
+
+    test('can be initialized with initialTags', () {
+      final vmWithTags = SaveWebpageViewModel(
+        itemsProvider,
+        initialTags: ['tag-1', 'tag-2'],
+      );
+      check(vmWithTags.selectedTagIds).deepEquals(['tag-1', 'tag-2']);
+      vmWithTags.dispose();
+    });
+
+    test('setSelectedTagIds updates list and notifies listeners', () {
+      int notifyCount = 0;
+      viewModel.addListener(() => notifyCount++);
+
+      viewModel.setSelectedTagIds(['tag-a', 'tag-b']);
+
+      check(viewModel.selectedTagIds).deepEquals(['tag-a', 'tag-b']);
+      check(notifyCount).equals(1);
+    });
+
+    test('addTag adds tag if not present and notifies', () {
+      int notifyCount = 0;
+      viewModel.addListener(() => notifyCount++);
+
+      viewModel.addTag('tag-1');
+      check(viewModel.selectedTagIds).deepEquals(['tag-1']);
+      check(notifyCount).equals(1);
+
+      // adding duplicate does not add or notify again
+      viewModel.addTag('tag-1');
+      check(viewModel.selectedTagIds).deepEquals(['tag-1']);
+      check(notifyCount).equals(1);
+    });
+
+    test('removeTag removes tag if present and notifies', () {
+      viewModel.setSelectedTagIds(['tag-1', 'tag-2']);
+      int notifyCount = 0;
+      viewModel.addListener(() => notifyCount++);
+
+      viewModel.removeTag('tag-1');
+      check(viewModel.selectedTagIds).deepEquals(['tag-2']);
+      check(notifyCount).equals(1);
+
+      // removing non-existent does nothing
+      viewModel.removeTag('tag-nonexistent');
+      check(viewModel.selectedTagIds).deepEquals(['tag-2']);
+      check(notifyCount).equals(1);
+    });
+
+    test('clearTags clears list and notifies', () {
+      viewModel.setSelectedTagIds(['tag-1', 'tag-2']);
+      int notifyCount = 0;
+      viewModel.addListener(() => notifyCount++);
+
+      viewModel.clearTags();
+      check(viewModel.selectedTagIds).isEmpty();
+      check(notifyCount).equals(1);
+    });
+  });
 }

@@ -25,6 +25,7 @@ void main() {
           faviconUrl: 'https://favicon.com',
           imageUrl: 'https://image.com',
           createdAt: createdAt,
+          tags: const ['tag1', 'tag2'],
         );
 
         check(item.id).equals('test-id-123');
@@ -37,6 +38,7 @@ void main() {
         check(item.faviconUrl).equals('https://favicon.com');
         check(item.imageUrl).equals('https://image.com');
         check(item.createdAt).equals(createdAt);
+        check(item.tags).deepEquals(['tag1', 'tag2']);
       });
 
       test('defaults ungiven optional fields to null', () {
@@ -55,6 +57,7 @@ void main() {
         check(item.faviconUrl).isNull();
         check(item.imageUrl).isNull();
         check(item.createdAt).isNotNull();
+        check(item.tags).isEmpty();
       });
 
       test('Sets createdAt to the current date if not specified', () {
@@ -97,6 +100,7 @@ void main() {
         check(result.containsKey('faviconUrl')).isTrue();
         check(result.containsKey('imageUrl')).isTrue();
         check(result.containsKey('createdAt')).isTrue();
+        check(result.containsKey('tags')).isTrue();
 
         check(result['type']).equals('webpage');
         check(result['url']).equals('https://example.com');
@@ -107,6 +111,22 @@ void main() {
         check(result['faviconUrl']).equals('https://favicon.com');
         check(result['imageUrl']).equals('https://image.com');
         check(result['createdAt']).isA<Timestamp>();
+        check((result['tags'] as List).cast<String>()).deepEquals(<String>[]);
+      });
+
+      test('includes tags preserving order in toFirestore', () {
+        final item = SavedItem(
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.unread,
+          uri: Uri.parse('https://example.com'),
+          tags: ['tag-b', 'tag-a', 'tag-c'],
+        );
+
+        final result = item.toFirestore();
+
+        check(
+          (result['tags'] as List).cast<String>(),
+        ).deepEquals(['tag-b', 'tag-a', 'tag-c']);
       });
 
       test('does not include id in the map when it is null', () {
@@ -266,6 +286,56 @@ void main() {
         check(item.id).equals('doc-id');
         check(item.type).equals(ItemType.webpage);
         check(item.readingStatus).equals(ReadingStatus.unread);
+      });
+
+      test('correctly parses tags list from snapshot preserving order', () {
+        final snapshot = _MockDocumentSnapshot();
+        when(() => snapshot.id).thenReturn('doc-id');
+        when(() => snapshot.data()).thenReturn(<String, dynamic>{
+          'tags': ['tag-1', 'tag-2', 'tag-3'],
+        });
+
+        final item = SavedItem.fromFirestore(snapshot, null);
+
+        check(item.tags).deepEquals(['tag-1', 'tag-2', 'tag-3']);
+      });
+
+      test('defaults tags to empty list if missing in snapshot', () {
+        final snapshot = _MockDocumentSnapshot();
+        when(() => snapshot.id).thenReturn('doc-id');
+        when(() => snapshot.data()).thenReturn(<String, dynamic>{});
+
+        final item = SavedItem.fromFirestore(snapshot, null);
+
+        check(item.tags).isEmpty();
+      });
+    });
+
+    group('copyWith', () {
+      test('updates tags correctly', () {
+        final item = SavedItem(
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.unread,
+          uri: Uri.parse('https://example.com'),
+          tags: ['tag-1'],
+        );
+
+        final updated = item.copyWith(tags: ['tag-2', 'tag-3']);
+
+        check(updated.tags).deepEquals(['tag-2', 'tag-3']);
+      });
+    });
+
+    group('toString', () {
+      test('includes tags', () {
+        final item = SavedItem(
+          type: ItemType.webpage,
+          readingStatus: ReadingStatus.unread,
+          uri: Uri.parse('https://example.com'),
+          tags: ['tag-1'],
+        );
+
+        check(item.toString()).contains('tags: [tag-1]');
       });
     });
   });

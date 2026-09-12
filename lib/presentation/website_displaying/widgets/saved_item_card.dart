@@ -2,11 +2,11 @@ import 'package:articly/config/config.dart';
 import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/presentation/tags_management/widgets/confirm_delete_dialog.dart';
 import 'package:articly/presentation/website_displaying/view_models/saved_item_view_model.dart';
+import 'package:articly/presentation/website_displaying/widgets/saved_item_details_dialog.dart';
 import 'package:articly/presentation/website_saving/widgets/save_webpage_screen.dart';
 import 'package:articly/utils/my_snack_bar.dart';
 import 'package:articly/utils/providers_shortcuts.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
 class SavedItemCard extends StatefulWidget {
@@ -133,193 +133,10 @@ class _SavedItemCardState extends State<SavedItemCard> {
   }
 
   Future<void> _showDetailsDialog() {
-    final colorScheme = Theme.of(context).colorScheme;
-    final item = _viewModel.currentItem;
-
-    return showDialog(
+    return showSavedItemDetailsDialog(
       context: context,
-      // 1. Return AlertDialog directly (removed Center & outer SingleChildScrollView)
-      builder: (context) => AlertDialog(
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-        contentPadding: const EdgeInsets.all(20),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(minWidth: 400, maxWidth: 600),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title (Pinned at the top)
-              SelectableText(
-                (item.title.isEmpty) ? defaultTitleName : item.title,
-                style: TextStyle(
-                  color: colorScheme.onSurface.withValues(alpha: 0.85),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18,
-                ),
-              ),
-
-              const Divider(height: 30),
-
-              // 2. Wrap the inner scroll view with Flexible so it shrinks to
-              // the available screen height and allows scrolling without overflowing.
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Reading status
-                      Row(
-                        children: [
-                          const Text(
-                            "• ",
-                            style: TextStyle(color: Colors.blue, fontSize: 16),
-                          ),
-                          Text(
-                            item.readingStatus.name,
-                            style: const TextStyle(
-                              color: Colors.blue,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // Url
-                      if (item.uri.toString().isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 12,
-                            horizontal: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerLowest,
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Theme(
-                            data: Theme.of(context).copyWith(
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              splashColor: Colors.transparent,
-                              highlightColor: Colors.transparent,
-                              hoverColor: Colors.transparent,
-                            ),
-                            child: Row(
-                              children: [
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 5),
-                                  child: Icon(
-                                    Icons.link_rounded,
-                                    size: 20,
-                                    color: Colors.blueGrey,
-                                  ),
-                                ),
-
-                                const SizedBox(width: 5),
-
-                                // Scrollable URL
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: MouseRegion(
-                                      cursor: SystemMouseCursors.click,
-                                      child: SelectableText(
-                                        item.uri.toString(),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                const SizedBox(width: 5),
-
-                                // copy icon button
-                                _buildCopyIconButton(item),
-
-                                const SizedBox(width: 5),
-
-                                // open link icon
-                                IconButton(
-                                  padding: const EdgeInsets.all(5),
-                                  constraints: const BoxConstraints(),
-                                  tooltip: 'Open link',
-                                  onPressed: () {
-                                    _openUrl();
-                                  },
-                                  icon: const Icon(Icons.open_in_new, size: 20),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                      const SizedBox(height: 20),
-
-                      if (item.notes.isNotEmpty)
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: colorScheme.onSurface.withValues(
-                              alpha: 0.08,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.all(8),
-                          child: SelectableText(
-                            item.notes,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: colorScheme.onSurface.withValues(
-                                alpha: 0.7,
-                              ),
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCopyIconButton(SavedItem item) {
-    bool copied = false;
-
-    return StatefulBuilder(
-      builder: (context, setDialogState) {
-        return IconButton(
-          padding: EdgeInsets.all(5),
-          constraints: const BoxConstraints(),
-          tooltip: copied ? 'Copied!' : 'Copy',
-          icon: Icon(
-            copied ? Icons.check_rounded : Icons.content_copy_outlined,
-            size: 20,
-          ),
-          onPressed: () async {
-            await Clipboard.setData(ClipboardData(text: item.uri.toString()));
-
-            setDialogState(() {
-              copied = true;
-            });
-
-            Future.delayed(const Duration(seconds: 2), () {
-              if (context.mounted) {
-                setDialogState(() {
-                  copied = false;
-                });
-              }
-            });
-          },
-        );
-      },
+      item: _viewModel.currentItem,
+      onOpenUrl: _openUrl,
     );
   }
 

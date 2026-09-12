@@ -13,6 +13,7 @@ class SavedItem {
   final String? imageUrl;
   final String? faviconUrl;
   final DateTime createdAt;
+  final List<String> tags;
 
   final log = Logger('SavedItem');
 
@@ -27,6 +28,7 @@ class SavedItem {
     this.imageUrl,
     this.faviconUrl,
     DateTime? createdAt, // only pass this during fromFirestore
+    this.tags = const [],
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toFirestore({bool isEdit = false}) {
@@ -43,6 +45,7 @@ class SavedItem {
         'faviconUrl': faviconUrl,
       // Only use this field on creation. If it's for updating, don't set this field:
       if (!isEdit) 'createdAt': Timestamp.fromDate(createdAt),
+      'tags': tags,
     };
   }
 
@@ -79,6 +82,11 @@ class SavedItem {
       imageUrl: data?['imageUrl'] as String?,
       faviconUrl: data?['faviconUrl'] as String?,
       createdAt: (data?['createdAt'] as Timestamp?)?.toDate(),
+      tags:
+          (data?['tags'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 
@@ -93,6 +101,7 @@ class SavedItem {
     String? imageUrl,
     String? faviconUrl,
     DateTime? createdAt,
+    List<String>? tags,
   }) {
     return SavedItem(
       id: id ?? this.id,
@@ -105,6 +114,7 @@ class SavedItem {
       imageUrl: imageUrl ?? this.imageUrl,
       faviconUrl: faviconUrl ?? this.faviconUrl,
       createdAt: createdAt ?? this.createdAt,
+      tags: tags ?? this.tags,
     );
   }
 
@@ -112,7 +122,7 @@ class SavedItem {
   String toString() {
     return 'id: $id,\ntype: $type,\nreadingStatus: $readingStatus,\nurl: $uri,'
         '\ntitle: $title,\nnotes: $notes,\nremindReading: $remindReading, '
-        '\nimageUrl: $imageUrl, \nfaviconUrl: $faviconUrl';
+        '\nimageUrl: $imageUrl, \nfaviconUrl: $faviconUrl, \ntags: $tags';
   }
 }
 
