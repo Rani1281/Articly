@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 // ============================================================================
 Future<void> showFilterBottomSheet({
   required BuildContext context,
-  required FilterType currentValue,
-  required ValueChanged<FilterType> onChanged,
+  required ReadingStatusFilterType currentValue,
+  required ValueChanged<ReadingStatusFilterType> onChanged,
 }) async {
   await showModalBottomSheet(
     context: context,
@@ -53,9 +53,9 @@ Future<void> showFilterBottomSheet({
                 const SizedBox(height: 16),
 
                 // Options wrapped in the new RadioGroup to fix deprecations
-                RadioGroup<FilterType>(
+                RadioGroup<ReadingStatusFilterType>(
                   groupValue: currentValue,
-                  onChanged: (FilterType? value) {
+                  onChanged: (ReadingStatusFilterType? value) {
                     if (value != null) {
                       onChanged(value);
                       Navigator.pop(context);
@@ -67,10 +67,10 @@ Future<void> showFilterBottomSheet({
                       _buildFilterOption(
                         context: context,
                         title: 'Unread',
-                        value: FilterType.unread,
+                        value: ReadingStatusFilterType.unread,
                         currentValue: currentValue,
                         onTap: () {
-                          onChanged(FilterType.unread);
+                          onChanged(ReadingStatusFilterType.unread);
                           Navigator.pop(context);
                         },
                       ),
@@ -78,10 +78,10 @@ Future<void> showFilterBottomSheet({
                       _buildFilterOption(
                         context: context,
                         title: 'Reading',
-                        value: FilterType.reading,
+                        value: ReadingStatusFilterType.reading,
                         currentValue: currentValue,
                         onTap: () {
-                          onChanged(FilterType.reading);
+                          onChanged(ReadingStatusFilterType.reading);
                           Navigator.pop(context);
                         },
                       ),
@@ -89,10 +89,10 @@ Future<void> showFilterBottomSheet({
                       _buildFilterOption(
                         context: context,
                         title: 'Read',
-                        value: FilterType.read,
+                        value: ReadingStatusFilterType.read,
                         currentValue: currentValue,
                         onTap: () {
-                          onChanged(FilterType.read);
+                          onChanged(ReadingStatusFilterType.read);
                           Navigator.pop(context);
                         },
                       ),
@@ -113,8 +113,8 @@ Future<void> showFilterBottomSheet({
 Widget _buildFilterOption({
   required BuildContext context,
   required String title,
-  required FilterType value,
-  required FilterType currentValue,
+  required ReadingStatusFilterType value,
+  required ReadingStatusFilterType currentValue,
   required VoidCallback onTap,
 }) {
   final isSelected = value == currentValue;

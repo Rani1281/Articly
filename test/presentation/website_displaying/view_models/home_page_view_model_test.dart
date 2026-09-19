@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:articly/data/models/saved_item.dart';
+import 'package:articly/data/models/tag.dart';
 import 'package:articly/data/services/shared_preferences_service.dart';
 import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/presentation/website_displaying/view_models/home_page_view_model.dart';
@@ -116,7 +119,7 @@ void main() {
       when(() => mockProvider.items).thenReturn({'1': item1, '2': item2});
 
       // Initially filter is none. Let's set it to unread to test filterItems is called.
-      viewModel.switchTab(1); // unread
+      viewModel.setFilter(ReadingStatusFilterType.unread); // unread
 
       await viewModel.processItems();
 
@@ -252,22 +255,6 @@ void main() {
         check(viewModel.items.last).equals(item1); // older
       },
     );
-
-    test('otherwise sorts to be ascending (older first)', () async {
-      viewModel.clearItems();
-      viewModel.items.addAll([item1, item2]);
-
-      when(
-        () => mockPrefsService.setIsDescending(any()),
-      ).thenAnswer((_) async => true);
-      // Set isDescending to false
-      await viewModel.switchIsDescending(); // true -> false
-
-      viewModel.sortByCreationDate();
-
-      check(viewModel.items.first).equals(item1); // older
-      check(viewModel.items.last).equals(item2); // newer
-    });
   });
 
   group('sortByName', () {
@@ -300,20 +287,6 @@ void main() {
         ).equals(itemB); // 'B' before 'A' in descending
       },
     );
-
-    test('otherwise, lower characters at the top', () async {
-      viewModel.clearItems();
-      viewModel.items.addAll([itemA, itemB]);
-
-      when(
-        () => mockPrefsService.setIsDescending(false),
-      ).thenAnswer((_) async => true);
-      await viewModel.switchIsDescending(); // true -> false
-
-      viewModel.sortByName();
-
-      check(viewModel.items.first).equals(itemA); // 'A' before 'B' in ascending
-    });
   });
 
   group('filterItems', () {
@@ -349,47 +322,13 @@ void main() {
       viewModel.clearItems();
       viewModel.items.addAll([itemUnread, itemRead]);
 
-      viewModel.switchTab(3); // FilterType.read
+      viewModel.setFilter(ReadingStatusFilterType.read); // FilterType.read
 
       viewModel.filterItems();
 
       check(viewModel.items).length.equals(1);
       check(viewModel.items.first.readingStatus).equals(ReadingStatus.read);
     });
-  });
-
-  group('switchTab', () {
-    setUp(() {
-      when(
-        () => mockProvider.load(notify: false),
-      ).thenAnswer((_) async => null);
-    });
-
-    test(
-      'receives the tabIndex, sets the filter to the filter at the given index, and notifies listeners',
-      () {
-        var notified = false;
-        viewModel.addListener(() => notified = true);
-
-        viewModel.switchTab(1); // unread
-
-        check(notified).isTrue();
-      },
-    );
-
-    test(
-      'if the chosen filter is the same as the previous one, returns before reassigning and does not notify listeners',
-      () {
-        viewModel.switchTab(1); // set to unread
-
-        var notified = false;
-        viewModel.addListener(() => notified = true);
-
-        viewModel.switchTab(1); // set to unread again
-
-        check(notified).isFalse();
-      },
-    );
   });
 
   group('setOrderBy', () {
@@ -434,32 +373,6 @@ void main() {
     );
   });
 
-  group('switchIsDescending', () {
-    test(
-      'switches the value of isDescending (true -> false, false -> true), notifies listeners, and calls prefsService.setIsDescending(...)',
-      () async {
-        when(
-          () => mockPrefsService.setIsDescending(any()),
-        ).thenAnswer((_) async => true);
-
-        var notified = false;
-        viewModel.addListener(() => notified = true);
-
-        // Initial true
-        await viewModel.switchIsDescending();
-        check(viewModel.isDescending).isFalse();
-        check(notified).isTrue();
-        verify(() => mockPrefsService.setIsDescending(false)).called(1);
-
-        notified = false;
-        await viewModel.switchIsDescending();
-        check(viewModel.isDescending).isTrue();
-        check(notified).isTrue();
-        verify(() => mockPrefsService.setIsDescending(true)).called(1);
-      },
-    );
-  });
-
   group('setIsGridView', () {
     test(
       'if the given value is the same as the previous, returns and does not notify listeners',
@@ -491,5 +404,124 @@ void main() {
         verify(() => mockPrefsService.setIsGridView(true)).called(1);
       },
     );
+  });
+
+  group('Tag filtering and sorting', () {
+    final itemNoTags = SavedItem(
+      id: 'item_0',
+      type: ItemType.webpage,
+      readingStatus: ReadingStatus.unread,
+      title: 'No Tags',
+      uri: Uri.parse(''),
+      createdAt: DateTime(2025, 1, 1),
+      tags: [],
+    );
+    final itemOneTag = SavedItem(
+      id: 'item_1',
+      type: ItemType.webpage,
+      readingStatus: ReadingStatus.unread,
+      title: 'One Tag',
+      uri: Uri.parse(''),
+      createdAt: DateTime(2025, 1, 2),
+      tags: ['tag_a'],
+    );
+    final itemTwoTags = SavedItem(
+      id: 'item_2',
+      type: ItemType.webpage,
+      readingStatus: ReadingStatus.read,
+      title: 'Two Tags',
+      uri: Uri.parse(''),
+      createdAt: DateTime(2025, 1, 3),
+      tags: ['tag_a', 'tag_b'],
+    );
+    final itemThreeTags = SavedItem(
+      id: 'item_3',
+      type: ItemType.webpage,
+      readingStatus: ReadingStatus.unread,
+      title: 'Three Tags',
+      uri: Uri.parse(''),
+      createdAt: DateTime(2025, 1, 4),
+      tags: ['tag_a', 'tag_b', 'tag_c'],
+    );
+
+    setUp(() {
+      when(() => mockPrefsService.getOrderBy()).thenReturn(null);
+      when(() => mockPrefsService.getIsDescending()).thenReturn(null);
+      when(
+        () => mockProvider.load(notify: false),
+      ).thenAnswer((_) async => null);
+      when(() => mockProvider.tags).thenReturn({
+        'tag_a': Tag(id: 'tag_a', name: 'Tag A'),
+        'tag_b': Tag(id: 'tag_b', name: 'Tag B'),
+        'tag_c': Tag(id: 'tag_c', name: 'Tag C'),
+      });
+      when(() => mockProvider.items).thenReturn({
+        'item_0': itemNoTags,
+        'item_1': itemOneTag,
+        'item_2': itemTwoTags,
+        'item_3': itemThreeTags,
+      });
+    });
+
+    test('filters items having one or more matching tags', () async {
+      viewModel.setSelectedTagIds(['tag_b']);
+      await viewModel.processItems();
+
+      // Only item_2 and item_3 have tag_b
+      check(
+        viewModel.items.map((i) => i.id).toSet(),
+      ).deepEquals({'item_2', 'item_3'});
+    });
+
+    test(
+      'sorts items by match count descending (more matches appear higher)',
+      () async {
+        // Filter by tag_a, tag_b, tag_c
+        viewModel.setSelectedTagIds(['tag_a', 'tag_b', 'tag_c']);
+        await viewModel.processItems();
+
+        // item_3 has 3 matches, item_2 has 2 matches, item_1 has 1 match, item_0 has 0 (filtered out)
+        final ids = viewModel.items.map((i) => i.id).toList();
+        check(ids).deepEquals(['item_3', 'item_2', 'item_1']);
+      },
+    );
+
+    test('combines reading status filter with tag filter', () async {
+      // Status unread AND tags [tag_a, tag_b]
+      viewModel.applyFilters(
+        filter: ReadingStatusFilterType.unread,
+        tagIds: ['tag_a', 'tag_b'],
+      );
+      await viewModel.processItems();
+
+      // item_1: unread, tag_a (1 match) -> kept
+      // item_2: read, tag_a, tag_b (2 matches) -> excluded because not unread
+      // item_3: unread, tag_a, tag_b, tag_c (2 matches with filter) -> kept
+      // item_0: unread, no tags -> excluded by tag filter
+      final ids = viewModel.items.map((i) => i.id).toList();
+      check(ids).deepEquals(['item_3', 'item_1']);
+    });
+
+    test('clearFilter clears both status and tag filters', () async {
+      viewModel.applyFilters(
+        filter: ReadingStatusFilterType.read,
+        tagIds: ['tag_a'],
+      );
+      check(viewModel.hasActiveFilter).isTrue();
+      check(viewModel.activeFilterCount).equals(2);
+
+      viewModel.clearFilter();
+      check(viewModel.hasActiveFilter).isFalse();
+      check(viewModel.filter).equals(ReadingStatusFilterType.none);
+      check(viewModel.selectedTagIds).isEmpty();
+    });
+
+    test('removeTagFromFilter removes specific tag and updates list', () async {
+      viewModel.setSelectedTagIds(['tag_a', 'tag_b']);
+      check(viewModel.selectedTagIds).deepEquals(['tag_a', 'tag_b']);
+
+      viewModel.removeTagFromFilter('tag_a');
+      check(viewModel.selectedTagIds).deepEquals(['tag_b']);
+    });
   });
 }

@@ -3,6 +3,7 @@ import 'package:articly/data/models/saved_item.dart';
 import 'package:articly/domain/providers/user_provider.dart';
 import 'package:articly/presentation/authentication/widgets/profile_page.dart';
 import 'package:articly/presentation/website_displaying/widgets/donut_chart.dart';
+import 'package:articly/presentation/website_displaying/widgets/filter_dialog.dart';
 import 'package:articly/presentation/website_displaying/widgets/saved_item_card.dart';
 import 'package:articly/presentation/website_displaying/widgets/show_bottom_sheets.dart';
 import 'package:articly/presentation/website_saving/view_models/save_webpage_view_model.dart';
@@ -448,6 +449,7 @@ class _HomePageState extends State<HomePage>
   Widget _buildListToolBar() {
     final isGridView = _viewModel.isGridView;
     final colorScheme = Theme.of(context).colorScheme;
+    final userProvider = context.watch<UserProvider>();
 
     return Row(
       children: [
@@ -478,50 +480,98 @@ class _HomePageState extends State<HomePage>
                 ),
               ),
 
-        const Spacer(),
-
-        // filter text (visible is a filter is applied)
-        if (_viewModel.filter != FilterType.none)
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              _viewModel.setFilter(FilterType.none);
-              log.info('Clearing filter');
-            },
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              spacing: 3,
-              children: [
-                Icon(Icons.clear, size: 18, color: Colors.blueGrey),
-                SelectionContainer.disabled(
-                  child: Text(
-                    _viewModel.filter.name,
-                    style: TextStyle(color: Colors.blueGrey),
-                  ),
-                ),
-              ],
+        // Active filter chips (scrollable if multiple)
+        if (_viewModel.hasActiveFilter)
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  if (_viewModel.filter != ReadingStatusFilterType.none)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4.0),
+                      child: InputChip(
+                        key: const ValueKey('activeStatusFilterChip'),
+                        label: Text(_viewModel.filter.name),
+                        avatar: const Icon(
+                          Icons.circle,
+                          size: 8,
+                          color: Colors.blue,
+                        ),
+                        onDeleted: () => _viewModel.clearStatusFilter(),
+                        deleteIcon: const Icon(Icons.close, size: 14),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        labelPadding: const EdgeInsets.only(left: 4, right: 6),
+                      ),
+                    ),
+                  for (final tagId in _viewModel.selectedTagIds)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4.0),
+                      child: InputChip(
+                        key: ValueKey('activeTagFilterChip_$tagId'),
+                        label: Text(
+                          '#${userProvider.tags[tagId]?.name ?? tagId}',
+                        ),
+                        onDeleted: () => _viewModel.removeTagFromFilter(tagId),
+                        deleteIcon: const Icon(Icons.close, size: 14),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        labelPadding: const EdgeInsets.only(left: 6, right: 6),
+                      ),
+                    ),
+                  if (_viewModel.activeFilterCount > 1)
+                    TextButton(
+                      key: const ValueKey('clearAllFiltersButton'),
+                      onPressed: () => _viewModel.clearFilter(),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                      ),
+                      child: const Text(
+                        'Clear all',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
+          )
+        else
+          const Spacer(),
 
         // filter icon button
         IconButton(
-          tooltip: _viewModel.filter != FilterType.none
-              ? 'Clear filter'
+          key: const ValueKey('filterIconButton'),
+          tooltip: _viewModel.hasActiveFilter
+              ? 'Filters applied (${_viewModel.activeFilterCount})'
               : 'Filter',
           onPressed: () async {
-            await showFilterBottomSheet(
+            final result = await showFilterDialog(
               context: context,
-              currentValue: _viewModel.filter,
-              onChanged: (FilterType filter) {
-                _viewModel.setFilter(filter);
-              },
+              currentStatus: _viewModel.filter,
+              currentTagIds: _viewModel.selectedTagIds,
             );
-            log.info('Selected filter: ${_viewModel.filter}');
+            if (result != null) {
+              _viewModel.applyFilters(
+                filter: result.status,
+                tagIds: result.tagIds,
+              );
+              log.info(
+                'Selected filter: ${_viewModel.filter}, tags: ${_viewModel.selectedTagIds}',
+              );
+            }
           },
-          icon: Icon(
-            Icons.filter_list,
-            color: colorScheme.onSurface.withValues(alpha: 0.9),
-          ),
+          icon: _viewModel.hasActiveFilter
+              ? Badge.count(
+                  count: _viewModel.activeFilterCount,
+                  child: Icon(Icons.filter_list, color: colorScheme.primary),
+                )
+              : Icon(
+                  Icons.filter_list,
+                  color: colorScheme.onSurface.withValues(alpha: 0.9),
+                ),
         ),
 
         const SizedBox(width: 5),
@@ -652,24 +702,48 @@ class _HomePageState extends State<HomePage>
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                _tabController.index == 0
-                    ? 'No saved sources yet'
-                    : 'No saved sources for the current status',
-              ),
-              const SizedBox(height: 20),
-              MyActionButton(
-                onPressed: () {
-                  Navigator.push(
+              if (_viewModel.hasActiveFilter) ...[
+                Icon(
+                  Icons.filter_list_off_outlined,
+                  size: 48,
+                  color: Theme.of(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const SaveWebpageScreen(),
-                    ),
-                  );
-                },
-                text: 'Add a webpage',
-                icon: Icon(Icons.add),
-              ),
+                  ).colorScheme.outline.withValues(alpha: 0.6),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No saved sources match the current filters',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  key: const ValueKey('clearFilterEmptyStateButton'),
+                  onPressed: () => _viewModel.clearFilter(),
+                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  label: const Text('Clear filters'),
+                ),
+              ] else ...[
+                Text(
+                  _tabController.index == 0
+                      ? 'No saved sources yet'
+                      : 'No saved sources for the current status',
+                ),
+                const SizedBox(height: 20),
+                MyActionButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SaveWebpageScreen(),
+                      ),
+                    );
+                  },
+                  text: 'Add a webpage',
+                  icon: const Icon(Icons.add),
+                ),
+              ],
             ],
           ),
         ),

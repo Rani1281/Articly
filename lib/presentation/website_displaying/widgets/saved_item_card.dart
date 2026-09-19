@@ -259,7 +259,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
 
             // Options Icon
             Padding(
-              padding: EdgeInsets.only(right: 10.0),
+              padding: const EdgeInsets.only(right: 2.0),
               child: _buildOptionsIcon(),
             ),
           ],
@@ -423,7 +423,7 @@ class _SavedItemCardState extends State<SavedItemCard> {
     );
   }
 
-  Widget _buildOptionsIcon({double? size}) {
+  Widget _buildOptionsIcon({double? size, EdgeInsetsGeometry? padding}) {
     return Theme(
       data: Theme.of(context).copyWith(
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -435,8 +435,8 @@ class _SavedItemCardState extends State<SavedItemCard> {
         builder:
             (BuildContext context, MenuController controller, Widget? child) {
               return IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+                padding: padding ?? const EdgeInsets.all(8.0),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                 tooltip: '',
                 icon: Icon(Icons.more_vert, size: size),
                 onPressed: () {
